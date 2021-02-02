@@ -1,0 +1,39 @@
+
+\newglossaryentry{binary64}
+    {name=binary64,description={IEEE754 2008 \cite{ieee754_2008} conformant floating point number representation with encoding in length of \num{64} bits}}
+
+\newglossaryentry{binary32}
+    {name=binary32,description={IEEE754 2008 \cite{ieee754_2008} conformant floating point number representation with encoding in length of \num{32} bits}}
+
+\newglossaryentry{binary16}
+    {name=binary16,description={IEEE754 2008 \cite{ieee754_2008} conformant floating point number representation with encoding in length of \num{16} bits}}
+
+\newglossaryentry{bfloat16}
+    {name=bfloat16,description={Googles Brain float \cite{bfloat16} floating point number representation with encoding in length of \num{16} bits}}
+
+\newglossaryentry{tensorfloat32}
+    {name=tensorfloat32,description={Nvidias TensorFloat-32 \cite{tf32} floating point number representation with encoding in length of \num{32} bits, but only \num{19} bits are used}}
+
+\newglossaryentry{posit64}
+    {name=posit64,description={Posit Standard \cite{posit2018standard} conformant storage format for real number representation with encoding in length of \num{64} bits and an exponent size of \code{es=3}}}
+
+\newglossaryentry{posit32}
+    {name=posit32,description={Posit Standard \cite{posit2018standard} conformant storage format for real number representation with encoding in length of \num{32} bits and an exponent size of \code{es=2}}}
+
+\newglossaryentry{posit16}
+    {name=posit16,description={Posit Standard \cite{posit2018standard} conformant storage format for real number representation with encoding in length of \num{16} bits and an exponent size of \code{es=1}}}
+
+\newglossaryentry{posit8}
+    {name=posit8,description={Posit Standard \cite{posit2018standard} conformant storage format for real number representation with encoding in length of \num{8} bits and an exponent size of \code{es=0}}}
+
+\newglossaryentry{quire}
+    {name=quire,description={Posit Standard \cite{posit2018standard} conformant special fixed-size data type that can be thought of as a dedicated register that permits dot products, sums, and other operations to be performed with rounding error deferred to the very end of the calculation \cite{gustafson2017posit}}}
+
+\newglossaryentry{rank}
+    {name=rank,description={In \acrshort{MPI} a process is identified by its rank, with is an integer between $[0, N-1]$, where $N$ is the size of the MPI process group}}
+
+\newglossaryentry{sparse matrix}
+    {name=sparse matrix,description={A matrix, where most of the entries are \num{0}}}
+
+\newglossaryentry{fma}
+    {name=fused multiply–add,description={A multiply-add operation $a + bc$ in one shot, where the rounding is deferred}}

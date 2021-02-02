@@ -1,0 +1,40 @@
+\documentclass{standalone}
+
+\usepackage{tikz}
+\usepackage{amsmath}
+
+% definition of all the colors
+\usepackage{xcolor}
+\input{../include/colors.tex}
+
+\begin{document}
+
+%\tikzset{every picture/.style={line width=0.75pt}} %set default line width to 0.75pt        
+
+\begin{tikzpicture}
+
+
+\coordinate (p);
+\foreach \labela/\labelb/\inline/\c/\width in {
+	\textcolor{corange}{sign}/$b_{n-1}$/$s$/corange/1,
+	/$b_{n-2}$/$e$/cblue/1,
+	/$b_{n-3}$/e/cblue/1,
+	\textcolor{cblue}{exponent}/$\cdots$/$\dots$/cblue/4,
+	/$b_{m+1}$/e/cblue/1,
+	/$b_{m}$/e/cblue/1,
+	/$b_{m-1}$/m/cgreen/1,
+	/$b_{m-2}$/m/cgreen/1,
+	\textcolor{cgreen}{mantissa}/$\ldots$/$\dots$/cgreen/9,
+	/$b_1$/m/cgreen/1,
+	/$b_0$/m/cgreen/1
+}{
+    \node[draw,fill=\c!35,minimum height=8 mm,minimum width=\width*8 mm,anchor=west,outer sep=0pt,label=below:\labelb,label=above:\labela]
+    (n) at (p) {\textcolor{\c}{\inline}};
+    %\draw[thick] ([yshift=-1mm]n.south west) -- ([yshift=1mm]n.north west);
+    \coordinate (p) at (n.east);
+}
+
+\end{tikzpicture}
+
+
+\end{document}

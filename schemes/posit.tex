@@ -1,0 +1,36 @@
+\documentclass{standalone}
+
+\usepackage{tikz}
+\usepackage{amsmath}
+
+% definition of all the colors
+\usepackage{xcolor}
+\input{../include/colors.tex}
+
+\begin{document}
+
+%\tikzset{every picture/.style={line width=0.75pt}} %set default line width to 0.75pt        
+
+\begin{tikzpicture}
+
+\foreach \labela/\labelb/\inline/\c/\width in {
+	\textcolor{corange}{sign}/$b_{n-1}$/$s$/corange/1,
+	//$r$/cyellow/1,
+	//$r$/cyellow/1,
+	\textcolor{cyellow}{regim}\textcolor{cbrown}{e}//$\dots$/cyellow/4,
+	//$\overline{r}$/cbrown/1,
+	//$e_1$/cblue/1,
+	\textcolor{cblue}{exponent}//$\dots$/cblue/3,
+	//$e_e$/cblue/1,
+	//$m_1$/cgreen/1,
+	\textcolor{cgreen}{mantissa}//$\dots$/cgreen/7,
+	/$b_0$/$m_m$/cgreen/1
+}{
+    \node[draw,fill=\c!35,minimum height=8 mm,minimum width=\width*8 mm,anchor=west,outer sep=0pt,label=below:\labelb,label=above:\labela]
+    (n) at (p) {\textcolor{\c}{\inline}};
+    \coordinate (p) at (n.east);
+}
+
+\end{tikzpicture}
+
+\end{document}

@@ -1,0 +1,23 @@
+\babel@toc {english}{}
+\contentsline {section}{\numberline {1}Introduction}{2}{section.1}%
+\contentsline {section}{\numberline {2}Conventions}{2}{section.2}%
+\contentsline {section}{\numberline {3}Theory: QCD}{2}{section.3}%
+\contentsline {section}{\numberline {4}Theory: lattice QCD}{2}{section.4}%
+\contentsline {section}{\numberline {5}Theory: Performance Models}{2}{section.5}%
+\contentsline {section}{\numberline {6}Software: openQxD}{2}{section.6}%
+\contentsline {section}{\numberline {7}Theory: Conjugate Gradient algorithm}{2}{section.7}%
+\contentsline {section}{\numberline {8}Theory: Real number formats}{10}{section.8}%
+\contentsline {subsection}{\numberline {8.1}IEEE Standard for Floating-Point Arithmetic}{10}{subsection.8.1}%
+\contentsline {subsection}{\numberline {8.2}Posits}{12}{subsection.8.2}%
+\contentsline {subsection}{\numberline {8.3}Floating point numbers in openQxD}{14}{subsection.8.3}%
+\contentsline {subsection}{\numberline {8.4}The conjugate gradient kernel}{16}{subsection.8.4}%
+\contentsline {subsection}{\numberline {8.5}Simulating other datatypes}{17}{subsection.8.5}%
+\contentsline {subsubsection}{\numberline {8.5.1}Discussion of figures \ref {fig:cgne:naive} - \ref {fig:cgne:res12}}{20}{subsubsection.8.5.1}%
+\contentsline {subsubsection}{\numberline {8.5.2}$8^4$ lattice}{23}{subsubsection.8.5.2}%
+\contentsline {subsubsection}{\numberline {8.5.3}Conclusion}{23}{subsubsection.8.5.3}%
+\contentsline {section}{\numberline {9}Summary}{25}{section.9}%
+\contentsline {section}{\numberline {10}References}{26}{section.10}%
+\contentsline {section}{Appendices}{27}{section*.6}%
+\contentsline {subsection}{\numberline {A}Code}{27}{subsection.Alph0.1}%
+\contentsline {section}{Acronyms}{27}{section*.7}%
+\contentsline {section}{Glossary}{27}{section*.9}%
