@@ -1,0 +1,306 @@
+\documentclass{article}
+
+\usepackage[utf8]{inputenc}
+
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{verbatim}
+\usepackage{physics}
+\usepackage{geometry}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{slashed} % Feynman slash notation
+\usepackage{listings} % for code listings
+\usepackage{xcolor}
+\usepackage{svg} % svg images
+
+\input{include/colors.tex} % definition of all the colors
+
+%Code listing style named "codestyle"
+\lstdefinestyle{codestyle}{
+    backgroundcolor=\color{codebackgroundcolour},   
+    commentstyle=\color{codecomment},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codestring},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+\lstset{style=codestyle}
+
+\newcommand{\eqname}[1]{\tag*{#1}}% Tag equation with name
+\newcommand{\qwdots}{\ar@{.}[]+<-1em,0em>;[]+<0em,0em>}
+
+\usepackage{tikz}
+\usetikzlibrary{tikzmark} % arrow pointing to character in equation https://tex.stackexchange.com/questions/191217/arrow-pointing-to-subscript-in-equation
+
+%\usepackage[bottom]{footmisc} % put footnote at the bottom of the page https://tex.stackexchange.com/questions/9425/how-to-fix-footnote-position-at-the-bottom-of-the-page
+
+\usepackage[acronym,toc]{glossaries} % glossary in the table of contents
+
+\usepackage[
+    type={CC},
+    modifier={by-sa},
+    version={4.0}
+]{doclicense}
+
+\usepackage{amsthm}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{corollary}{Corollary}[theorem]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{prop}[theorem]{Proposition}
+\newtheorem{example}{Example}[section]
+
+\allowdisplaybreaks % page breaks in equations
+\graphicspath{{./img/}{./plots/}}
+
+\geometry{
+  a4paper,
+  left=29mm,
+  right=29mm,
+  top=20mm,
+}
+
+\def\code#1{\texttt{#1}}
+
+\title{Master Thesis \\ Title TODO}
+\author{Roman Gruber}
+\date{ETH Zürich, TODO:date}
+
+\numberwithin{equation}{section}
+
+\makeglossaries
+
+\newglossaryentry{binary64}
+    {name=binary64,description={IEEE754 2008 conformant floating point number representation with encoding in length of 64 bits}}
+
+\newglossaryentry{binary32}
+    {name=binary32,description={IEEE754 2008 conformant floating point number representation with encoding in length of 32 bits}}
+
+\newglossaryentry{binary16}
+    {name=binary16,description={IEEE754 2008 conformant floating point number representation with encoding in length of 16 bits}}
+
+\newacronym{QCD}{QCD}{Quantum chromodynmanics}
+\newacronym{nan}{NaN}{Not a number}
+
+\begin{document}
+
+\maketitle
+
+\abstract 
+TODO
+\newline
+
+\doclicenseThis
+
+\noindent\textcolor{gray}{\hrulefill}
+
+\tableofcontents
+
+\noindent\textcolor{gray}{\hrulefill}
+
+\section{Introduction}
+
+TODO
+
+In \acrshort{QCD} blabla. \textcolor{corange}{orange}, \textcolor{cyellow}{yellow}, \textcolor{cblue}{blue}, \textcolor{cbrown}{brown}, \textcolor{cpink}{pink}, \textcolor{cred}{red}, \textcolor{cgreen}{green}, \textcolor{clightblue}{lightblue}, \textcolor{clightgreen}{lightgreen}, \textcolor{clightpink}{lightpink},  \textcolor{cdarkblue}{darkblue}, \colorbox{clightblue}{lightblue}, \colorbox{clightpink}{lightpink}, \colorbox{clightgreen}{lightgreen}
+
+\section{Conventions}
+
+\section{Floating point formats}
+\label{sec:floats}
+
+Floating point numbers are omnipresent in the simulation application. In the conjugate gradient kernel, there are large scalar products over vectors of very high dimensionality over multiple ranks. The components of these vectors are single precision floating point numbers (I call them \gls{binary32} from here on). The precision was degraded from \gls{binary64} to \gls{binary32} already and a speedup of a factor of 2 was achieved. This motivates to explore even smaller floating point formats with encoding lengths of 16 bits. Since the floating point operation performance scales with the exponent squared [TODO: ref needed], a 16 bits float format with a smaller exponent could lead to a better performance.
+
+Each floating point format has a number of bits that is used as exponent and mantissa [TODO: scheme \url{https://en.wikipedia.org/wiki/Bfloat16_floating-point_format}].
+
+\begin{definition}[Exponent and mantissa]
+
+The number of bits of the floating point format that is used by the exponent and the mantissa are denoted by $e$ and $m$ respectively.
+
+\end{definition}
+
+The resulting floating point number is then calculated as
+
+\begin{align*}
+    f = (-1)^S \cdot M \cdot 2^{(E-B)},
+\end{align*}
+
+where $E$ denotes the exponent, $B$ is the exponent bias, $M$ the mantissa and $S$ the sign bit. The exponent is biased and calculated as follows
+
+\begin{align}
+    E = \sum_{i=0}^{(e-1)} b_{M+i} 2^i, \label{eq:exponent}
+\end{align}
+
+where $B$ is the exponent bias.
+
+\begin{definition}[Exponent bias]
+
+\begin{align*}
+    B = 2^{(e-1)} -1,
+\end{align*}
+
+\end{definition}
+
+The calculation of the mantissa is a bit more involved, since it depends on the number being normal or subnormal.
+
+\begin{definition}[Subnormal numbers]
+
+TODO
+
+\end{definition}
+
+Therefore the mantissa of a normal number (when the exponent $0<E<B$, this implies that the implicit bit is $1$) is
+
+\begin{align*}
+    M = \tikzmark{implicit1}\textcolor{cyellow}{1} + \sum_{i=1}^{m} b_{m-i} 2^{-i}, \label{eq:mantissa}
+\end{align*}
+
+\begin{tikzpicture}[remember picture,overlay]
+\draw[<-] 
+  ([shift={(3pt,-2pt)}]pic cs:implicit1) |- ([shift={(-14pt,-10pt)}]pic cs:implicit1) 
+  node[anchor=east] {$\scriptstyle \text{implicit bit}$}; 
+\end{tikzpicture}
+
+whereas the mantissa of a subnormal number (when the exponent $E=0$) is
+
+\begin{align*}
+    M = \tikzmark{implicit0}\textcolor{cyellow}{0} + \sum_{i=1}^{m} b_{m-i} 2^{-i},
+\end{align*}
+
+\begin{tikzpicture}[remember picture,overlay]
+\draw[<-] 
+  ([shift={(3pt,-2pt)}]pic cs:implicit0) |- ([shift={(-14pt,-10pt)}]pic cs:implicit0) 
+  node[anchor=east] {$\scriptstyle \text{implicit bit}$}; 
+\end{tikzpicture}
+
+The $1$ or $0$ in the front of the summand is the leading \textcolor{cyellow}{implicit bit} ($(m+1)$-th mantissa bit) that tells us whether the number is subnormal ($E=0$) or not. Usual floating point formats are summarised in table \ref{tab:formats}.
+
+\begin{table}[H]
+\centering
+
+    \begin{tabular}{ |p{2cm}||p{1cm}|p{1cm}|p{1cm}|p{6cm}|  }
+        \hline
+        \multicolumn{5}{|c|}{Floating point formats} \\
+        \hline
+        name & s & e & m & comment \\
+        \hline
+        binary128 & 1 & 15 & 112 & IEEE 754 \\
+        \gls{binary64}  & 1 & 11 & 52 & double precision, IEEE 754 \\
+        \gls{binary32}  & 1 & 8  & 23 & single precision, IEEE 754 \\
+        \gls{binary16}  & 1 & 5  & 10 & half precision, IEEE 754 \\
+        \hline
+        bfloat16  & 1 & 8  & 7 & Googles Brain Float\\
+        binary24  & 1 & 7  & 16 & AMDs fp24 \\
+        binary256 & 1 & 19 & 236 & IEEE 754 \\
+        tf32      & 1 & 8  & 10 & NVIDIAs TensorFloat \footnotemark \\
+        \hline
+    \end{tabular}
+    \caption{\label{tab:limits} Commonly used floating point formats, where $s$ is the number of sign bits, $e$ the number of exponent bits and $m$ the number of mantissa bits.}
+    
+\end{table}
+
+\footnotetext[1]{Allocates 32 bits, but only 19bits are used.}
+
+The format of interest is the \gls{binary16} half precision IEEE 754 floating point format. The highest representable number is when the exponent is highest. This is not the case when all $e$ exponent bits are $1$, because then - according to the specification [ref needed] - the number is either $\pm \infty$ or not a number (\acrshort{nan}), depending on the mantissa. The maximal exponent is therefore the next smaller number,
+
+\begin{align*}
+    E_{max} = \underbrace{ 1...1 }_{\text{\makebox[0pt]{$e-1$ times} }}0.
+\end{align*}
+
+Using equation \ref{eq:exponent}, we find
+
+\begin{align*}
+    E_{max} &= \sum_{i=1}^{(e-1)} 2^i \\
+            &= 2^e -2.
+\end{align*}
+
+The highest mantissa on the other hand is when all mantissa bits are $1$ (including the implicit bit),
+
+\begin{align*}
+    M_{max} &= 1 + \sum_{i=1}^{m} 2^{-i} \\
+            &= 2 - 2^{-m}.
+\end{align*}
+
+Using these two formulas we can define
+
+\begin{definition}[The highest representable number of any floating point format]
+
+\begin{align*}
+    f_{max} &= (-1)^0 \cdot M_{max} \cdot 2^{(E_{max} - B)} \\
+            &= ( 2 - 2^{-m} ) \cdot 2^{(2^e -2^{e-1} -1)} \\
+            &= ( 2 - 2^{-m} ) \cdot 2^{(2^{e-1} -1)}.
+\end{align*}
+
+See table \ref{tab:limits} for these limiting numbers of the different formats,
+
+\begin{table}[H]
+\centering
+
+    \begin{tabular}{ |p{2cm}||p{1cm}|p{1cm}|p{1cm}|p{3cm}|  }
+        \hline
+        \multicolumn{5}{|c|}{Floating point format limits} \\
+        \hline
+        name & $f_{max}$ & $f_{min}$ & $f_{smin}$ & exponent range \\
+        \hline
+        binary128 & & & &  \\
+        \gls{binary64}  & & & &  \\
+        \gls{binary32}  & & & &  \\
+        \gls{binary16}  & $65504$ & & &  \\
+        \hline
+        bfloat16  & & & & \\
+        binary24  & & & &  \\
+        binary256 & & & &  \\
+        tf32      & & & &  \\
+        \hline
+    \end{tabular}
+    
+    \caption{\label{tab:formats} TODO.}
+    
+\end{table}
+
+\end{definition}
+
+\subsection{Simulating half precision}
+
+TODO
+
+\section{Summary}
+
+TODO
+
+\newpage
+
+\bibliography{include/references}
+\bibliographystyle{apalike}
+
+\newpage
+
+\appendix
+\section*{Appendices}
+\addcontentsline{toc}{section}{Appendices}
+\renewcommand{\thesubsection}{\Alph{subsection}}
+
+\subsection{Code}
+\label{sec:code}
+
+All code used in this report is open source and can be found in the GitHub repository \cite{github}
+
+\printglossary[type=\acronymtype]
+
+\printglossary
+
+\end{document}
