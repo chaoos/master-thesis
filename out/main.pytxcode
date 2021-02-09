@@ -1,10 +1,10 @@
-=>PYTHONTEX#py#default#default#0#code#####142#
+=>PYTHONTEX#py#default#default#0#code#####143#
 from sympy import *
 x=symbols('x')
 result = latex(integrate("(1+x)**(1/2)",x))
-=>PYTHONTEX#py#default#default#1#i#####148#
+=>PYTHONTEX#py#default#default#1#i#####149#
 result
-=>PYTHONTEX#py#default#default#2#code#####150#
+=>PYTHONTEX#py#default#default#2#code#####151#
 print("Python says ``Hello!''")
 =>PYTHONTEX:SETTINGS#
 version=0.17

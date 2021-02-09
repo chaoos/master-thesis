@@ -39,6 +39,12 @@ R.~Krashinsky, O.~Giroux, S.~Jones, N.~Stam, and S.~Ramaswamy.
 \newblock {\em NVIDIA blog: https://devblogs. nvidia.
   com/nvidia-ampere-architecture-in-depth}, 2020.
 
+\bibitem{luscher2004}
+M.~L{\"u}scher.
+\newblock Solution of the dirac equation in lattice qcd using a domain
+  decomposition method.
+\newblock {\em Computer physics communications}, 156(3):209--220, 2004.
+
 \bibitem{ieee754_1985}
 I.~of~Electrical, E.~E. C. S.~S. Committee, and D.~Stevenson.
 \newblock {\em IEEE standard for binary floating-point arithmetic}.
