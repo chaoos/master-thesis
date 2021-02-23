@@ -140,6 +140,12 @@ TODO
 
 In \acrshort{QCD} blabla. \textcolor{corange}{orange}, \textcolor{cyellow}{yellow}, \textcolor{cblue}{blue}, \textcolor{cbrown}{brown}, \textcolor{cpink}{pink}, \textcolor{cred}{red}, \textcolor{cgreen}{green}, \textcolor{cpurple}{purple}, \textcolor{cturquois}{turquois}, \textcolor{clightblue}{lightblue}, \textcolor{clightgreen}{lightgreen}, \textcolor{clightpink}{lightpink},  \textcolor{cdarkblue}{darkblue}, \colorbox{clightblue}{lightblue}, \colorbox{clightpink}{lightpink}, \colorbox{clightgreen}{lightgreen}, \textcolor{linkcolor}{linkcolor}
 
+\begin{comment}
+
+solving large sparse linear systems, which arose as finite-difference discretizations of differential equations.[
+
+\end{comment}
+
 \begin{pycode}
 from sympy import *
 x=symbols('x')
@@ -992,7 +998,9 @@ The highest exponent in all 4 runs was $E=4$, whereas the lowest exponent deceas
     \label{fig:exponents}
 \end{figure}
 
-\subsection{The conjugate gradient kernel}
+\subsection{The conjugate gradient kernel in openQxD}
+
+\label{sec:fp_in_openqxd}
 
 The conjugate gradient kernel \code{cgne()} in \code{modules/linsolv/cgne.c} in \cite{openqxd} implements the algorithm, see Listing \ref{lst:cgne}.
 
@@ -1175,26 +1183,80 @@ If the desicion goes for floats, which might be the more realistic scenario, the
 
 \begin{proposal}[mixed precision]
 
-TODO: proposal for mixed precision (binary16) conjugate gradient or other algorithms.
+The above analysis suggests that the calculation of the solution can be (at least partly) conducted in an even less precise datatype than \gls{binary32}. One could for example choose \num{3} datatypes with different precision. The algorithm can be started using the least precise one. If the tolerance hits a certain value at the boundaries of the datatype, the algorithm switches to the next higher one. The calculation is continued in that datatype until the tolerance reaches the limits of the new datatype. Again the datatype is switched to the next higher one\footnotemark.
+\footnotetext{One obvious choice could be \gls{binary64}, \gls{binary32} and \gls{binary16}. When the algorithm is started in \gls{binary16} and a tolerance of $\approx 10^{-4}$ is reached, the algorithm continues in \gls{binary32}, the limit of which is at a tolerance of $\approx 10^{-35}$. Continuing calculation would then be conducted in \gls{binary64}.}
+This calculation in mixed precision is not dependent on the algorithm itself and can therefore be applied to every iterative solver algorithm. Algorithm \ref{alg:mixed_precision} shows an example implementation of such a mixed precision calculation. The array $D$ consists of all available datatypes participating in the calculation in ascending order, meaning the least precise datatype comes first. The function $alg()$ performs the underlying algorithm (for example conjugate gradient) in the datatype given by its arguments. It expects at least a starting vector $\vec{x_0}$ and a tolerance and returns the status\footnotemark, the calculated solution and the residual up to the given tolerance.
+\footnotetext{See section \ref{sec:fp_in_openqxd}}
+
+\begin{figure}
+\centering
+\begin{minipage}{.6\linewidth}
+\begin{algorithm}[H]
+\SetKwInOut{Input}{input}
+\Input{desired norm of relative residual $rn$}
+\Input{array of datatypes in $\{D\}_{k=0}^N$}
+\Input{iterative algorithm $alg()$}
+\SetAlgoLined
+  $\vec{x_0}, \vec{r_0}, \ldots \gets$ initial guess, \ldots\;
+  $\vec{x}, \vec{r} \gets \vec{x_0}, \vec{r_0}$\;
+  status $\gets 0$\;
+  \For{$k \gets 0, 1$ \KwTo $N$}{
+    convert all variables to datatype $D[k]$\;
+    $tol \gets \frac{1}{\norm{\vec{r_0}}} max(rn, \text{\code{MACHINE\_EPSILON of $D[k]$}})$\;
+    substatus, $\vec{x}, \vec{r}$, $\ldots \gets alg(tol, \vec{x}, \ldots)$\;
+    \uIf{substatus $> 0$}{
+      status $\gets$ status $+$ substatus\;
+    }
+    \uIf{$\norm{\vec{r}} < rn$}{
+      \Return status, $\vec{x};$ \tcp{success}
+    }
+ }
+ status $\gets -3$\;
+ \Return status, $\vec{x_0};$ \tcp{the algorithm failed}
+ \caption{Pseudo-code for an iterative algorithm in mixed precision.}
+ \label{alg:mixed_precision}
+\end{algorithm}
+\end{minipage}
+\end{figure}
 
 \end{proposal}
 
 \begin{proposal}[approximating the amounts $\alpha_i$]
 
-Looking at plot \textit{4e} of Figure \ref{fig:cgne:res12}, where the amounts $\alpha_i$ are plotted for every iteration, we see that after every reset step the amounts need $2-3$ step to reach a value that is not changing very much. This is becomes apparent when looking at the fitting lines. The values of the $\alpha_i$ are in the range $10^{-1}$ and the slopes $m$ of the fitting lines are in the range $10^{-4}$ - $10^{-5}$, suggesting that the value of $\alpha_i$ is not changing from iteration to iteration when only looking at $2-3$ significant decimal digits.
+Looking at plot \textit{4e} of Figure \ref{fig:cgne:res12}, where the amounts $\alpha_i$ are plotted for every iteration, we see that after every reset step the amounts need $2-3$ steps to reach a value that is not changing very much for future iterations. This is becomes apparent when looking at the fitting lines. The values of the $\alpha_i$ are in the range $10^{-1}$ and the slopes $m$ of the fitting lines are in the range $10^{-4}$ - $10^{-5}$, suggesting that the value of $\alpha_i$ is not changing from iteration to iteration when only looking at $2-3$ significant decimal digits.
 
-A possibility to reduce computational cost in each iteration could be to approximate the values of future $\alpha_i$ to be constant. The less precise the datatype, the larger the change in $\alpha_i$. The large error in $\alpha_i$ of \gls{bfloat16} suggests that the algorithm is not sensible to errors in $\alpha_i$. Therefore, it can be expected that the results should not change significantly with a approximated value of $\alpha_i$.
-
-TODO:
+A possibility to reduce computational cost in each iteration could be to approximate the values of future $\alpha_i$ to be constant. The less precise the datatype, the larger the change in $\alpha_i$. The large error in $\alpha_i$ of \gls{bfloat16} in all plots suggests that the algorithm is not sensible to errors in $\alpha_i$. Therefore, it can be expected that the results should not change significantly with a approximated value of $\alpha_i$.
 
 \begin{itemize}
-    \item adv1: residual can be calculated b-Ax, not recusively, no more roundoff accumulation, only roundoff errors
-    \item adv2: only one matrix-vector multiplication per iteration, see dis2
-    \item dis1: alpha approximation, can have errors
-    \item dis2: the dirac operator must be given in form of Ddagger D as one operator
+    \item Advantage: The resoduals can be calculated using $\vec{b} - A \vec{x}$, not recusively. This implies less roundoff accumulation.
+    \item Advantage: Only one matrix-vector multiplication per iteration.
+    \item Disadvantage: Since the $\alpha_i$ are just approximated, the number of needed iterations may increase.
+    \item Disadvantage: The Dirac operator $D$ must be given in the form of $A = D^{\dagger} D$ as one operator, else the algorithm still consists of \num{2} matrix-vector multiplications per iteration.
 \end{itemize}
 
+The results of simulations with approximated values for the $\alpha_i$ can be observed in plot series \ref{fig:cgne:4x4x4x4:e1} and \ref{fig:cgne:8x8x8x8:e1}. The value was approximated based on previous values. The first \num{5} steps where skipped (thus the algorithm performed natively). In step number \num{5}, the last \num{3} values of $\alpha_i$ where averaged. In the following steps the constant value calculated in step \num{5} was reused. After every reset step, the value of $\alpha_i$ had to be recalculated using the above procedure. Therefore a datatype such as \gls{bfloat16} that has reset steps after approximately every \num{7}th regular step, will benefit in only \num{2} steps per reset step. This is very little difference to native runs compared to datatypes with high precision.
+
+The calculation became more sensible to the number range of the datatype. This can be seen in all plots when looking at \gls{binary16} that was not able to converge anymore, although by a very small amount. \gls{tensorfloat32} on the other hand performed very similar to the regular rounds, it was expected that it needs slightly more iterations. When going with this strategy, it is therefore advisable to perform more regular cg-steps when coming closer to the boundaries of the datatype. One possible solution would be to choose a higher machine epsilon close to the boundaries, forcing the algorithm to perform more reset steps, in turn causing more regular cg-steps and recalculations of $\alpha_i$.
+
+Notice that with larger lattice sizes, the approximation of the amounts has less error (see plots \textit{1e} and \textit{2e} in figures \ref{fig:cgne:4x4x4x4:e1} and \ref{fig:cgne:8x8x8x8:e1}) and the algorithm is thus more stable.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1.0\textwidth]{plots/cgne_4x4x4x4_e1}
+    \caption{Plots \textit{1a} to \textit{1f} contain the convergence analysis of a conjugate gradient run with a $4^4$ lattice, relative residual $10^{-6}$ and approximated values of $\alpha_i$. In plots \textit{2a} to \textit{2f} the residual was chosen to be $10^{-12}$. Plots \textit{1e} and \textit{2e} contain the relative error in the approximated $\alpha_i$ compared to the real $\alpha_i$.}
+    \label{fig:cgne:4x4x4x4:e1}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1.0\textwidth]{plots/cgne_8x8x8x8_e1}
+    \caption{The same setup as figure \ref{fig:cgne:4x4x4x4:e1}, but with a $8^4$ lattice.}
+    \label{fig:cgne:8x8x8x8:e1}
+\end{figure}
+
 \end{proposal}
+
+\begin{comment}
 
 res $> 10^{-6}$
 
@@ -1208,6 +1270,8 @@ Simulated datatype: precision $>$ number range
 
 Collective datatype: number range $>$ precision
 
+\end{comment}
+
 \section{SAP preconditioned GCR algorithm}
 
 The next solver appearing in openQxD is called \code{SAP\_GCR}. It makes use of a multiplicative \acrfull{sap} as preconditioner for a flexible \acrfull{gcr} run.
@@ -1216,13 +1280,18 @@ TODO: motivation: parallel processing, chrial regime (spontaneous breaking of ch
 
 \subsection{Even-Odd Preconditioning}
 
-Preconditioning in general, when employed in lattice QCD, is expected to have significant impact on the number of iterations of a solver. One way of preconditioning $D \psi = \eta$ is
+Preconditioning in general, when employed in lattice QCD, is expected to have significant impact on the number of iterations of a solver. One way of preconditioning $D \psi = \eta$ on a lattice is
 
 \begin{align*}
     L D R \psi^{\prime} = L \eta,
 \end{align*}
 
-with $\psi = R^{-1} \psi^{\prime}$ and $L$, $R$ chosen wisely such that $LDR$ is well conditioned. If $L = \mathbb{I}$, it is called \df{right preconditioning}, if $R=\mathbb{I}$ it is called \df{left preconditioning}. If the Dirac-matrix involves only nearest-neighbor interactions it is possible to split the lattice into even and odd sites. If the sites are ordered such that the even sites come first,
+with $\psi = R^{-1} \psi^{\prime}$ and $L$, $R$ chosen wisely such that $LDR$ is well conditioned. If $L = \mathbb{I}$, it is called \df{right preconditioning}, if $R=\mathbb{I}$ it is called \df{left preconditioning}. If the Dirac-matrix involves only nearest-neighbor interactions it is possible to split the lattice into even and odd sites\footnotemark
+\footnotetext{It is therefore very similar to a domain decomposition method, see later.}
+\footnotemark.
+\footnotetext{Even lattice points are the ones where the sum of the global cartesian coordinates $(x_0 + x_1 + x_2 + x_3)$ in units of the lattice spacing $a$ is even.}
+If the sites are ordered such that the even sites come first \footnotemark,
+\footnotetext{This is indeed the case in openQxD (see \code{main/README.global}) in \cite{openqxd}.}
 
 \begin{align*}
     D &=
@@ -1268,7 +1337,7 @@ After a bit of algebra,
     \hat{D} &= D_{ee} - D_{eo} D_{oo}^{-1} D_{oe}.
 \end{align*}
 
-This specific preconditioning reduces the amount of iterative steps needed by a factor of \num{2} approximately. The inversion of $D_{oo}$ is simple, because with only nearest-neighbor-interactions the odd sites do not interact among themselves, only with even sites. Thus $D_{oo}$ exhibits a diagonal form. Using
+This specific preconditioning reduces the amount of iterative steps needed by a factor of \num{2} approximately, because $D_{oo}$ and $\hat{D}$ are matrices of half the dimension of $D$. The inversion of $D_{oo}$ is simple, because with only nearest-neighbor-interactions the odd sites do not interact among themselves, only with even sites. Thus $D_{oo}$ exhibits block-diagonal form (all blocks are $6 \times 6$, why?). Using
 
 \begin{align*}
     D \psi = \eta \implies \begin{pmatrix}
@@ -1277,7 +1346,7 @@ This specific preconditioning reduces the amount of iterative steps needed by a 
     \end{pmatrix} \begin{pmatrix} \psi_e \\ \psi_o \end{pmatrix} = \begin{pmatrix} D_{ee} \psi_e + D_{eo} \psi_o \\ D_{oe}\psi_e + D_{oo} \psi_o \end{pmatrix} = \begin{pmatrix} \eta_e \\ \eta_o \end{pmatrix}
 \end{align*}
 
-we can write the preconditioned form, where only the even lattice sites have to be solved to determine $\psi_e$
+we can write the preconditioned form, where only the reduced system with even lattice sites has to be solved to determine $\psi_e$
 
 \begin{align*}
     \hat{D} \psi_e &= D_{ee} \psi_e - D_{eo} D_{oo}^{-1} D_{oe} \psi_e \\
@@ -1291,15 +1360,79 @@ because $\psi_o$ follows from the solution $\psi_e$ via
     \psi_o = D_{oo}^{-1} (\eta_o - D_{oe} \psi_e).
 \end{align*}
 
-
 \subsection{Schwarz Alternating Procedure}
 
-Domain decomposition is a way to partition the large system into (possibly many) smaller subproblems with regularly updated boundary conditions coming from solutions of neighboring subproblems. They fit very well into the notion of parallel processing, because each subproblem can be chosen to be contained in one single rank. The large lattice is split into sublattices called \df{local lattice}. Each rank has its own local lattice, the size of which is determined at compilation time. The full lattice consists of the ensemble of all local lattices. It is therefore adivable to chose the size of subproblems as a divisor of the local lattices such that at least one subproblem fits into one rank. These subproblems can then be solved using a \acrshort{gcr} solver.
+Domain decomposition is a way to partition the large system into (possibly many) smaller subproblems with regularly updated boundary conditions coming from solutions of neighboring subproblems. They fit very well into the notion of parallel processing, because each subproblem can be chosen to be contained in one single rank. The large lattice is split into sublattices called \df{local lattice}. Each rank has its own local lattice, the size of which is determined at compilation time. The full lattice consists of the ensemble of all local lattices arranged in a grid. It is therefore advisable to choose the size of decomposed subdomains as a divisor of the local lattice size such that at least one subproblem fits into one rank. These subproblems can then be solved using a Krylov subspace method such as conjugate gradient.
 
-The multiplicative \acrlong{sap} is such a domain decomposition method coming from the theory of partial differential equations. The domain decomposition preconditioner based on \acrshort{sap} involves itself an iterative procedure and is therefore very expensive.
+\begin{figure}[H]
+  \centering
+  \includestandalone[]{schemes/domain_decomposition}
+  \caption{$d=2$ dimensional example of a decomposition of a lattice $\Omega$ into domains named $\Omega_i$.}
+  \label{fig:ddecomp}
+\end{figure}
 
+The idea behind \acrshort{sap} is to loop through all blocks $\Omega_i$ and solve the smaller subproblem using boundary conditions given from the most recent solution. If the original problem only includes nearest-neighbor interactions, the solution of a block $\Omega_i$ depends only on that block and its exterior boundary points, which are the adjacent points on the neighboring blocks with opposite color. For example, the solution of the subproblem involving $\Omega_6$, depends only on the solutions of $\Omega_2$, $\Omega_5$, $\Omega_7$ and $\Omega_{10}$\footnotemark.
+\footnotetext{It depends on all other subproblems as well, but only indirectly.}
+Therefore all gray subproblems can be solved simultaneously, with the most recent boundary conditions obtained from the white domains and vice versa. Solving all gray, followed by all white subproblems is called a \df{Schwarz cycle}. Each subproblem can be solved with a solver separately, again applying some preconditioning\footnotemark.
+\footnotetext{Using even-odd preconditioning is perfectly fine with $D$ replaced by the restricted Dirac operator $D_i$ acting only on the points in $\Omega_i$.}
+
+\begin{comment}
+TODO: formulate the block subproblem here, and the sap cycle. D only couples nearest-neighbor blocks, see (0706.2298 Local coherence and deflation of the low quark modes in lattice QCD Fig.4)
+
+kappa, the lattice hopping term, determines to how many neighbors the interactions are extended.
+the wilson dirac operator D_w in doc/dirac.pdf eq (10) has only nearest neighbor interactions
+\end{comment}
+
+\subsection{SAP as a Preconditioner}
+
+The multiplicative \acrlong{sap} is such a domain decomposition method coming from the theory of partial differential equations. It can be applied in the form of a right preconditioner $M^{-1}$ making the preconditioned system
+
+\begin{align}
+    M^{-1} A \vec{x} = M^{-1} \vec{b} \label{eq:sap:preconditioned}
+\end{align}
+
+to be solved in very few steps, if $M^{-1}$ is a good approximation for $A^{-1}$. The preconditioning matrix $M^{-1}$ although is never explicitly available during the calculation, such as it is the case in even-odd preconditioning which can also be applied in advance. In order to solve the preconditioned equation \eqref{eq:sap:preconditioned} using a iterative Krylov subspace method, the algorithm must able to apply $M^{-1}$ and $M^{-1} A$ to an arbitrary vector $\vec{v}$. If it is possible to implement such operations on multiple ranks in an efficient way and if the preconditioner makes $M^{-1} A$ well conditioned\footnotemark, we reached the goal. Obviously an application of $M^{-1}$ should be possible without involving $A^{-1}$. The actions of operators $M^{-1}$ and $M^{-1} A$ on a vector $\vec{v}$ are assembled using a multiplicative \acrlong{sap}.
+
+\footnotetext{Would it be dingy to expect such a thing from a preconditioner?}
+
+\begin{comment}
+
+No overlapping (why?) of domains, as preconditioner (why?)
+
+Before calling GCR, calculate the P_i and T_i (Saad Page 490), i-th operator for i-th rank.
+Then calc M^-1 b using the T_i simulaneously on all ranks
+Start GCR
+In each GCR step: M^-1 A x_i must be calculated, using the P_i on all ranks simultaneously.
+M^-1 is the preconditioner that is not explicitly available, only implicitly via the P_i. However the M^-1 is not an exact inverse of A, but approximates A^-1. The remaining matrix B = M^-1 A is "close" to the identity, which makes Bx=c solved in very few steps, with c=M^-1b.
+
+The domain decomposition preconditioner based on \acrshort{sap} involves itself an iterative procedure and is therefore very expensive.
+
+* fixed number of GMRES iterations can be a preconditioner as well
+* choice of preconditioner is often more important than the choice of iterative method [Yousef Saad book]
+* preconditioning = bringing the condition number of a matrix closer to 1 (cond(id) = 1)
+
+The block sizes bs[4] and other parameters of the specified block grid
+are obtained from the parameter data base. These and the lattice sizes
+must be such that the lattice can be covered by non-overlapping blocks.
+Moreover, the number of blocks in each direction must be even and the
+local lattices must contain an even number of blocks. This ensures that
+the block grid can be chessboard-coloured and that the number of blocks
+in the local lattice is the same for both colours.
+
+The blocks are ordered such that the first half of them have the same colour.
+
+\end{comment}
+
+\begin{proposal}
+
+TODO: sap as preconditioner does not have to be precise, only approximation, thus reduced precision in the calculations? Is sap-preconditioning memory-bound? Involves network communication as well on the surface, therefore surface to volume ratio should be as small as possible, meaning the SAP-blocks should be as large as possible. Tradeoff: reduced precision performs better with small blocks, network communication is minimized with large blocks.
+EO-reconditioning also in reduced precision?
+
+\end{proposal}
 
 \subsection{Generalized Conjugate Residual algorithm}
+
+TODO: Why GCR? it allows inexact preconditioning without compromising the correctness of the solution.
 
 We wish to solve \eqref{eq:Axb} if a is not Hermitian. Comparing to the conjugate gradient algorithm, we minimize the residual $\vec{r}$ of the solution $\vec{x}$, using the \df{quadratic form},
 
@@ -1366,7 +1499,7 @@ Imposing $A^{\dagger} A$-orthogonality instead of regular $A$-orthogonality betw
                     &= ( \vec{e}_{i} + \alpha_i \vec{p}_i )^{\dagger} A^{\dagger} A \vec{p}_i \\
 \end{align*}
 
-gives us an expression for the amounts $\alpha_i$. Notice the above equation is equivalent to imposing $A$-orthogonality $0=\vec{r}_{i+1}^{\dagger} A \vec{p}_i$. However, we find (compare equation \eqref{eq:cgne:alpha_pre})
+gives an expression for the amounts $\alpha_i$. Notice the above equation is equivalent to imposing $A$-orthogonality $0=\vec{r}_{i+1}^{\dagger} A \vec{p}_i$. However, we find (compare equation \eqref{eq:cgne:alpha_pre})
 
 \begin{align*}
       \alpha_i = \frac{ \vec{r}_i^{\dagger} (A \vec{p}_{i}) }{ \vec{p}_i^{\dagger} (A^{\dagger} A) \vec{p}_i } = \frac{ \vec{r}_i^{\dagger} (A \vec{p}_{i}) }{ \norm{A \vec{p}_i}^2 }.
@@ -1446,7 +1579,7 @@ There are some remarks to note about the method of \acrshort{gcr}.
 
 \subsection{GCR in openQxD}
 
-The actual implementation of the \acrshort{gcr} algorithm in openQxD is quite different\footnotemark, but actually equivalent to the definition \ref{df:gcr}. Ref. \cite{luscher2004} explains the implementation of the algorithm in detail. The main \acrshort{gcr}-loop looks as in Algorithm \ref{alg:gcr} (see Figure 3 in \cite{luscher2004})
+The actual implementation of the \acrshort{gcr} algorithm in openQxD is quite different\footnotemark, but actually equivalent to definition \ref{df:gcr} (see lemma \ref{lem:gcr_equiv}). Ref. \cite{luscher2004} explains the implementation of the algorithm in detail. The main \acrshort{gcr}-loop looks as in Algorithm \ref{alg:gcr} (see Figure 3 in \cite{luscher2004})
 
 \footnotetext{See \code{fgcr()} in \code{modules/linsolv/fgcr.c} lines \num{212}ff in \cite{openqxd}.}
 
@@ -1474,14 +1607,18 @@ The actual implementation of the \acrshort{gcr} algorithm in openQxD is quite di
 \end{minipage}
 \end{figure}
 
-In the algorithm above, $M_{sap}$ is the \acrlong{sap} preconditioner, that might depend on the iteration number $k$ as well, making the algorithm flexible. $D$ is the Dirac-operator and $\rho_k$ the residual in the $k$-th step. The algorithm does not include a update of the solution vector $\psi_{k+1}$, instead this is done after $n_{kv}$ iterations all at once,
+In the algorithm above, $M_{sap}$ is the \acrlong{sap} preconditioner, that might depend on the iteration number $k$ as well, making the algorithm flexible. $D$ is the Dirac-operator and $\rho_k$ the residual in the $k$-th step. The algorithm does not include an update of the solution vector $\psi_{k+1}$, instead this is done after $n_{kv}$ iterations all at once,
 
 \begin{align}
     \psi_{k+1} = \sum_{l=0}^k \alpha^{\prime}_l \rho_k. \label{eq:gcr:step:paper}
 \end{align}
 
 \begin{lemma}
+
+\label{lem:gcr_equiv}
+
 The iterative algorithm from definition \ref{df:gcr} is equivalent to algorithm \ref{alg:gcr} when setting the preconditioning operator $M_{sap} = \mathbb{I}$, the Dirac-matrix $D = A$, the source vector $\eta = \vec{b}$ and the solution vectors $\psi_k = \vec{x}_k$.
+
 \end{lemma}
 
 \begin{proof}
@@ -1521,7 +1658,67 @@ where in the last step equation \eqref{eq:gcr:Api:equiv} was inserted. The $\chi
 
 \section{Deflated SAP preconditioned GCR algorithm}
 
+\begin{comment}
+
+deflation
+
+numerical lattice QCD has the problem that with small quark masses simulation techniques become inefficient in the "chiral limit" (what's that?).
+
+"deflating QCD": treating the eigenmodes of the Dirac operator with small eigenvalues separately from the bulk of the quark modes (eigenvalues)
+
+"V^2 problem": # eigenvalues below a fixed value (ex: 100MeV) grows O(V = full 4D lattice volume). calculating low quark modes (low eigenvalues) scales with O(V^2)
+
+"little dirac operator": Dirac op restricted to deflation subspace
+
+clever choice of deflation subspace --> numerical effort O(V)
+
+deflated system:
+P_L D chi(x) = P_L eta(X)
+P = projector to deflation subspace
+P_L = projector to the orthogonal complement of the deflation subspace.
+
+only the deflated system has to be solved, full system follows from the inverse of the deflated Dirac operator (whose condition number is expected to be significantly smaller that the full system)
+
+little dirac operator can also be preconditioned using eo-preconditioning if the number of blocks in every direction is even.
+
+* The application of the projector (P, P_L, P_R?) consumes 1/4 or more of the computation time!
+* computation of the little Dirac operator takes a lot as well?
+
+* bringing A in blockdiagonal form an then solve the problem on the 2 smaller block matrices on the diagonal
+* Iterating this method, end up in a upper triagonal matrix -> gauss elimination
+
+\end{comment}
+
 TODO
+
+\section{The Dirac operator}
+
+\begin{comment}
+
+The number of cycles in cg (or other solvers) do not scale with the lattice volume (times 12 which is the dimension of the matrix to solve), therefore the matrix becomes more sparse, the larger the lattice becomes.For very large lattice sizes D_dagger D starts to become proportional to the identity more and more, because the diagonal elements stay non-zero.
+
+\end{comment}
+
+TODO
+
+\begin{definition}[Hadamard product]
+
+The \df{Hadamard product} of two vectors $\vec{x}$ and $\vec{y}$ is defined as 
+
+\begin{align*}
+    \odot \colon \mathbb{R}^n \times \mathbb{R}^n &\to \mathbb{R}^n \\
+    (\vec{x}, \vec{y}) &\mapsto \vec{x} \odot \vec{y},
+\end{align*}
+
+with
+
+\begin{align*}
+    &(\vec{x} \odot \vec{y})_i \coloneqq (\vec{x})_i (\vec{y})_i,
+\end{align*}
+
+where $(\vec{v})_i$ denotes the $i$-th component of the vector $\vec{v}$.
+
+\end{definition}
 
 \section{Summary}
 
