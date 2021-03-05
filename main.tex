@@ -21,6 +21,11 @@
 \usepackage[group-separator={,}]{siunitx} % thousand separator in large numbers
 \usepackage[nottoc,numbib]{tocbibind} % references in toc
 \usepackage[ruled,vlined,linesnumbered]{algorithm2e} % pseudocode listings
+\usepackage{tcolorbox} % for styled proposals
+\tcbuselibrary{many} % for styled proposals
+
+\usepackage{cleveref} % for clever footnotes
+\crefformat{footnote}{#2\footnotemark[#1]#3} % use inside proposals
 
 % definition of all the colors
 \usepackage{array}
@@ -72,6 +77,16 @@
 
 %\interfootnotelinepenalty=10000 % force the footnote to stay on only one page
 
+% restriction operator \restr{f}{A} => f|_A
+% see https://tex.stackexchange.com/a/22255
+\newcommand\restr[2]{{% we make the whole thing an ordinary symbol
+  \left.\kern-\nulldelimiterspace % automatically resize the bar with \right
+  #1 % the function
+  \vphantom{\big|} % pretend it's a little taller at normal size
+  \right|_{#2} % this is the delimiter
+  }
+}
+
 \usepackage[
     type={CC},
     modifier={by-sa},
@@ -81,7 +96,7 @@
 \usepackage{amsthm}
 \theoremstyle{plain} % boldface title, italicized body. 
 \newtheorem{theorem}{Theorem}[section]
-\newtheorem{corollary}{Corollary}[theorem]
+\newtheorem{corollary}[theorem]{Corollary}
 \newtheorem{lemma}[theorem]{Lemma}
 \newtheorem{prop}[theorem]{Proposition}
 %\theoremstyle{definition} % boldface title, roman body.  
@@ -89,7 +104,18 @@
 \newtheorem{example}{Example}[section]
 \theoremstyle{remark} % italicized title, roman body. 
 \newtheorem*{remark}{Remark} % * creates a theorem environment that is not numbered 
-\newtheorem{proposal}{Proposal}[section]
+% use with:
+% \begin{proposal}[title] bla \end{proposal}
+%\newtheorem{proposal}{Proposal}[section]
+% use with:
+% \begin{proposal}{title}{label} bla \end{proposal} % label is then referenced as pp:label
+\newtcbtheorem[number within=section]{proposal}{Proposal}{
+  enhanced jigsaw, breakable,
+  colback=clightblue!5,
+  colframe=clightblue!35!gray,
+  breakable,
+  fonttitle=\bfseries
+}{pp}
 
 \allowdisplaybreaks % page breaks in equations
 \graphicspath{{./img/}{./plots/}}
@@ -138,7 +164,13 @@ TODO
 
 TODO
 
-In \acrshort{QCD} blabla. \textcolor{corange}{orange}, \textcolor{cyellow}{yellow}, \textcolor{cblue}{blue}, \textcolor{cbrown}{brown}, \textcolor{cpink}{pink}, \textcolor{cred}{red}, \textcolor{cgreen}{green}, \textcolor{cpurple}{purple}, \textcolor{cturquois}{turquois}, \textcolor{clightblue}{lightblue}, \textcolor{clightgreen}{lightgreen}, \textcolor{clightpink}{lightpink},  \textcolor{cdarkblue}{darkblue}, \colorbox{clightblue}{lightblue}, \colorbox{clightpink}{lightpink}, \colorbox{clightgreen}{lightgreen}, \textcolor{linkcolor}{linkcolor}
+\begin{proposal}{example proposal}{one}
+
+Reference here with pp:one.
+
+\end{proposal}
+
+In \acrshort{QCD} blabla see proposal \ref{pp:one}. \textcolor{corange}{orange}, \textcolor{cyellow}{yellow}, \textcolor{cblue}{blue}, \textcolor{cbrown}{brown}, \textcolor{cpink}{pink}, \textcolor{cred}{red}, \textcolor{cgreen}{green}, \textcolor{cpurple}{purple}, \textcolor{cturquois}{turquois}, \textcolor{clightblue}{lightblue}, \textcolor{clightgreen}{lightgreen}, \textcolor{clightpink}{lightpink},  \textcolor{cdarkblue}{darkblue}, \colorbox{clightblue}{lightblue}, \colorbox{clightpink}{lightpink}, \colorbox{clightgreen}{lightgreen}, \textcolor{linkcolor}{linkcolor}
 
 \begin{comment}
 
@@ -1181,29 +1213,23 @@ If one desides to replace \gls{binary32} with posits, the most elegant solution 
 
 If the desicion goes for floats, which might be the more realistic scenario, then the most elegant solution would be to use collective variables in \gls{binary64}. Type conversions between different IEEE floating point types are not considered to be expensive. The \gls{tensorfloat32} compared to \gls{binary32} and \gls{bfloat16} answers the question how important precision is in the calculation. All of them have the same number of exponent bits and therefore approximately the same number range, but very different precisions. We see that all of them were able to converge in any experiment, but with \gls{binary64} as collective variable, the results were closest to each other (see Figure \ref{fig:cgne:col64} plot \textit{3a}). The only real difference was in the amount of reset steps. If the datatype is lower in bitlength, the memory-boundedness suggests that the calculation performs faster, but the tradeoff is the amount of (computationally expensive) reset steps that increases with less precision. However, the datatype for collective operations should be precise and should have a large number range. Since the amount of variables needed in that datatype does not scale with the lattce size, it is perfectly right to use a datatype with large bitlength. Comparing the convergence of \gls{bfloat16} in the naive case (Figure \ref{fig:cgne:naive} plot \textit{1a}) with the case \gls{binary64} collective variables (Figure \ref{fig:cgne:col64} plot \textit{3a}), it can be seen that the algorithm converged \num{21} steps faster, only because the collective datatype was chosen to be \gls{binary64}. On the other hand, comparing the performance of \gls{binary16} in the two plots, we see that the number range of the collective datatype brought \gls{binary16} from no convergence to convergence within \code{status=35} steps - only marginally slower than \gls{binary32}. These arguments make \gls{binary64} the best choice for variables with a collective role.
 
-\begin{proposal}[mixed precision]
+\begin{proposal}{Mixed Precision}{mp}
 
-The above analysis suggests that the calculation of the solution can be (at least partly) conducted in an even less precise datatype than \gls{binary32}. One could for example choose \num{3} datatypes with different precision. The algorithm can be started using the least precise one. If the tolerance hits a certain value at the boundaries of the datatype, the algorithm switches to the next higher one. The calculation is continued in that datatype until the tolerance reaches the limits of the new datatype. Again the datatype is switched to the next higher one\footnotemark.
-\footnotetext{One obvious choice could be \gls{binary64}, \gls{binary32} and \gls{binary16}. When the algorithm is started in \gls{binary16} and a tolerance of $\approx 10^{-4}$ is reached, the algorithm continues in \gls{binary32}, the limit of which is at a tolerance of $\approx 10^{-35}$. Continuing calculation would then be conducted in \gls{binary64}.}
-This calculation in mixed precision is not dependent on the algorithm itself and can therefore be applied to every iterative solver algorithm. Algorithm \ref{alg:mixed_precision} shows an example implementation of such a mixed precision calculation. The array $D$ consists of all available datatypes participating in the calculation in ascending order, meaning the least precise datatype comes first. The function $alg()$ performs the underlying algorithm (for example conjugate gradient) in the datatype given by its arguments. It expects at least a starting vector $\vec{x_0}$ and a tolerance and returns the status\footnotemark, the calculated solution and the residual up to the given tolerance.
-\footnotetext{See section \ref{sec:fp_in_openqxd}}
+The above analysis suggests that the calculation of the solution can be (at least partly) conducted in an even less precise datatype than \gls{binary32}. One could for example choose \num{3} datatypes with different precision. The algorithm can be started using the least precise one. If the tolerance hits a certain value at the boundaries of the datatype, the algorithm switches to the next higher one. The calculation is continued in that datatype until the tolerance reaches the limits of the new datatype. Again the datatype is switched to the next higher one\footnote{One obvious choice could be $d = \{\text{binary64}, \text{binary32}, \text{binary16}\}$. When the algorithm is started in \gls{binary16} and a tolerance of $\approx 10^{-4}$ is reached, the algorithm continues in \gls{binary32}, the limit of which is at a tolerance of $\approx 10^{-35}$. A continuing calculation would then be conducted in \gls{binary64}.}. This calculation in mixed precision is not dependent on the algorithm itself and can therefore be applied to every iterative solver algorithm. Algorithm \ref{alg:mixed_precision} shows an example implementation of such a mixed precision calculation. The array $d$ consists of all available datatypes participating in the calculation in ascending order, meaning the least precise datatype comes first. The function $solve()$ performs the underlying algorithm (for example conjugate gradient) in the datatype given by its arguments. It expects at least a starting vector $\vec{x_0}$ and a tolerance and returns the status \footnote{See section \ref{sec:fp_in_openqxd}}, the calculated solution and the residual up to the given tolerance.
 
-\begin{figure}
-\centering
-\begin{minipage}{.6\linewidth}
 \begin{algorithm}[H]
 \SetKwInOut{Input}{input}
 \Input{desired norm of relative residual $rn$}
-\Input{array of datatypes in $\{D\}_{k=0}^N$}
-\Input{iterative algorithm $alg()$}
+\Input{array of datatypes in $\{d\}_{k=0}^N$}
+\Input{iterative algorithm $solve()$}
 \SetAlgoLined
   $\vec{x_0}, \vec{r_0}, \ldots \gets$ initial guess, \ldots\;
   $\vec{x}, \vec{r} \gets \vec{x_0}, \vec{r_0}$\;
   status $\gets 0$\;
   \For{$k \gets 0, 1$ \KwTo $N$}{
-    convert all variables to datatype $D[k]$\;
-    $tol \gets \frac{1}{\norm{\vec{r_0}}} max(rn, \text{\code{MACHINE\_EPSILON of $D[k]$}})$\;
-    substatus, $\vec{x}, \vec{r}$, $\ldots \gets alg(tol, \vec{x}, \ldots)$\;
+    convert all variables to datatype $d[k]$\;
+    $tol \gets \frac{1}{\norm{\vec{r_0}}} max(rn, \text{\code{MACHINE\_EPSILON of $d[k]$}})$\;
+    substatus, $\vec{x}, \vec{r}$, $\ldots \gets solve(tol, \vec{x}, \ldots)$\;
     \uIf{substatus $> 0$}{
       status $\gets$ status $+$ substatus\;
     }
@@ -1216,12 +1242,10 @@ This calculation in mixed precision is not dependent on the algorithm itself and
  \caption{Pseudo-code for an iterative algorithm in mixed precision.}
  \label{alg:mixed_precision}
 \end{algorithm}
-\end{minipage}
-\end{figure}
 
 \end{proposal}
 
-\begin{proposal}[approximating the amounts $\alpha_i$]
+\begin{proposal}{Approximating the amounts $\alpha_i$}{alpha}
 
 Looking at plot \textit{4e} of Figure \ref{fig:cgne:res12}, where the amounts $\alpha_i$ are plotted for every iteration, we see that after every reset step the amounts need $2-3$ steps to reach a value that is not changing very much for future iterations. This is becomes apparent when looking at the fitting lines. The values of the $\alpha_i$ are in the range $10^{-1}$ and the slopes $m$ of the fitting lines are in the range $10^{-4}$ - $10^{-5}$, suggesting that the value of $\alpha_i$ is not changing from iteration to iteration when only looking at $2-3$ significant decimal digits.
 
@@ -1231,7 +1255,7 @@ A possibility to reduce computational cost in each iteration could be to approxi
     \item Advantage: The resoduals can be calculated using $\vec{b} - A \vec{x}$, not recusively. This implies less roundoff accumulation.
     \item Advantage: Only one matrix-vector multiplication per iteration.
     \item Disadvantage: Since the $\alpha_i$ are just approximated, the number of needed iterations may increase.
-    \item Disadvantage: The Dirac operator $D$ must be given in the form of $A = D^{\dagger} D$ as one operator, else the algorithm still consists of \num{2} matrix-vector multiplications per iteration.
+    \item Disadvantage: The Dirac operator $D$ must be given in the form of $A = D^{\dagger} D$ as \textit{one} operator, else the algorithm still consists of \num{2} matrix-vector multiplications per iteration. Also, $D^{\dagger} D$ is less sparse than $D$.
 \end{itemize}
 
 The results of simulations with approximated values for the $\alpha_i$ can be observed in plot series \ref{fig:cgne:4x4x4x4:e1} and \ref{fig:cgne:8x8x8x8:e1}. The value was approximated based on previous values. The first \num{5} steps where skipped (thus the algorithm performed natively). In step number \num{5}, the last \num{3} values of $\alpha_i$ where averaged. In the following steps the constant value calculated in step \num{5} was reused. After every reset step, the value of $\alpha_i$ had to be recalculated using the above procedure. Therefore a datatype such as \gls{bfloat16} that has reset steps after approximately every \num{7}th regular step, will benefit in only \num{2} steps per reset step. This is very little difference to native runs compared to datatypes with high precision.
@@ -1239,6 +1263,8 @@ The results of simulations with approximated values for the $\alpha_i$ can be ob
 The calculation became more sensible to the number range of the datatype. This can be seen in all plots when looking at \gls{binary16} that was not able to converge anymore, although by a very small amount. \gls{tensorfloat32} on the other hand performed very similar to the regular rounds, it was expected that it needs slightly more iterations. When going with this strategy, it is therefore advisable to perform more regular cg-steps when coming closer to the boundaries of the datatype. One possible solution would be to choose a higher machine epsilon close to the boundaries, forcing the algorithm to perform more reset steps, in turn causing more regular cg-steps and recalculations of $\alpha_i$.
 
 Notice that with larger lattice sizes, the approximation of the amounts has less error (see plots \textit{1e} and \textit{2e} in figures \ref{fig:cgne:4x4x4x4:e1} and \ref{fig:cgne:8x8x8x8:e1}) and the algorithm is thus more stable.
+
+\end{proposal}
 
 \begin{figure}
     \centering
@@ -1253,8 +1279,6 @@ Notice that with larger lattice sizes, the approximation of the amounts has less
     \caption{The same setup as figure \ref{fig:cgne:4x4x4x4:e1}, but with a $8^4$ lattice.}
     \label{fig:cgne:8x8x8x8:e1}
 \end{figure}
-
-\end{proposal}
 
 \begin{comment}
 
@@ -1280,6 +1304,13 @@ TODO: motivation: parallel processing, chrial regime (spontaneous breaking of ch
 
 \subsection{Even-Odd Preconditioning}
 
+\begin{comment}
+
+* Note that it works only because D(ee) is diagonal in space for Wilson (and Wilson-twisted) fermions.
+* it does not allow “multisolvers” i.e. codes which solve di5 fferent quark masses in one stroke (mscg).
+
+\end{comment}
+
 Preconditioning in general, when employed in lattice QCD, is expected to have significant impact on the number of iterations of a solver. One way of preconditioning $D \psi = \eta$ on a lattice is
 
 \begin{align*}
@@ -1290,7 +1321,7 @@ with $\psi = R^{-1} \psi^{\prime}$ and $L$, $R$ chosen wisely such that $LDR$ is
 \footnotetext{It is therefore very similar to a domain decomposition method, see later.}
 \footnotemark.
 \footnotetext{Even lattice points are the ones where the sum of the global cartesian coordinates $(x_0 + x_1 + x_2 + x_3)$ in units of the lattice spacing $a$ is even.}
-If the sites are ordered such that the even sites come first \footnotemark,
+If the sites are ordered such that the even sites come first\footnotemark,
 \footnotetext{This is indeed the case in openQxD (see \code{main/README.global}) in \cite{openqxd}.}
 
 \begin{align*}
@@ -1307,7 +1338,7 @@ If the sites are ordered such that the even sites come first \footnotemark,
     \end{pmatrix}
 \end{align*}
 
-$D_{ee}$ and $D_{oo}$ consist of the interactions of even/odd sites among themselves, whereas $D_{eo}$ and $D_{oe}$ consider the interactions of even with odd sites. $\psi_e$ and $\psi_o$ contain the values for even and odd lattice sites of the spinor.
+$D_{ee}$ ($D_{oo}$) consists of the interactions of the even (odd) sites among themselves, whereas $D_{eo}$ and $D_{oe}$ consider the interactions of even with odd sites. $\psi_e$ and $\psi_o$ contain the values for even and odd lattice sites of the spinor.
 
 Using specific forms of $L$ and $R$, $D$ can be brought in a block-diagional form, namely
 
@@ -1362,7 +1393,7 @@ because $\psi_o$ follows from the solution $\psi_e$ via
 
 \subsection{Schwarz Alternating Procedure}
 
-Domain decomposition is a way to partition the large system into (possibly many) smaller subproblems with regularly updated boundary conditions coming from solutions of neighboring subproblems. They fit very well into the notion of parallel processing, because each subproblem can be chosen to be contained in one single rank. The large lattice is split into sublattices called \df{local lattice}. Each rank has its own local lattice, the size of which is determined at compilation time. The full lattice consists of the ensemble of all local lattices arranged in a grid. It is therefore advisable to choose the size of decomposed subdomains as a divisor of the local lattice size such that at least one subproblem fits into one rank. These subproblems can then be solved using a Krylov subspace method such as conjugate gradient.
+Domain decomposition is a way to partition the large system into (possibly many) smaller subproblems with regularly updated boundary conditions coming from solutions of neighboring subproblems. They fit very well into the notion of parallel processing, because the subproblem can be chosen to be contained in one single rank. The full lattice is split into sublattices called \df{local lattice}. Each rank has its own local lattice, the size of which is determined at compilation time. The full lattice consists of the ensemble of all local lattices arranged in a grid. It is therefore advisable to choose the size of decomposed subdomains as a divisor of the local lattice size such that one or more blocks fit into one rank. These subproblems can then be solved using a iterative solving method.
 
 \begin{figure}[H]
   \centering
@@ -1371,9 +1402,9 @@ Domain decomposition is a way to partition the large system into (possibly many)
   \label{fig:ddecomp}
 \end{figure}
 
-The idea behind \acrshort{sap} is to loop through all blocks $\Omega_i$ and solve the smaller subproblem using boundary conditions given from the most recent solution. If the original problem only includes nearest-neighbor interactions, the solution of a block $\Omega_i$ depends only on that block and its exterior boundary points, which are the adjacent points on the neighboring blocks with opposite color. For example, the solution of the subproblem involving $\Omega_6$, depends only on the solutions of $\Omega_2$, $\Omega_5$, $\Omega_7$ and $\Omega_{10}$\footnotemark.
+The idea behind \acrshort{sap} is to loop through all blocks $\Omega_i$ and solve the smaller subproblem using boundary conditions given from the most recent global solution (see figure \ref{fig:ddecomp}). If the original problem only includes nearest-neighbor interactions, the solution of a block $\Omega_i$ depends only on that block and its exterior boundary points, which are the adjacent points on the neighboring blocks with opposite color. For example, the solution of the subproblem involving $\Omega_6$, depends only on the solutions of $\Omega_2$, $\Omega_5$, $\Omega_7$ and $\Omega_{10}$\footnotemark.
 \footnotetext{It depends on all other subproblems as well, but only indirectly.}
-Therefore all gray subproblems can be solved simultaneously, with the most recent boundary conditions obtained from the white domains and vice versa. Solving all gray, followed by all white subproblems is called a \df{Schwarz cycle}. Each subproblem can be solved with a solver separately, again applying some preconditioning\footnotemark.
+Therefore all gray (white) subproblems can be solved simultaneously, with the most recent boundary conditions obtained from the white (gray) domains. Solving all gray, followed by all white subproblems is called a \df{Schwarz cycle} and is considered one iteration in the \acrshort{sap}. Each subproblem can be solved with a desired solver separately, again applying some preconditioning\footnotemark.
 \footnotetext{Using even-odd preconditioning is perfectly fine with $D$ replaced by the restricted Dirac operator $D_i$ acting only on the points in $\Omega_i$.}
 
 \begin{comment}
@@ -1384,16 +1415,6 @@ the wilson dirac operator D_w in doc/dirac.pdf eq (10) has only nearest neighbor
 \end{comment}
 
 \subsection{SAP as a Preconditioner}
-
-The multiplicative \acrlong{sap} is such a domain decomposition method coming from the theory of partial differential equations. It can be applied in the form of a right preconditioner $M^{-1}$ making the preconditioned system
-
-\begin{align}
-    M^{-1} A \vec{x} = M^{-1} \vec{b} \label{eq:sap:preconditioned}
-\end{align}
-
-to be solved in very few steps, if $M^{-1}$ is a good approximation for $A^{-1}$. The preconditioning matrix $M^{-1}$ although is never explicitly available during the calculation, such as it is the case in even-odd preconditioning which can also be applied in advance. In order to solve the preconditioned equation \eqref{eq:sap:preconditioned} using a iterative Krylov subspace method, the algorithm must able to apply $M^{-1}$ and $M^{-1} A$ to an arbitrary vector $\vec{v}$. If it is possible to implement such operations on multiple ranks in an efficient way and if the preconditioner makes $M^{-1} A$ well conditioned\footnotemark, we reached the goal. Obviously an application of $M^{-1}$ should be possible without involving $A^{-1}$. The actions of operators $M^{-1}$ and $M^{-1} A$ on a vector $\vec{v}$ are assembled using a multiplicative \acrlong{sap}.
-
-\footnotetext{Would it be dingy to expect such a thing from a preconditioner?}
 
 \begin{comment}
 
@@ -1419,14 +1440,40 @@ local lattices must contain an even number of blocks. This ensures that
 the block grid can be chessboard-coloured and that the number of blocks
 in the local lattice is the same for both colours.
 
-The blocks are ordered such that the first half of them have the same colour.
+The blocks are ordered such that the first half of them have the same colour (black by definition).
 
 \end{comment}
 
-\begin{proposal}
+The multiplicative \acrlong{sap} is such a domain decomposition method coming from the theory of partial differential equations. It can be applied in the form of a right preconditioner $M^{-1}$ making the preconditioned system
 
-TODO: sap as preconditioner does not have to be precise, only approximation, thus reduced precision in the calculations? Is sap-preconditioning memory-bound? Involves network communication as well on the surface, therefore surface to volume ratio should be as small as possible, meaning the SAP-blocks should be as large as possible. Tradeoff: reduced precision performs better with small blocks, network communication is minimized with large blocks.
+\begin{align}
+    M^{-1} A \vec{x} = M^{-1} \vec{b} \label{eq:sap:preconditioned}
+\end{align}
+
+to be solved in very few steps, if $M^{-1}$ is a good approximation for $A^{-1}$. The preconditioning matrix $M^{-1}$ although is never explicitly available during the calculation, such as it is the case in even-odd preconditioning which can also be applied in advance. In order to solve the preconditioned equation \eqref{eq:sap:preconditioned} using a iterative Krylov subspace method, the algorithm must be able to apply $M^{-1}$ and $M^{-1} A$ to an arbitrary vector $\vec{v}$. If it is possible to implement such operations on multiple ranks in an efficient way and if the preconditioner makes $M^{-1} A$ well conditioned\footnotemark, we reached the goal.
+\footnotetext{Would it be dingy to expect such a thing from a preconditioner?}
+Obviously an application of $M^{-1}$ should be possible without involving $A^{-1}$. The actions of operators $M^{-1}$ and $M^{-1} A$ on a vector $\vec{v}$ are assembled using a multiplicative \acrlong{sap}, where the blocks are treated by some fixed number of \acrfull{mr} steps\footnotemark. The blocks need not to be solved to a certain precision, because the procedure is only used as a preconditioner approximating the solution. This is a motivation for proposal \ref{pp:sap_reduced_precision}.
+
+\footnotetext{Determined by the value of \code{mnr} in the solver section of the input file.}
+
+In openQxD the \code{SAP\_GCR} solver is implemented as follows: The large problem is solved using a flexible \acrshort{gcr} solver, that in each of its \code{nmx} steps uses a different preconditioner. The preconditioner is given by \code{ncy} steps of the \acrlong{sap} applied to the current solution vector. Each \acrshort{sap} cycle involves approximately solving all gray followed by all white blocks on the whole lattice each with \code{nmr} steps of the \acrshort{mr} method using even-odd preconditioning (\code{isolv=1}) or not (\code{isolv=0}).
+
+\begin{proposal}{MR in reduced precision}{sap_reduced_precision}
+
+%\label{pp:sap_reduced_precision}
+
+Since \acrshort{mr} is memory-bound, it can be conducted in mixed or reduced precision.
+
+\begin{comment}
+TODO: sap as preconditioner does not have to be precise, only approximation, thus reduced precision in the calculations? Is sap-preconditioning memory-bound? Involves network communication as well on the surface, therefore surface to volume ratio should be as small as possible, meaning the SAP-blocks should be as large as possible. Tradeoff: reduced precision performs better with small blocks, but network communication is minimized with large blocks.
 EO-reconditioning also in reduced precision?
+\end{comment}
+
+\end{proposal}
+
+\begin{proposal}{Performing the MR steps on the GPU}{sap_gpu}
+
+The preconditioning procedure involves \code{mnr} \acrfull{mr} steps to be taken on each block in each Schwarz cycle to approximate a solution to the block problem. Since blocks of the same color are independent on each other and the Dirac operator acting only on a specific block involves no communication whatsoever, we can conclude that the procedure of solving a subproblem is a problem \textit{local} to the block and self-contained in the sense that it can be solved independently and without MPI communication. This could be a very handy starting point when going towards GPU-utilisation. Once the souce vector and the restricted Dirac operator are transfered to the GPU, the problem can be solved on the GPU without involving any communication with other ranks or GPUs. This can also be beneficial, because of the following argument: The local lattice of one single rank, can be subdivided into multiple blocks as well (imagine figure \ref{fig:ddecomp} being the local lattice). The actual implementation solves the gray (white) blocks in a local lattice sequentially\footnote{By iterating over the blocks, see \code{sap()} at line \num{717}ff in \code{modules/sap/sap.c} in \cite{openqxd}.}. Since all the gray (white) problems within the local lattice can be solved simulaneously, the code does not exploit the full concurrency potential of the procedure. Solving the subproblems on the GPU, one could launch \acrshort{mr} solvers on all gray blocks simultaneously followed by all white blocks. Keeping in mind proposal \ref{pp:sap_reduced_precision}, the \acrshort{mr} solver can be called in mixed or even reduced precision.
 
 \end{proposal}
 
@@ -1434,7 +1481,7 @@ EO-reconditioning also in reduced precision?
 
 TODO: Why GCR? it allows inexact preconditioning without compromising the correctness of the solution.
 
-We wish to solve \eqref{eq:Axb} if a is not Hermitian. Comparing to the conjugate gradient algorithm, we minimize the residual $\vec{r}$ of the solution $\vec{x}$, using the \df{quadratic form},
+We wish to solve \eqref{eq:Axb} if $A$ is not Hermitian. Comparing to the conjugate gradient algorithm, we minimize the residual $\vec{r}$ of the solution $\vec{x}$, using the \df{quadratic form},
 
 \begin{align*}
     f(\vec{x}) &= \frac{1}{2} \left( \vec{b} - A \vec{x} \right)^{\dagger} \left( \vec{b} - A \vec{x} \right) + c \\
@@ -1574,7 +1621,7 @@ There are some remarks to note about the method of \acrshort{gcr}.
 \end{remark}
 
 \begin{remark}
-    Comparing to the conjugate gradient algorithm, we imposed $A^{\dagger} A$-orthogonality of the directions $\vec{p}_i$ instead of $A$-orthogonality as well as $A$-orthogonality of $\vec{r}_{i+1}$ and $\vec{p}_i$ instead of regular orthogonality. A vanishing of all previous $\beta_{ij}$ on the other hand was not imposed, leading to the sum in the recursive relation of $\vec{p}_{i+1}$.
+    Comparing to the conjugate gradient algorithm, we imposed $A^{\dagger} A$-orthogonality of the directions $\vec{p}_i$ instead of $A$-orthogonality as well as $A$-orthogonality of $\vec{r}_{i+1}$ and $\vec{p}_i$ instead of regular orthogonality. A vanishing of all previous $\beta_{ij}$ on the other hand was not imposed, leading to the sum in the step equation of $\vec{p}_{i+1}$.
 \end{remark}
 
 \subsection{GCR in openQxD}
@@ -1607,7 +1654,7 @@ The actual implementation of the \acrshort{gcr} algorithm in openQxD is quite di
 \end{minipage}
 \end{figure}
 
-In the algorithm above, $M_{sap}$ is the \acrlong{sap} preconditioner, that might depend on the iteration number $k$ as well, making the algorithm flexible. $D$ is the Dirac-operator and $\rho_k$ the residual in the $k$-th step. The algorithm does not include an update of the solution vector $\psi_{k+1}$, instead this is done after $n_{kv}$ iterations all at once,
+In algorithm \ref{alg:gcr}, $M_{sap}$ is the \acrshort{sap} preconditioner, that might depend on the iteration number $k$ as well, making the algorithm flexible. $D$ is the Dirac-operator and $\rho_k$ the residual in the $k$-th step. The algorithm does not include an update of the solution vector $\psi_{k+1}$, instead this is done after $n_{kv}$ iterations all at once,
 
 \begin{align}
     \psi_{k+1} = \sum_{l=0}^k \alpha^{\prime}_l \rho_k. \label{eq:gcr:step:paper}
@@ -1656,13 +1703,305 @@ where in the last step equation \eqref{eq:gcr:Api:equiv} was inserted. The $\chi
 
 \end{proof}
 
+\begin{proposal}{GCR in mixed precision}{gcr_mp}
+
+In the current version of openQxD \ref{openqxd}, the outer \acrshort{gcr} solver is performed in pure \gls{binary64}. A mixed precision variant would need the preconditioning $M_{sap}$ to be done in mixed precision as well. Algorithm \ref{alg:mixed_precision} would directly apply with $solve()$ replaced by \code{fgcr()} with the difference that \code{fgcr()} has to accept $D$, $M_{sap}$, $\vec{x}_0$ and $\vec{b}$ in the desired precision.
+
+\end{proposal}
+
 \section{Deflated SAP preconditioned GCR algorithm}
+
+The low modes of the Dirac operator condensate TODO.
+
+Small quark masses corresponding to real physics are believed to be the cause for the spontaneously breaking of chiral symmetry in lattice QCD \cite{banks1980}. Numerical lattice QCD has the problem that with large lattice volumes and small quark masses simulation techniques become inefficient in the \df{chiral regime} (where chiral symmetry is spontaneously broken). According to the Bank-Casher relation \cite{banks1980}, this is because the number of eigenvalues of $D$ below a fixed value grows with $O(V)$, where $V$ is the total 4D lattice volume. On the other hand, the computational effort scales even worse with $O(V^2)$ \cite{luscher2007}. This behavior goes under the name of \df{$V^2$-problem}.
+
+A solving algorithm that has a flat scaling in with respect to the quark masses can therefore lead to large speedups specially in that regime. By deflating the Dirac operator, it is possible to separate eigenmodes with very small eigenvalues from the others. Thus the space needs to be split in low and high modes without actually calculating the modes, else the problem would be solved already.
+
+\subsection{Deflation}
+
+\begin{theorem}[Deflation]
+
+\label{thm:deflation}
+
+Let $A$ be a linear, invertible operator acting on a vector space $\Lambda$, $\vec{b} \in \Lambda$ a arbitrary vector and $P_L$ a projector\footnote{$P_L$ does not have to be orthogonal or hermitian.} acting on $\Lambda$. Also, define the linear operator $P_R$ such that $P_L A = A P_R$\footnote{Such a linear operator $P_R$ always exists - just set $P_R \coloneqq A^{-1} P_L A$, since $A$ is invertible.}. Consider 
+
+\begin{align}
+    \vec{x}^{\star} \coloneqq P_R \vec{x}^{\star}_1 + (1-P_R) \vec{x}^{\star}_2, \label{eq:def_projection}
+\end{align}
+
+with $\vec{x}^{\star}_1$ and $\vec{x}^{\star}_2$ being solutions to the "smaller" (projected) systems
+
+\begin{align*}
+    P_L A \vec{x}_1 &= P_L \vec{b}
+    & &\text{and} &
+    (1-P_L)A \vec{x}_2 &= (1-P_L)\vec{b}
+\end{align*}
+
+respectively. Then 
+
+\begin{enumerate}[label={\arabic*)}]
+  \item $P_R$ is a projector,
+  \item $\vec{x}^{\star}$ is a solution to $A\vec{x} = \vec{b}$.
+\end{enumerate}
+
+\end{theorem}
+
+\begin{proof}
+
+Using that $P_L^2 = P_L$ is a projector,
+
+\begin{align*}
+    P_R^2 &= (A^{-1} P_L A)^2 \\
+    &= A^{-1} P_L^2 A \\
+    &= A^{-1} P_L A \\
+    &= P_R.
+\end{align*}
+
+By direct calculation,
+
+\begin{align*}
+    A \vec{x}^{\star} &= A P_R \vec{x}^{\star}_1 + A (1-P_R) \vec{x}^{\star}_2 \\
+    &= P_L A \vec{x}^{\star}_1 + (1-P_L) A \vec{x}^{\star}_2 \\
+    &= P_L \vec{b} + (1-P_L)\vec{b} \\
+    &= \vec{b}.
+\end{align*}
+
+\end{proof}
+
+\begin{remark}
+Therefore, if we find clever projectors $P_L$ and $P_R$ without involving $A^{-1}$, we can solve $A\vec{x} = \vec{b}$ by solving the \num{2} smaller systems of equations and then projecting the solutions using $P_R$.
+\end{remark}
+
+\begin{remark}
+Notice that $P_L A$ as well as $(1-P_L)A$ are not invertible, therefore there are infinitely many solutions $\vec{x}^{\star}_1$ and $\vec{x}^{\star}_2$\footnotemark. Nonetheless the solution vector $\vec{x}^{\star}$ is still unique after the projection in equation \eqref{eq:def_projection}.
+\end{remark}
+
+\footnotetext{Let $P$ be a linear projector (not the identity-operator) and $A$ a invertible linear operator. We want to solve $PA\vec{x} = P\vec{b}$. There exists at least one solution to this, namely the unique solution to $A\vec{x} = \vec{b}$. Since $PA$ is not invertible, the only two possibilities are zero or infinite solutions and it can't be zero solutions.}
+
+\begin{remark}
+Comparing deflation to left preconditioning, the difference is that in deflation $P_L$ is a projector and $P_L A$ has condition number infinite whereas in case of preconditioning $P_L $ is invertible and the condition number of $P_L A$ is expected to be smaller than of $A$.
+\end{remark}
+
+\begin{corollary}
+
+\label{cor:deflation}
+
+Let $A$ and $\vec{b}$ be as in theorem \ref{thm:deflation}. Furthermore let $\{ \vec{\omega}_i \}_{i=1}^N$ be a orthonormal basis of a linear subspace $\Omega \subset \Lambda$, called the \df{deflation subspace} and let the restriction of $A$ to $\Omega$, $\widetilde{A} \coloneqq \restr{A}{\Omega}$ called the \df{little operator}, be invertible. Define the action of $P_L$ on an arbitrary vector $\vec{x} \in \Lambda$ as
+
+\begin{align*}
+    P_L \vec{x} &\coloneqq \vec{x} - \sum_{i,j=1}^N A \vec{\omega}_i (\widetilde{A}^{-1})_{ij} \langle \vec{\omega}_j, \vec{x} \rangle
+    %P_R \vec{y} &= \vec{y} - \sum_{i,j=1}^N \vec{\omega}_i (\widetilde{A}^{-1})_{ij} \langle \vec{\omega}_j, A \vec{y} \rangle,
+\end{align*}
+
+and let $\vec{x}^{\star}_1$ be one of the solutions to the \df{deflated system} $\hat{A} \vec{x}_1 = P_L \vec{b}$, where $\hat{A} \coloneqq P_L A$ is called the \df{deflated operator}. Consider
+
+\begin{align}
+    \vec{x}^{\star} \coloneqq P_R \vec{x}^{\star}_1 + \sum_{i,j=1}^N \vec{\omega}_i (\widetilde{A}^{-1})_{ij} \langle \vec{\omega}_j, \vec{b} \rangle, \label{eq:defl_soln}
+\end{align}
+
+with $P_R$ satifying $P_L A = A P_R$. Then $\vec{x}^{\star}$ is the unique solution to $A \vec{x} = \vec{b}$.
+
+\end{corollary}
+
+\begin{proof}
+
+Lets first show that $P_L^2 = P_L$ is a projector,
+
+\begin{align*}
+    P_L^2 \vec{x} &= P_L \left( \vec{x} - \sum_{i,j=1}^N A \vec{\omega}_i (\widetilde{A}^{-1})_{ij} \langle \vec{\omega}_j, \vec{x} \rangle \right) \\
+    &= \vec{x} - 2 \sum_{i,j=1}^N A \vec{\omega}_i (\widetilde{A}^{-1})_{ij} \langle \vec{\omega}_j, \vec{x} \rangle + \sum_{i,j=1}^N A \vec{\omega}_i (\widetilde{A}^{-1})_{ij} \sum_{k,l=1}^N \langle \vec{\omega}_j, A \vec{\omega}_k \rangle (\widetilde{A}^{-1})_{kl} \langle \vec{\omega}_l, \vec{x} \rangle \\
+    &= \vec{x} - 2 \sum_{i,j=1}^N A \vec{\omega}_i (\widetilde{A}^{-1})_{ij} \langle \vec{\omega}_j, \vec{x} \rangle + \sum_{i,j,l=1}^N A \vec{\omega}_i (\widetilde{A}^{-1})_{ij} \langle \vec{\omega}_l, \vec{x} \rangle \underbrace{\sum_{k=1}^N \underbrace{\langle \vec{\omega}_j, A \vec{\omega}_k \rangle}_{= \widetilde{A}_{jk}} (\widetilde{A}^{-1})_{kl} }_{= \delta_{jl}} \\
+    &= \vec{x} - 2 \sum_{i,j=1}^N A \vec{\omega}_i (\widetilde{A}^{-1})_{ij} \langle \vec{\omega}_j, \vec{x} \rangle + \sum_{i,j=1}^N A \vec{\omega}_i (\widetilde{A}^{-1})_{ij} \langle \vec{\omega}_j, \vec{x} \rangle \\
+    &= \vec{x} - \sum_{i,j=1}^N A \vec{\omega}_i (\widetilde{A}^{-1})_{ij} \langle \vec{\omega}_j, \vec{x} \rangle \\
+    &= P_L \vec{x}.
+\end{align*}
+
+Now lets show that the second term in equation \eqref{eq:defl_soln} is equal to $(1-P_R)\vec{x}^{\star}_2$ where $\vec{x}^{\star}_2$ solves $(1-P_L)A \vec{x}_2 = (1-P_L) \vec{b}$.
+
+\begin{align*}
+    (1-P_R)\vec{x}^{\star}_2 &= A^{-1} (1-P_L) A \vec{x}^{\star} \\
+    &= A^{-1} (1-P_L) \vec{b} \\
+    &= A^{-1} \sum_{i,j=1}^N A \vec{\omega}_i (\widetilde{A}^{-1})_{ij} \langle \vec{\omega}_j, \vec{b} \rangle \\
+    &= \sum_{i,j=1}^N \vec{\omega}_i (\widetilde{A}^{-1})_{ij} \langle \vec{\omega}_j, \vec{b} \rangle 
+\end{align*}
+
+which corresponds to the second term of $\vec{x}^{\star}$ in equation \eqref{eq:defl_soln}. Therefore by application of theorem \ref{thm:deflation}, $\vec{x}^{\star}$ is the unique solution to $A\vec{x} = \vec{b}$.
+
+\end{proof}
+
+\begin{remark}
+Using the definition of $P_L$ from corollary \ref{cor:deflation}, the action of $P_R$ on a arbirary vector $\vec{x}$ can be determined as
+
+\begin{align*}
+    P_R\vec{x} &= A^{-1} P_L A \vec{x} \\ 
+    &= \vec{x} - \sum_{i,j=1}^N \vec{\omega}_i (\widetilde{A}^{-1})_{ij} \langle \vec{\omega}_j, A \vec{x} \rangle.
+\end{align*}
+\end{remark}
+
+\begin{remark}
+An application of $P_L$ to an arbitrary vector $\vec{x}$ involves solving the \df{little equation} $\widetilde{A} \vec{\beta} = \vec{\alpha}$ on $\Omega$ for a given $\vec{\alpha} \in \Omega$. To see this, lets look at the $k$-th component of $P_L \vec{x}$
+
+\begin{align*}
+    (P_L\vec{x})_k &\coloneqq x_k - \sum_{i,j=1}^N (A\vec{\omega}_i)_k (\widetilde{A}^{-1})_{ij} \langle \vec{\omega}_j, \vec{x} \rangle.
+\end{align*}
+
+Define the vector
+
+\begin{align*}
+    \vec{\alpha}_{\vec{x}} &\coloneqq
+    \begin{pmatrix}
+        \langle \vec{\omega}_1, \vec{x} \rangle \\
+        \langle \vec{\omega}_2, \vec{x} \rangle \\
+        \vdots \\
+        \langle \vec{\omega}_N, \vec{x} \rangle
+    \end{pmatrix}.
+\end{align*}
+
+Then
+
+\begin{align*}
+    (P_L\vec{x})_k &= x_k - \sum_{i=1}^N (A\vec{\omega}_i)_k ( \textcolor{cyellow}{\widetilde{A}^{-1} \vec{\alpha}_{\vec{x}}} )_i.
+\end{align*}
+
+By similar analysis, an application of $P_R$ has the same cost with one additional application of $A$. Also the vectors $\{A\vec{\omega}_i\}_{i=1}^N$ and $\{\vec{\omega}_i\}_{i=1}^N$ have to be kept in system memory.
+
+\end{remark}
+
+\begin{remark}
+Assuming that the condition number of $A$ is high and the \df{spectrum} of $A$, $\sigma(A)$, is separable in a way such that
+
+\begin{align}
+    \sigma(A) &= \sigma_l(A) \cup \sigma_h(A)
+    & &\text{with} &
+    \max\limits_{\lambda \in \sigma_l(A)} \abs{\lambda} &\ll \min\limits_{\lambda \in \sigma_h(A)} \abs{\lambda}. \label{eq:separable}
+\end{align}
+
+The subscripts stand for "low" and "high", corresponding to the low and high modes of the operator $A$. So, the property in equation \eqref{eq:separable} states that the bulk of the low and high eigenvalues are somehow clustered in two regions. Consider the linear subspaces $\Omega_l, \Omega_h \subset \Lambda$ such that the low and high eigenvectors corresponding to the low and high eingenvalues of $A$ are contained in $\Omega_l$ and $\Omega_h$ respectively. Then the condition number of $A$ restricted to the low (high) modes is much smaller than the condition number of $A$. Therefore, if we are able to find a orthonormal basis $\{\vec{\omega}_i\}_{i=0}^N$ of the subspace $\Omega_l$ containing the bulk of the low eigenmodes of $A$, we can apply deflation from corollary \ref{cor:deflation} to solve the little equation that has a significantly smaller condition number than $A$. Then solve the deflated system and using this solution construct a solution of the full system.
+
+% TODO: why is it easy to solve the deflated system?
+% TODO: define condition number \kappa(A) = ... somewhere.
+
+\end{remark}
+
+\begin{lemma}
+\label{lem:condition_number}
+
+Let $A$, $\{\vec{\omega}_i\}_{i=1}^N$, $\Omega$, $P_L$, $P_R$ be as in corollary \ref{cor:deflation} and assume that the spectrum of $A$ is separable \eqref{eq:separable}. Define the deflation subspace to be the subspace corresponding to the low eigenmodes, $\Omega \coloneqq \Omega_l$. Then $\kappa(\hat{A}) \ll \kappa(A)$
+\end{lemma}
+
+\begin{proof}
+
+Lets define the orthogonal projector $P^{\perp}$ to $\Omega^{\perp}$, the othogonal complement of the deflation subspace of $\Omega$,
+
+\begin{align*}
+    P^{\perp} \vec{x} \coloneqq \vec{x} - \sum_{i=1}^N \langle \vec{\omega}_i, \vec{x} \rangle \vec{\omega}_i.
+\end{align*}
+
+The deflated operator $\hat{A} \coloneqq P_L A$ acts on the orthogonal complement,
+
+\begin{align*}
+    \hat{A} (1-P) \vec{x} &= P_L A (1-P) \vec{x} \\
+    &= P_L A \vec{x} - \sum_{k=1}^N P_L A \vec{\omega}_k \langle \vec{\omega}_k, \vec{x} \rangle \\
+    &= A \vec{x} - \sum_{i,j=1}^N A \vec{\omega}_i (\widetilde{A}^{-1})_{ij} \langle \vec{\omega}_j, A \vec{x} \rangle - \sum_{k=1}^N A \vec{\omega}_k \langle \vec{\omega}_k, \vec{x} \rangle + \sum_{i,k=1}^N A \vec{\omega}_i \underbrace{ \sum_{j=1}^N (\widetilde{A}^{-1})_{ij} \underbrace{\langle \vec{\omega}_j, A \vec{\omega}_k \rangle}_{=\widetilde{A}_{jk}} }_{\delta_{ik}} \langle \vec{\omega}_k, \vec{x} \rangle \\
+    &= A \vec{x} - \sum_{i,j=1}^N A \vec{\omega}_i (\widetilde{A}^{-1})_{ij} \langle \vec{\omega}_j, A \vec{x} \rangle - \sum_{k=1}^N A \vec{\omega}_k \langle \vec{\omega}_k, \vec{x} \rangle + \sum_{k=1}^N A \vec{\omega}_k \langle \vec{\omega}_k, \vec{x} \rangle \\
+    &= A \vec{x} - \sum_{i,j=1}^N A \vec{\omega}_i (\widetilde{A}^{-1})_{ij} \langle \vec{\omega}_j, A \vec{x} \rangle \\
+    &= P_L A \vec{x} \\
+    &= \hat{A} \vec{x}.
+\end{align*}
+
+Define the \df{minimal and maximal eigenvalue} of $A$,
+
+\begin{align*}
+    \lambda_{min}(A) &\coloneqq \min\limits_{\lambda \in \sigma(A)} \abs{\lambda}
+    & &\text{and} &
+    \lambda_{max}(A) &\coloneqq \max\limits_{\lambda \in \sigma(A)} \abs{\lambda}.
+\end{align*}
+
+The condition number of $\hat{A}$ can now be upper bounded,
+
+\begin{align*}
+    \kappa({\hat{A}}) = \frac{\abs{\lambda_{max}(\hat{A})}}{\abs{\lambda_{min}(\hat{A})}} \ll \frac{\abs{\lambda_{max}(A)}}{\abs{\lambda_{min}(\hat{A})}} \le \frac{\abs{\lambda_{max}(A)}}{\abs{\lambda_{min}(A)}} = \kappa({A}),
+\end{align*}
+
+where property \eqref{eq:separable} as used in the first inequality.
+
+\end{proof}
+
+\begin{remark}
+Lemma \ref{lem:condition_number} tells us that the deflated system is significantly better conditioned than the full system and is therefore solved in fewer iterations.
+\end{remark}
+
+\begin{lemma}
+
+$P_L$ as defined in corollary \ref{cor:deflation} is a projection to the orthogonal complement of $\Omega$, i.e. $\langle \vec{\omega}_k, P_L \vec{x} \rangle = 0$.
+
+\end{lemma}
+
+\begin{proof}
+
+Let $\vec{x}$ be an arbitrary vector, and $k \in \{1, \dots, N\}$, then
+
+\begin{align*}
+    \langle \vec{\omega}_k, P_L \vec{x} \rangle &= \langle \vec{\omega}_k, \vec{x} \rangle - \sum_{i,j=1}^N \langle \vec{\omega}_k, A \vec{\omega}_i \rangle (\widetilde{A}^{-1})_{ij} \langle \vec{\omega}_j, \vec{x} \rangle \\
+    &= \langle \vec{\omega}_k, \vec{x} \rangle - \sum_{j=1}^N \langle \vec{\omega}_j, \vec{x} \rangle \sum_{i=1}^N \widetilde{A}_{ki} (\widetilde{A}^{-1})_{ij} \\
+    &= \langle \vec{\omega}_k, \vec{x} \rangle - \sum_{j=1}^N \langle \vec{\omega}_j, \vec{x} \rangle \delta_{kj} \\
+    &= 0.
+\end{align*}
+
+\end{proof}
+
+\begin{comment}
+The larger the condition number the worse the problem to solve with iterative methods. But now we have 2 systems with contidion numbers of infinity! Why is this better than one system with condition number < infinity?
+\end{comment}
+
+\begin{comment}
+label:sick_proposal
+
+Sick proposal: For every calculation of A^-1 x for a given x, we need to solve Ay=x iteratively. This is done in every trajectory step in HMC. Throughout the whole process this is done 1000s of times, always for a different x. Let x_1, ..., x_n be such x's. if for two such x's |x_i - x_j| = small, then
+
+A yi = xi ~ xj = A yj
+
+and therefore 
+
+xi ~ xj => A^-1 xi ~ A^-1 xj => yi ~ yj
+
+The solution can be recycled. Also if |x_i - x_j| = small, but not small enough for the above, ans assuming that the solution to Ayi=xi is present to a certain precision, then one could solve for 
+
+Ayj=xj, with starting vector yi, and after few iterations obtain yj to certain precision.
+
+
+\end{comment}
+
+
+\begin{comment}
+
+Assuming that we have a $N$-dimensional subspace $\Omega \subset \Lambda$ of the full lattice $\Lambda$ and $\Omega$ is spanned by the orthonormal set of fields $\phi_1, \dots, \phi_N$, we can define the projector $P^{\Omega}$ to that subspace
+
+\begin{align*}
+    P^{\Omega} \colon \Lambda &\longrightarrow \Omega \\
+    \psi(x) &\longmapsto P^{\Omega} \psi(x) \coloneqq \sum_{i=1}^N \langle \phi_i, \psi \rangle \phi_i(x).
+\end{align*}
+
+Since the $\phi_i$ describe a basis of the \df{deflation subspace} $\Omega$, the action of the Dirac operator $D$ on this subspace is completely determined by the components of the \df{little Dirac operator} $A^{\Omega} \colon \Omega \to \Omega$,
+
+\begin{align*}
+    A^{\Omega}_{ij} = \langle \phi_i, D \phi_j \rangle
+\end{align*}
+
+If the deflation subspace $\Omega$ approximates the bulk of the low eigenmodes in the spectrum of the Dirac operator, then the condition number of $D(\mathbb{I} - P)$ is smaller than that of $D$. This will speed up the convergence of an iterative solver algorithm.
+
+\end{comment}
 
 \begin{comment}
 
 deflation
 
-numerical lattice QCD has the problem that with small quark masses simulation techniques become inefficient in the "chiral limit" (what's that?).
+Ddenotes the lattice Dirac operator at a value of the bare quark mass close to the critical mass (the inverse of D is put in quotes in this formula in order to make it clear that an approximation to the inverse is being applied). As a result the componentsof the fields along the high modes of the Dirac operator are suppressed and the fields willtherefore have a strong overlap with the subspace spanned bythe low modes of the operator.The local coherence of the latter then guarantees that the associated domain-decomposeddeflation subspace is highly effective
+
+
+local coherence: Loosely speaking, a set of quark fields is referred to as locally coherent if the fields are locally well approximated by a relatively small number of fields
+
+relaxation method: (like SAP preconditioning)
 
 "deflating QCD": treating the eigenmodes of the Dirac operator with small eigenvalues separately from the bulk of the quark modes (eigenvalues)
 
@@ -1691,11 +2030,25 @@ little dirac operator can also be preconditioned using eo-preconditioning if the
 
 TODO
 
-\section{The Dirac operator}
+\section{Multishift Conjugate Gradient algorithm}
+
+TODO
+
+\begin{proposal}{MSCG in mixed precision}{mscg_mp}
+
+TODO: \acrlong{mscg} in mixed precision. Currently only in binary64.
+
+\end{proposal}
+
+\section{Dirac operator}
 
 \begin{comment}
 
 The number of cycles in cg (or other solvers) do not scale with the lattice volume (times 12 which is the dimension of the matrix to solve), therefore the matrix becomes more sparse, the larger the lattice becomes.For very large lattice sizes D_dagger D starts to become proportional to the identity more and more, because the diagonal elements stay non-zero.
+
+By ”Inversion” we mean inverting partially this matrix id est solving a set of equations of the type
+Dψ=η(2.8)
+where D and η are given and ψ is unknown. D is a 12N×12N complex matrix and η and ψ are 12N complex vectors. The solution is often called ”quarkpropagator”. 
 
 \end{comment}
 
@@ -1723,6 +2076,14 @@ where $(\vec{v})_i$ denotes the $i$-th component of the vector $\vec{v}$.
 \section{Summary}
 
 TODO
+
+\section{Future}
+
+\begin{comment}
+
+* MSCG in mixed precision (currently it's only in double)
+
+\end{comment}
 
 \newpage
 
