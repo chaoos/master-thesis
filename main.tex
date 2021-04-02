@@ -99,7 +99,6 @@
 \newtheorem{corollary}[theorem]{Corollary}
 \newtheorem{lemma}[theorem]{Lemma}
 \newtheorem{prop}[theorem]{Proposition}
-%\theoremstyle{definition} % boldface title, roman body.  
 \newtheorem{definition}{Definition}[section]
 \newtheorem{example}{Example}[section]
 \theoremstyle{remark} % italicized title, roman body. 
@@ -109,13 +108,15 @@
 %\newtheorem{proposal}{Proposal}[section]
 % use with:
 % \begin{proposal}{title}{label} bla \end{proposal} % label is then referenced as pp:label
-\newtcbtheorem[number within=section]{proposal}{Proposal}{
+\newtcbtheorem[number within=section,list inside={pp}]{proposal}{Proposal}{
   enhanced jigsaw, breakable,
   colback=clightblue!5,
   colframe=clightblue!35!gray,
   breakable,
   fonttitle=\bfseries
 }{pp}
+\newcommand\listofproposals{\tcblistof[\subsection]{pp}{List of Proposals}}
+
 
 \allowdisplaybreaks % page breaks in equations
 \graphicspath{{./img/}{./plots/}}
@@ -162,9 +163,18 @@ TODO
 
 \section{Introduction}
 
+\begin{comment}
+From quda paper:
+latticeQCD ,where the main computational challenge is to efficiently solve the discretized Dirac equation in the presence of an SU(3) gauge field. In lattice QCD, the propagation of quarks is given by the inverse of the Dirac operator,
+which is a large sparse matrix. Hence, many systems of linear equations must
+be solved involving this matrix; it is this requirement that makes lattice QCD
+a grand challenge subject. In such linear solvers, the application of the Dirac
+operator to a vector is the most compute intensive kernel.
+\end{comment}
+
 TODO
 
-\begin{proposal}{example proposal}{one}
+\begin{proposal}{Example proposal}{one}
 
 Reference here with pp:one.
 
@@ -174,7 +184,11 @@ In \acrshort{QCD} blabla see proposal \ref{pp:one}. \textcolor{corange}{orange},
 
 \begin{comment}
 
-solving large sparse linear systems, which arose as finite-difference discretizations of differential equations.[
+solving large sparse linear systems, which arose as finite-difference discretizations of differential equations.
+
+Often in a simulation, one needs to calc A^-1 x, A sparse, but we have only A. So solve Ay = x to some accuracy such that r=Ay-b, |r| is small (residual). Then y = A^-1 x --> y is the approximated result of A^-1 x. But this has to be done everytime fom anew for every new vector x. It's an "operator" that in its application, involves an iterative solving algorithm to produce the desired result of A^-1 x.
+
+A very large part (~90%) of the application deals with inverting the Dirac operator A=D via different solvers (CGNE, MSCG, SAP_GCR, DFL_SAP_GCR).
 
 \end{comment}
 
@@ -308,7 +322,7 @@ Define the \df{error} $\vec{e}_i$ and the \df{residual} $\vec{r}_i$ as
 
 \end{definition}
 
-The residual is the vector of discrepancies and the same as $\vec{r}_i = -f'(\vec{x}_i) = -A \vec{e}_i$, the negative derivative of the quadratic form. The derivative point ni direction of the maximum increase, thus the residual points in direction of the steepest descent seen from the position of point $\vec{x}_i$.
+The residual is the vector of discrepancies and the same as $\vec{r}_i = -f'(\vec{x}_i) = -A \vec{e}_i$, the negative derivative of the quadratic form. The derivative point in direction of the maximum increase, thus the residual points in direction of the steepest descent seen from the position of point $\vec{x}_i$.
 
 \begin{definition}[Method of Steepest Descent]
 The iteration step equation of the \df{method of steepest descent} in defined as
@@ -580,7 +594,7 @@ with
 and initial starting vectors
 
 \begin{align*}
-    \vec{x}_{0} &= \text{arbitrary starting point}, \\
+    \vec{x}_{0} &= \text{arbitrary starting point}, \numberthis \label{eq:cg:start} \\
     \vec{p}_{0} &= \vec{r}_{0} = \vec{b} - A \vec{x}_0.
 \end{align*}
 
@@ -907,7 +921,7 @@ The posit datatype is designed to be a replacement for the IEEE floating point f
     \item The standard gives no guarantee of bit-identical results across systems.
 \end{itemize}
 
-\footnotetext{There was even a system using IEEE 754 that had non-commutative floating point operations\cite{cody1980}.}
+\footnotetext{There was even a system using IEEE 754 that had non-commutative floating point operations \cite{cody1980}.}
 
 The goal is to utilise the number of bits more efficiently and remove these inconsistencies. The key idea is to place half of all numbers between $0$ and $1$ and the other half are the reciprocals (the reciprocal of $0$ being $\pm \infty$). The number can then be drawn on a projective real number circle \cite{gustafson2017}. The structure of a binary posit number is illustrated in Figure \ref{fig:posit}.
 
@@ -1034,7 +1048,13 @@ The highest exponent in all 4 runs was $E=4$, whereas the lowest exponent deceas
 
 \label{sec:fp_in_openqxd}
 
-The conjugate gradient kernel \code{cgne()} in \code{modules/linsolv/cgne.c} in \cite{openqxd} implements the algorithm, see Listing \ref{lst:cgne}.
+The conjugate gradient kernel \code{cgne()} in \code{modules/linsolv/cgne.c} in \cite{openqxd} implements the algorithm, see Listing \ref{lst:cgne}. The algorithm is already implemented in mixed precision using \gls{binary32} in most of the computations and \gls{binary64} in correction steps\footnote{The method is also refered to as \df{mixed precision defect-correction}, see ref. \cite{goddeke2005}}.
+
+\begin{comment}
+The disadvantage of defect-correction, however, is that the Krylov search space that is built up is discarded each time the solver is restarted.
+
+Other possibility: "reliable updates" scheme:
+\end{comment}
 
 \begin{figure} % wrap into a figure such that the whole snippet is on the same page
 \begin{lstlisting}[
@@ -1252,7 +1272,7 @@ Looking at plot \textit{4e} of Figure \ref{fig:cgne:res12}, where the amounts $\
 A possibility to reduce computational cost in each iteration could be to approximate the values of future $\alpha_i$ to be constant. The less precise the datatype, the larger the change in $\alpha_i$. The large error in $\alpha_i$ of \gls{bfloat16} in all plots suggests that the algorithm is not sensible to errors in $\alpha_i$. Therefore, it can be expected that the results should not change significantly with a approximated value of $\alpha_i$.
 
 \begin{itemize}
-    \item Advantage: The resoduals can be calculated using $\vec{b} - A \vec{x}$, not recusively. This implies less roundoff accumulation.
+    \item Advantage: The residuals can be calculated using $\vec{b} - A \vec{x}$, not recusively. This implies less roundoff accumulation.
     \item Advantage: Only one matrix-vector multiplication per iteration.
     \item Disadvantage: Since the $\alpha_i$ are just approximated, the number of needed iterations may increase.
     \item Disadvantage: The Dirac operator $D$ must be given in the form of $A = D^{\dagger} D$ as \textit{one} operator, else the algorithm still consists of \num{2} matrix-vector multiplications per iteration. Also, $D^{\dagger} D$ is less sparse than $D$.
@@ -1300,7 +1320,7 @@ Collective datatype: number range $>$ precision
 
 The next solver appearing in openQxD is called \code{SAP\_GCR}. It makes use of a multiplicative \acrfull{sap} as preconditioner for a flexible \acrfull{gcr} run.
 
-TODO: motivation: parallel processing, chrial regime (spontaneous breaking of chiral symmetry), simulation containing sea-quarks limited to small lattices and large quark masses.
+TODO: motivation: parallel processing, chiral regime (spontaneous breaking of chiral symmetry), simulation containing sea-quarks limited to small lattices and large quark masses.
 
 \subsection{Even-Odd Preconditioning}
 
@@ -1407,6 +1427,23 @@ The idea behind \acrshort{sap} is to loop through all blocks $\Omega_i$ and solv
 Therefore all gray (white) subproblems can be solved simultaneously, with the most recent boundary conditions obtained from the white (gray) domains. Solving all gray, followed by all white subproblems is called a \df{Schwarz cycle} and is considered one iteration in the \acrshort{sap}. Each subproblem can be solved with a desired solver separately, again applying some preconditioning\footnotemark.
 \footnotetext{Using even-odd preconditioning is perfectly fine with $D$ replaced by the restricted Dirac operator $D_i$ acting only on the points in $\Omega_i$.}
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\textwidth]{plots/dirac_matrix6}
+    \caption{An example plot of a Dirac-matrix of an $8^4$-lattice with \acrshort{sf}-boundary conditions. Every pixel consists of $192 \times 192$ numbers. If the average over that numbers is non-zero the pixel is drawn black, else the pixel is drawn white. The density states the percentage of non-zero values over all entries.}
+    \label{fig:dirac_matrix}
+\end{figure}
+
+Whereas the division into domains on the lattice is straightforward, the representation of the Dirac-operator as a sparse matrix and its decomposition is not. Looking at an actual example of a Dirac-operator as matrix (see figure \ref{fig:dirac_matrix}), one observes a lot of structure. While on the diagonal we find the operators restricted to the black and white blocks, the first and the third quadrant describe the operators restricted to the interior and exterior boundaries of the blocks. The operator restricted to the exterior boundaries of the union of all black (white) blocks is denoted by $D_{\partial b}$ ($D_{\partial w}$). The decomposition into $2n$ domains ($n$ gray and $n$ white blocks) can be translated as seen in figure \ref{fig:ddecomp_matrix}. Notice that the restricted operators $D_i$ are well-conditioned, because they exhibit block diagonal form.
+
+\begin{figure}[H]
+  \centering
+  \includestandalone[]{schemes/dd_matrix}
+  \caption{Schematic of the Dirac-operator in term of a large sparse matrix. If the components of the black blocks are arranged such that they appear first, then the decomposition from figure \ref{fig:ddecomp} can be translated into a matrix with blocks as in the picture. $D_i$ describes the Dirac-operator restricted to block $i$ and $D_{\partial b}$ ($D_{\partial w}$) is the Dirac-operator restricted to the external boundaries of the black (white) blocks. The right side describes a vector decomposed into the same $2n$ domains $\psi_1, \dots, \psi_{2n}$. The upper half corresponds to the black blocks and the lower half to the white blocks.}
+  \label{fig:ddecomp_matrix}
+\end{figure}
+
+
 \begin{comment}
 TODO: formulate the block subproblem here, and the sap cycle. D only couples nearest-neighbor blocks, see (0706.2298 Local coherence and deflation of the low quark modes in lattice QCD Fig.4)
 
@@ -1473,7 +1510,9 @@ EO-reconditioning also in reduced precision?
 
 \begin{proposal}{Performing the MR steps on the GPU}{sap_gpu}
 
-The preconditioning procedure involves \code{mnr} \acrfull{mr} steps to be taken on each block in each Schwarz cycle to approximate a solution to the block problem. Since blocks of the same color are independent on each other and the Dirac operator acting only on a specific block involves no communication whatsoever, we can conclude that the procedure of solving a subproblem is a problem \textit{local} to the block and self-contained in the sense that it can be solved independently and without MPI communication. This could be a very handy starting point when going towards GPU-utilisation. Once the souce vector and the restricted Dirac operator are transfered to the GPU, the problem can be solved on the GPU without involving any communication with other ranks or GPUs. This can also be beneficial, because of the following argument: The local lattice of one single rank, can be subdivided into multiple blocks as well (imagine figure \ref{fig:ddecomp} being the local lattice). The actual implementation solves the gray (white) blocks in a local lattice sequentially\footnote{By iterating over the blocks, see \code{sap()} at line \num{717}ff in \code{modules/sap/sap.c} in \cite{openqxd}.}. Since all the gray (white) problems within the local lattice can be solved simulaneously, the code does not exploit the full concurrency potential of the procedure. Solving the subproblems on the GPU, one could launch \acrshort{mr} solvers on all gray blocks simultaneously followed by all white blocks. Keeping in mind proposal \ref{pp:sap_reduced_precision}, the \acrshort{mr} solver can be called in mixed or even reduced precision.
+The preconditioning procedure involves \code{mnr} \acrfull{mr} steps to be taken on each block in each Schwarz cycle to approximate a solution to the block problem. Since blocks of the same color are independent on each other and the Dirac operator acting only on a specific block involves no communication whatsoever, we can conclude that the procedure of solving a subproblem is a problem \textit{local} to the block and self-contained in the sense that it can be solved independently and without MPI communication among ranks. This could be a very handy starting point when going towards GPU-utilisation. Once the souce vector and the restricted Dirac operator are transfered to the GPU, the problem can be solved on the GPU without involving any communication with other ranks or GPUs. This can also be beneficial, because of the following argument: The local lattice of one single rank, can be subdivided into multiple blocks as well (imagine figure \ref{fig:ddecomp} being the local lattice). The actual implementation solves the gray (white) blocks in a local lattice sequentially\footnote{By iterating over the blocks, see \code{sap()} at line \num{717}ff in \code{modules/sap/sap.c} in \cite{openqxd}.}. Since all the gray (white) problems within the local lattice can be solved simulaneously, the code does not exploit the full concurrency potential of the procedure. Solving the subproblems on the GPU, one could launch \acrshort{mr} solvers on all gray blocks simultaneously followed by all white blocks. Keeping in mind proposal \ref{pp:sap_reduced_precision}, the \acrshort{mr} solver can be called in mixed or even reduced precision.
+
+For a specific implementation of the GPU-solver, one option is to encode the restricted Dirac-operator in one of the sparse matrix formats (for example \acrshort{csr}) and use already existing libraries (for example \cite{bell2008} for \acrshort{cuda}) for an application to a spinor. Comparing the implementation of the Dirac-operator in QUDA (see ref. \cite{clark2010}), it is advisable to not rely on such generic libraries, because they ignore further symmetries and structure of the operator. The problem lies mostly in the memory-boundedness of the procedure.
 
 \end{proposal}
 
@@ -1628,7 +1667,7 @@ There are some remarks to note about the method of \acrshort{gcr}.
 
 The actual implementation of the \acrshort{gcr} algorithm in openQxD is quite different\footnotemark, but actually equivalent to definition \ref{df:gcr} (see lemma \ref{lem:gcr_equiv}). Ref. \cite{luscher2004} explains the implementation of the algorithm in detail. The main \acrshort{gcr}-loop looks as in Algorithm \ref{alg:gcr} (see Figure 3 in \cite{luscher2004})
 
-\footnotetext{See \code{fgcr()} in \code{modules/linsolv/fgcr.c} lines \num{212}ff in \cite{openqxd}.}
+\footnotetext{Actually called GMRES recursive algorithm (GMRESR) \cite{vuik1995}, see \code{fgcr()} in \code{modules/linsolv/fgcr.c} lines \num{212}ff in \cite{openqxd}.}
 
 \begin{figure}
 \centering
@@ -1657,7 +1696,7 @@ The actual implementation of the \acrshort{gcr} algorithm in openQxD is quite di
 In algorithm \ref{alg:gcr}, $M_{sap}$ is the \acrshort{sap} preconditioner, that might depend on the iteration number $k$ as well, making the algorithm flexible. $D$ is the Dirac-operator and $\rho_k$ the residual in the $k$-th step. The algorithm does not include an update of the solution vector $\psi_{k+1}$, instead this is done after $n_{kv}$ iterations all at once,
 
 \begin{align}
-    \psi_{k+1} = \sum_{l=0}^k \alpha^{\prime}_l \rho_k. \label{eq:gcr:step:paper}
+    \psi_{k+1} = \sum_{l=0}^k \alpha^{\prime}_l \phi_k. \label{eq:gcr:step:paper}
 \end{align}
 
 \begin{lemma}
@@ -1713,7 +1752,7 @@ In the current version of openQxD \ref{openqxd}, the outer \acrshort{gcr} solver
 
 The low modes of the Dirac operator condensate TODO.
 
-Small quark masses corresponding to real physics are believed to be the cause for the spontaneously breaking of chiral symmetry in lattice QCD \cite{banks1980}. Numerical lattice QCD has the problem that with large lattice volumes and small quark masses simulation techniques become inefficient in the \df{chiral regime} (where chiral symmetry is spontaneously broken). According to the Bank-Casher relation \cite{banks1980}, this is because the number of eigenvalues of $D$ below a fixed value grows with $O(V)$, where $V$ is the total 4D lattice volume. On the other hand, the computational effort scales even worse with $O(V^2)$ \cite{luscher2007}. This behavior goes under the name of \df{$V^2$-problem}.
+Small quark masses corresponding to real physics are believed to be the cause for the spontaneously breaking of chiral symmetry in lattice QCD \cite{banks1980}. Numerical lattice QCD has the problem that with large lattice volumes and small quark masses simulation techniques become inefficient in the \df{chiral regime} (where chiral symmetry is spontaneously broken), because the Dirac opertors gets more and more ill-conditioned. Thus, the presence of low eigenvalues is a source of difficulty \cite{giusti2003}. According to the Bank-Casher relation \cite{banks1980}, this is because the number of eigenvalues of $D$ below a fixed value grows with $O(V)$, where $V$ is the total 4D lattice volume. On the other hand, the computational effort scales even worse with $O(V^2)$ \cite{luscher2007}. This behavior goes under the name of \df{$V^2$-problem}.
 
 A solving algorithm that has a flat scaling in with respect to the quark masses can therefore lead to large speedups specially in that regime. By deflating the Dirac operator, it is possible to separate eigenmodes with very small eigenvalues from the others. Thus the space needs to be split in low and high modes without actually calculating the modes, else the problem would be solved already.
 
@@ -1741,14 +1780,14 @@ respectively. Then
 
 \begin{enumerate}[label={\arabic*)}]
   \item $P_R$ is a projector,
-  \item $\vec{x}^{\star}$ is a solution to $A\vec{x} = \vec{b}$.
+  \item $\vec{x}^{\star}$ is the solution to $A\vec{x} = \vec{b}$.
 \end{enumerate}
 
 \end{theorem}
 
 \begin{proof}
 
-Using that $P_L^2 = P_L$ is a projector,
+Using that $P_L^2 = P_L$ is a projector and the defining relation $P_L A = A P_R$,
 
 \begin{align*}
     P_R^2 &= (A^{-1} P_L A)^2 \\
@@ -1773,13 +1812,13 @@ Therefore, if we find clever projectors $P_L$ and $P_R$ without involving $A^{-1
 \end{remark}
 
 \begin{remark}
-Notice that $P_L A$ as well as $(1-P_L)A$ are not invertible, therefore there are infinitely many solutions $\vec{x}^{\star}_1$ and $\vec{x}^{\star}_2$\footnotemark. Nonetheless the solution vector $\vec{x}^{\star}$ is still unique after the projection in equation \eqref{eq:def_projection}.
+Notice that $P_L A$ as well as $(1-P_L)A$ are not invertible, therefore there are infinitely many solutions $\vec{x}^{\star}_1$ and $\vec{x}^{\star}_2$\footnotemark. Nonetheless the solution vector $\vec{x}^{\star}$ is still unique after the projection in equation \eqref{eq:def_projection}, because $P_R$ is a projector.
 \end{remark}
 
-\footnotetext{Let $P$ be a linear projector (not the identity-operator) and $A$ a invertible linear operator. We want to solve $PA\vec{x} = P\vec{b}$. There exists at least one solution to this, namely the unique solution to $A\vec{x} = \vec{b}$. Since $PA$ is not invertible, the only two possibilities are zero or infinite solutions and it can't be zero solutions.}
+\footnotetext{Let $P$ be a linear projector (not the identity-operator) and $A$ an invertible linear operator. The system of interest is $PA\vec{x} = P\vec{b}$. There exists at least one solution to this, namely the unique solution to $A\vec{x} = \vec{b}$. Since $PA$ is not invertible, the only two possibilities are zero or infinite solutions and it can't be zero solutions.}
 
 \begin{remark}
-Comparing deflation to left preconditioning, the difference is that in deflation $P_L$ is a projector and $P_L A$ has condition number infinite whereas in case of preconditioning $P_L $ is invertible and the condition number of $P_L A$ is expected to be smaller than of $A$.
+Comparing deflation to left preconditioning, the difference is that in deflation $P_L$ is a projector and $P_L A$ has condition number infinite whereas in case of preconditioning $P_L $ is invertible (a good approximation of $A^{-1}$) and the condition number of $P_L A$ is expected to be smaller than of $A$.
 \end{remark}
 
 \begin{corollary}
@@ -1793,7 +1832,7 @@ Let $A$ and $\vec{b}$ be as in theorem \ref{thm:deflation}. Furthermore let $\{ 
     %P_R \vec{y} &= \vec{y} - \sum_{i,j=1}^N \vec{\omega}_i (\widetilde{A}^{-1})_{ij} \langle \vec{\omega}_j, A \vec{y} \rangle,
 \end{align*}
 
-and let $\vec{x}^{\star}_1$ be one of the solutions to the \df{deflated system} $\hat{A} \vec{x}_1 = P_L \vec{b}$, where $\hat{A} \coloneqq P_L A$ is called the \df{deflated operator}. Consider
+and let $\vec{x}^{\star}_1$ be one of the (infinite) solutions to the \df{deflated system} $\hat{A} \vec{x}_1 = P_L \vec{b}$, where $\hat{A} \coloneqq P_L A$ is called the \df{deflated operator}. Consider
 
 \begin{align}
     \vec{x}^{\star} \coloneqq P_R \vec{x}^{\star}_1 + \sum_{i,j=1}^N \vec{\omega}_i (\widetilde{A}^{-1})_{ij} \langle \vec{\omega}_j, \vec{b} \rangle, \label{eq:defl_soln}
@@ -1816,10 +1855,10 @@ Lets first show that $P_L^2 = P_L$ is a projector,
     &= P_L \vec{x}.
 \end{align*}
 
-Now lets show that the second term in equation \eqref{eq:defl_soln} is equal to $(1-P_R)\vec{x}^{\star}_2$ where $\vec{x}^{\star}_2$ solves $(1-P_L)A \vec{x}_2 = (1-P_L) \vec{b}$.
+Now lets show that the second term in equation \eqref{eq:defl_soln} is equal to $(1-P_R)\vec{x}^{\star}_2$ where $\vec{x}^{\star}_2$ solves the projected system $(1-P_L)A \vec{x}_2 = (1-P_L) \vec{b}$.
 
 \begin{align*}
-    (1-P_R)\vec{x}^{\star}_2 &= A^{-1} (1-P_L) A \vec{x}^{\star} \\
+    (1-P_R)\vec{x}^{\star}_2 &= A^{-1} (1-P_L) A \vec{x}^{\star}_2 \\
     &= A^{-1} (1-P_L) \vec{b} \\
     &= A^{-1} \sum_{i,j=1}^N A \vec{\omega}_i (\widetilde{A}^{-1})_{ij} \langle \vec{\omega}_j, \vec{b} \rangle \\
     &= \sum_{i,j=1}^N \vec{\omega}_i (\widetilde{A}^{-1})_{ij} \langle \vec{\omega}_j, \vec{b} \rangle 
@@ -1830,7 +1869,7 @@ which corresponds to the second term of $\vec{x}^{\star}$ in equation \eqref{eq:
 \end{proof}
 
 \begin{remark}
-Using the definition of $P_L$ from corollary \ref{cor:deflation}, the action of $P_R$ on a arbirary vector $\vec{x}$ can be determined as
+From $P_L$ in corollary \ref{cor:deflation}, the action of $P_R$ on a arbirary vector $\vec{x}$ can be determined using the defining relation of $P_R$ as
 
 \begin{align*}
     P_R\vec{x} &= A^{-1} P_L A \vec{x} \\ 
@@ -1863,11 +1902,14 @@ Then
     (P_L\vec{x})_k &= x_k - \sum_{i=1}^N (A\vec{\omega}_i)_k ( \textcolor{cyellow}{\widetilde{A}^{-1} \vec{\alpha}_{\vec{x}}} )_i.
 \end{align*}
 
-By similar analysis, an application of $P_R$ has the same cost with one additional application of $A$. Also the vectors $\{A\vec{\omega}_i\}_{i=1}^N$ and $\{\vec{\omega}_i\}_{i=1}^N$ have to be kept in system memory.
+By similar analysis, an application of $P_R$ has the same cost with one additional application of $A$. For an efficient implementation of $P_L$ and $P_R$, the $2N$ vectors $\{A\vec{\omega}_i\}_{i=1}^N$ and $\{\vec{\omega}_i\}_{i=1}^N$ have to be kept in system memory.
 
 \end{remark}
 
 \begin{remark}
+
+% TODO: work through this again -> local coherence
+
 Assuming that the condition number of $A$ is high and the \df{spectrum} of $A$, $\sigma(A)$, is separable in a way such that
 
 \begin{align}
@@ -1900,7 +1942,7 @@ Lets define the orthogonal projector $P^{\perp}$ to $\Omega^{\perp}$, the othogo
 The deflated operator $\hat{A} \coloneqq P_L A$ acts on the orthogonal complement,
 
 \begin{align*}
-    \hat{A} (1-P) \vec{x} &= P_L A (1-P) \vec{x} \\
+    \hat{A} P^{\perp} \vec{x} &= P_L A P^{\perp} \vec{x} \\
     &= P_L A \vec{x} - \sum_{k=1}^N P_L A \vec{\omega}_k \langle \vec{\omega}_k, \vec{x} \rangle \\
     &= A \vec{x} - \sum_{i,j=1}^N A \vec{\omega}_i (\widetilde{A}^{-1})_{ij} \langle \vec{\omega}_j, A \vec{x} \rangle - \sum_{k=1}^N A \vec{\omega}_k \langle \vec{\omega}_k, \vec{x} \rangle + \sum_{i,k=1}^N A \vec{\omega}_i \underbrace{ \sum_{j=1}^N (\widetilde{A}^{-1})_{ij} \underbrace{\langle \vec{\omega}_j, A \vec{\omega}_k \rangle}_{=\widetilde{A}_{jk}} }_{\delta_{ik}} \langle \vec{\omega}_k, \vec{x} \rangle \\
     &= A \vec{x} - \sum_{i,j=1}^N A \vec{\omega}_i (\widetilde{A}^{-1})_{ij} \langle \vec{\omega}_j, A \vec{x} \rangle - \sum_{k=1}^N A \vec{\omega}_k \langle \vec{\omega}_k, \vec{x} \rangle + \sum_{k=1}^N A \vec{\omega}_k \langle \vec{\omega}_k, \vec{x} \rangle \\
@@ -1950,28 +1992,34 @@ Let $\vec{x}$ be an arbitrary vector, and $k \in \{1, \dots, N\}$, then
 
 \end{proof}
 
-\begin{comment}
-The larger the condition number the worse the problem to solve with iterative methods. But now we have 2 systems with contidion numbers of infinity! Why is this better than one system with condition number < infinity?
-\end{comment}
+\subsection{Choosing the deflation subspace}
+
+\begin{definition}[Local coherence]
+
+\label{def:local_coherence}
+
+Let $\varepsilon > 0$, $M,N \in \mathbb{N}$ with $M \ll N$ and $\Lambda$ be the full lattice. Let $B \coloneqq \{\vec{\rho}_i\}_{i=1}^N$ and $C \coloneqq \{\vec{\omega}_j\}_{j=1}^M$ with $\vec{\rho}_i,\vec{\omega}_j \in \Lambda$ be two sets of fields. Furthermore define the projector $P_{\Gamma}$ to the subspace $\Gamma \coloneqq span(C)$ via its action onto an abitrary vector $\vec{x} \in \Lambda$ as
+
+\begin{align*}
+    P_{\Gamma} \vec{x} \coloneqq \sum_{j=1}^M \langle \vec{\omega}_j, \vec{x} \rangle \vec{\omega}_j.
+\end{align*}
+
+The fields $B$ are \df{locally coherent} with the fields $C$ up to $\varepsilon$, if $\forall i \in \{1, \dots N\}$
+
+\begin{align*}
+    \norm{ (1-P_{\Gamma}) \vec{\rho}_i } \le \varepsilon.
+\end{align*}
+
+
+\end{definition}
+
+\begin{remark}
+Definition \ref{def:local_coherence} can be interpreted such that the fields in $B$ can be well approximated by the (much fewer) fields in $C$, since the approximation error is smaller or equal to $\varepsilon$.
+\end{remark}
 
 \begin{comment}
-label:sick_proposal
-
-Sick proposal: For every calculation of A^-1 x for a given x, we need to solve Ay=x iteratively. This is done in every trajectory step in HMC. Throughout the whole process this is done 1000s of times, always for a different x. Let x_1, ..., x_n be such x's. if for two such x's |x_i - x_j| = small, then
-
-A yi = xi ~ xj = A yj
-
-and therefore 
-
-xi ~ xj => A^-1 xi ~ A^-1 xj => yi ~ yj
-
-The solution can be recycled. Also if |x_i - x_j| = small, but not small enough for the above, ans assuming that the solution to Ayi=xi is present to a certain precision, then one could solve for 
-
-Ayj=xj, with starting vector yi, and after few iterations obtain yj to certain precision.
-
-
+The larger the condition number the worse the problem to solve with iterative methods. But now we have 2 systems with contidion numbers of infinity! Why is this better than one system with condition number < infinity? the smaller systems restricted to the projections space have condition numbers lower than the full system, IF the deflation space was chosen "wisely".
 \end{comment}
-
 
 \begin{comment}
 
@@ -2028,7 +2076,6 @@ little dirac operator can also be preconditioned using eo-preconditioning if the
 
 \end{comment}
 
-TODO
 
 \section{Multishift Conjugate Gradient algorithm}
 
@@ -2050,9 +2097,112 @@ By ”Inversion” we mean inverting partially this matrix id est solving a set 
 Dψ=η(2.8)
 where D and η are given and ψ is unknown. D is a 12N×12N complex matrix and η and ψ are 12N complex vectors. The solution is often called ”quarkpropagator”. 
 
+Only the gauge field configuration is stored in memory for the dirac operator (as implemented in openqxd). In every trajectory of HMC the fields are updated, and the operator changes.
+
+The gauge fields are SU(3) matrices. Inspecting their representations, they can be represented using 18, 12, 10 or 8 real numbers. The 8-representation involves 6 number between [-1,1] and 2 between [-pi,pi]. This is in all number ranges of all floating point types! In QUDA, they use 16-bit (or 8-bit) signed integers and cudaReadModeNormalizedFloat to convert to a binary32 in the range [-1,1].
+
 \end{comment}
 
-TODO
+\begin{proposal}{Representation of the Dirac-operator}{dop_reps}
+For the implementation of the Dirac-operator on the GPU, the software library QUDA \cite{clark2010} is a good sample. To improve the performance of their Dirac-operator, the authors of QUDA used a representation of the SU(3)-fields with \num{8} real numbers, a gauge transformation to make almost all of the gauge fields in temporal direction to the identity-matrix and a change of basis in the $\gamma$-matrices, such that one of the four matrices has a very simple form. The most interesting one is probably the SU(3)-representation with only \num{8} real numbers. In openQxD \footnote{See line 43 in \code{include/su3.h} in \cite{openqxd}.} the struct \code{su3\_dble} representing a SU(3)-gauge-field consists of \num{18} double precision numbers. The C-macro for a matrix-matrix multiplication of 2 such \code{su3\_dble} \footnote{See line 490ff in \code{include/su3.h} in \cite{openqxd}.} consists of $18 \cdot 12$ FLOPs, $2 \cdot 18$ loads and $18$ stores. Using \gls{binary64}, the arithmetic intensity is $I = 0.5$ FLOPs per byte, making the problem memory-bound.
+
+Since the rows and columns of SU(3)-matrices form a orthonormal basis of $\mathbb{C}^3$, one representation of such matrices can hold only the first two rows or columns and the third row or column is calculated as the vector product of the former two \cite{deforcrand1985}. This is a representation with \num{12} real numbers. A matrix-matrix multiplication of 2 such matrices ends up in $270$ FLOPs, $2 \cdot 12$ loads and $12$ stores. This results in a arithmetic intensity of $I = 0.9375$ FLOPs per byte using \gls{binary64}.
+
+If the representation of a SU(3)-gauge-field would be chosen such that the struct contains only \num{10} numbers \cite{bunk1986}, then a matrix $A \in SU(3)$ would be represented as ($a_{ij} \in \mathbb{C}$)
+
+\begin{align*}
+    A =
+    \begin{pmatrix}
+    a_{11} & a_{12} & a_{13} \\
+    a_{21} & a_{22} & a_{23} \\
+    a_{31} & a_{32} & a_{33} 
+    \end{pmatrix}
+    &= 
+    \begin{pmatrix}
+    1 & 0 & 0 \\
+    0 &   N a_{31}^{*} & N a_{21} \\
+    0 & - N a_{21}^{*} & N a_{31}
+    \end{pmatrix}
+    \begin{pmatrix}
+    a_{11} & a_{12} & a_{13} \\
+    0 & - N a_{13}^{*} & - N a_{12}^{*} \\
+    \frac{1}{N} & - N a_{11}^{*} a_{12} & - N a_{11}^{*} a_{13}
+    \end{pmatrix} \\
+    &= 
+    \begin{pmatrix}
+    a_{11} & a_{12} & a_{13} \\
+    a_{21} & -N^2 \left( a_{13} a_{31}^{*} + a_{11}^{*} a_{12} a_{21} \right) & -N^2 \left( a_{12}^{*} a_{31}^{*} + a_{11}^{*} a_{13} a_{21} \right) \\
+    a_{31} & -N^2 \left( a_{13}^{*} a_{21}^{*} + a_{11}^{*} a_{12} a_{31} \right) & -N^2 \left( a_{12}^{*} a_{21}^{*} + a_{11}^{*} a_{13} a_{31} \right) 
+    \end{pmatrix}
+\end{align*}
+
+where $N \coloneqq \left(1 - \abs{a_{11}}^2 \right)^{-\frac{1}{2}}$. Notice that this representation has a singularity at $\abs{a_{11}}=1$. The \num{5} complex numbers $a_{11}, a_{12}, a_{13}, a_{21}, a_{31}$ are subject of the orthonormality constraints
+
+\begin{align}
+  \abs{a_{11}}^2 + \abs{a_{12}}^2 + \abs{a_{13}}^2 = \abs{a_{11}}^2 + \abs{a_{21}}^2 + \abs{a_{31}}^2 = 1, \label{eq:su3_orth_constr}
+\end{align}
+
+leading to the observation that all \num{12} real numbers are in the set $[-1, 1].$
+
+Finally, in a minimal representation of $8$ real numbers \cite{bunk1986}, can be obtained using the constraint above \eqref{eq:su3_orth_constr}. If we write $a_{ij} = x_{ij} + i y_{ij}$ with $x_{ij}, y_{ij} \in \mathbb{R}$ we can eliminate \num{2} further numbers. One (of many) choices could be
+
+\begin{align}
+  y_{31} &= \sqrt{1 - \abs{a_{11}}^2 - \abs{a_{21}}^2 - \abs{x_{31}}^2} \\
+  y_{13} &= \sqrt{1 - \abs{a_{11}}^2 - \abs{a_{13}}^2 - \abs{x_{13}}^2}.
+\end{align}
+
+Using this, only $a_{11}, a_{12}, a_{21}$ and the real parts of $a_{13}$ and $a_{31}$ need to be stored in memory. For a breakdown of the different arthmetic intensities of the representations, see table \ref{tab:ai_su3}.
+
+\begin{table}[H]
+\centering
+    \begin{tabular}{ |p{1.2cm}|p{2cm}|p{2cm}|p{2cm}|  }
+        \hline
+        \multicolumn{4}{|c|}{Arithmetic intensities in FLOPs per byte} \\
+        \hline
+        Reals & I(binary64) & I(binary32) & I(binary16) \\
+        \hline
+        18  & 0.5    & 1       & 2      \\
+        12  & 0.9375 & 1.875   & 3.75   \\
+        10  & 1.3667 & 2.7333  & 5.4667 \\
+        8   & 1.9115 & 3.8229  & 7.6458 \\
+        \hline
+    \end{tabular}
+    \caption{Arithmetic intensities of SU(3) representations with different requirement for real numbers for a matrix-matrix multiplication. In the calculation of the intensities a FLOP-count of \num{6} was used for the square root of a floating point number and previous results were reused instead of recalculating.}
+    \label{tab:ai_su3}
+\end{table}
+    
+In table \ref{tab:dw_dble} one invocation of \code{Dw\_dble()} was called and the macros from \code{su3.h} where counted.
+
+\begin{table}[H]
+\centering
+    \begin{tabular}{ |p{1.2cm}|p{4cm}|p{1.2cm}|p{1.2cm}|p{1.2cm}|p{1.2cm}|  }
+        \hline
+        \multicolumn{6}{|c|}{One invocation of \code{Dw\_dble()}} \\
+        \hline
+        \# calls & macro name & I(18) & I(12) & I(10) & I(8) \\
+        \hline
+        61440 & \code{\_vector\_add\_assign()}    & 0.0416 & 0.0416 & 0.0416 & 0.0416 \\
+        24576 & \code{\_su3\_multiply()}          & 0.3    & 0.625 & 0.9323 & 1.0989 \\
+        24576 & \code{\_su3\_inverse\_multiply()} & 0.3    & 0.625 & 0.9323 & 1.0989 \\
+        12288 & \code{\_vector\_add()}            & 0.0416 & 0.0416 & 0.0416 & 0.0416 \\
+        12288 & \code{\_vector\_i\_add()}         & 0.0416 & 0.0416 & 0.0416 & 0.0416 \\
+        12288 & \code{\_vector\_i\_add\_assign()} & 0.0416 & 0.0416 & 0.0416 & 0.0416 \\
+        12288 & \code{\_vector\_sub()}            & 0.0416 & 0.0416 & 0.0416 & 0.0416 \\
+        12288 & \code{\_vector\_i\_sub()}         & 0.0416 & 0.0416 & 0.0416 & 0.0416 \\
+        12288 & \code{\_vector\_sub\_assign()}    & 0.0416 & 0.0416 & 0.0416 & 0.0416 \\
+        12288 & \code{\_vector\_i\_sub\_assign()} & 0.0416 & 0.0416 & 0.0416 & 0.0416 \\
+        \hline
+    \end{tabular}
+    \caption{Number of C macro calls for one call of \code{Dw\_dble()} on a $8^4$ local lattice with $4$ ranks.}
+    \label{tab:dw_dble}
+\end{table}
+
+
+\begin{comment}
+A necessary condition for GPU acceleration to be advantageous is that the benefit of doing work on the GPU exceeds the cost of getting the data there.
+\end{comment}
+
+\end{proposal}
 
 \begin{definition}[Hadamard product]
 
@@ -2073,6 +2223,60 @@ where $(\vec{v})_i$ denotes the $i$-th component of the vector $\vec{v}$.
 
 \end{definition}
 
+\section{GPU Implementation}
+
+There are multiple possibilities how to implement GPU-utilization into the current state of the code.
+
+\begin{proposal}{GPU Implementation Variant 1}{gpu_implementation1} % ref with pp:gpu_implementation1
+
+Keeping the results in mind (ref TODO) that the pure GPU implementation of the \code{SAP\_GCR} was by far the fastest, it makes sense to associate a local lattice to each GPU - so to treat a GPU as an additional rank with its own local lattice. Each GPU would then act as another rank and the full lattice can be extended by as many local lattices as there are available GPUs. Some nodes might have GPUs, some not. Each GPU has a \df{bystander process} running on the CPU. Process contexts associated to a GPU (CPU) are from now on called \df{GPU ranks} (\df{CPU ranks}). The bystander process will not need a lot of CPU load, since it only hosts control and informational variables and is not involved in any calculations. The communication from a GPU rank to another rank (CPU or GPU) in the system can be done either via the bystander process or via direct injection into the network bypassing the CPU and the bystander process. The former case will not need a change of the MPI communication code among ranks. Since the communication will only take negligible computational effort on the bystander process, it will not \textit{steal} much from the CPU ranks running on the node. Let me give an example: Let' s assume the application runs on one single node with \num{8} cores and \num{4} GPUs attached to it. This would involve \num{8} CPU ranks (separate processes) and \num{4} GPU ranks with in total \num{4} (separate) bystander processes. Technically the machine is over-subscripted and the operating system needs to schedule the processes. But since the bystander processes will be in sleeping state most of the time, this will not (or only negligibly) degrade the performance of the \num{8} CPU ranks.
+
+\begin{itemize}
+    \item Advantage: The application can run on hybrid machines in the sense that some nodes can have GPUs attached to them and others don't.
+    \item Disadvantage: The full system constsis of two types of ranks - GPU ranks and CPU ranks. Inevitably, either the GPU or the CPU ranks will be faster on the same local lattice size. This means that either the GPUs or the CPUs will have to wait for the others to finish. Utilization of resources is not perfect.
+\end{itemize}
+
+\end{proposal}
+
+\begin{proposal}{GPU Implementation Variant 2}{gpu_implementation2} % ref with pp:gpu_implementation2
+
+Since the GPUs are fast on the solver algorithms, a pure GPU implementation of all currently implemented solvers \footnote{\acrshort{cgne}, \acrshort{mscg}, \acrshort{sapgcr} and \acrshort{dflsapgcr}} can lead to a significant speed up of the program.
+
+\begin{itemize}
+    \item Advantage: Only the small subset of solver algorithm code has to be changed.
+    \item Disadvantage: The Dirac-operator has to be held in the main memory as well as in the GPU memory. Both need to be in sync. This will lead to a lot of inta-node traffic, which itself should not be a problem. The Dirac-operator is stored in terms of its gauge-fields. They will be redundant and thus the full amount of GPU and CPU memory us not optimally utilized.
+    \item Disadvantage: Since the solvers run on the GPUs, the CPUs will be stale during that time (although the waiting time will be smaller than the time they would need to run the solvers themselves). In the HMC-calculations done on the CPUs, the GPUs will be stale. Again the full potential of performance is not utilized.
+\end{itemize}
+
+
+\end{proposal}
+
+\section{Algorithm-independent considerations}
+
+\begin{proposal}{Choice of starting vectors}{starting_vector} % ref with pp:starting_vector
+
+\begin{comment}
+label:sick_proposal
+
+Sick proposal: For every calculation of A^-1 x for a given x, we need to solve Ay=x iteratively. This is done in every trajectory step in HMC. Throughout the whole process this is done 1000s of times, always for a different x. Let x_1, ..., x_n be such x's. if for two such x's |x_i - x_j| = small, then
+
+A yi = xi ~ xj = A yj
+
+and therefore 
+
+xi ~ xj => A^-1 xi ~ A^-1 xj => yi ~ yj
+
+The solution can be recycled. Also if |x_i - x_j| = small, but not small enough for the above, ans assuming that the solution to Ayi=xi is present to a certain precision, then one could solve for 
+
+Ayj=xj, with starting vector yi, and after few iterations obtain yj to certain precision.
+
+
+\end{comment}
+
+During a simulation, a lot of linear systems of equation of the type $A \vec{x} = \vec{b}$ have to be solved. Most solving algorithms have the possibility to choose a initial starting vector $\vec{x}_0$ from where to start the iterative process (see definition \ref{eq:cg:start} for example). Consider the sequence of matrices and source vectors for which the linear system of equations should be solved $\{A_1, \vec{b}_1\}, \{A_2, \vec{b}_2\}, \dots, \{A_n, \vec{b}_n\}$ and the matrix $A$ not changing very much among steps ($A_i \approx A_j$). If the difference $\norm{\vec{b}_i - \vec{b}_j}$ is small, then the difference of the solution vectors $\norm{\vec{x}_i - \vec{x}_j}$ can be expected to be small too. Assuming that the system $A_i \vec{x}_i = \vec{b}_i$ is already solved, the iterative solver for $A_j \vec{x}_j = \vec{b}_j$ can use $\vec{x}_i$ as its initial starting vector and reduce the amount of steps needed to solve the latter system.
+
+\end{proposal}
+
 \section{Summary}
 
 TODO
@@ -2088,6 +2292,7 @@ TODO
 \newpage
 
 \bibliography{include/references}
+
 \bibliographystyle{abbrv}
 
 \newpage
@@ -2101,6 +2306,8 @@ TODO
 \label{sec:code}
 
 All code used in this report is open source and can be found in the GitHub repository \cite{github}
+
+\listofproposals
 
 \printglossary[type=\acronymtype]
 
