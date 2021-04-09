@@ -748,7 +748,7 @@ Using the step equation \eqref{eq:cg_step}, we can update the error and residual
     \begin{align}
         \vec{r}_{i+1} &= \vec{b} - A \vec{x}_{i+1} \label{eq:residual_exact} \\
                       &= \vec{r}_{i} - \alpha_i A \vec{p}_{i} \label{eq:residual_recursive} \\
-                      &= - A \vec{e}_{i+1}. \label{eq:residual_exact2}
+                      &= - A \vec{e}_{i+1}. \label{eq:cg_error2}
     \end{align}
 \end{subequations}
 
@@ -1757,7 +1757,7 @@ where in the last step equation \eqref{eq:gcr:Api:equiv} was inserted. The $\chi
 
 \begin{proposal}{GCR in mixed precision}{gcr_mp}
 
-In the current version of openQxD \cite{openqxd}, the outer \acrshort{gcr} solver is performed in pure \gls{binary64}. A mixed precision variant would need the preconditioning $M_{sap}$ to be done in mixed precision as well. Algorithm \ref{alg:mixed_precision} would directly apply with $solve()$ replaced by \code{fgcr()} with the difference that \code{fgcr()} has to accept $D$, $M_{sap}$, $\vec{x}_0$ and $\vec{b}$ in the desired precision.
+In the current version of openQxD \ref{openqxd}, the outer \acrshort{gcr} solver is performed in pure \gls{binary64}. A mixed precision variant would need the preconditioning $M_{sap}$ to be done in mixed precision as well. Algorithm \ref{alg:mixed_precision} would directly apply with $solve()$ replaced by \code{fgcr()} with the difference that \code{fgcr()} has to accept $D$, $M_{sap}$, $\vec{x}_0$ and $\vec{b}$ in the desired precision.
 
 \end{proposal}
 
