@@ -1,0 +1,52 @@
+\documentclass{standalone}
+
+\usepackage{tikz}
+\usepackage{amsmath}
+\usetikzlibrary{math}
+\usetikzlibrary{calc}
+
+% definition of all the colors
+\usepackage{xcolor}
+\input{../include/colors.tex}
+
+\begin{document}
+
+
+
+\begin{tikzpicture}[]
+
+\def\step{2}
+
+\node[circle,fill=cblue,inner sep=0pt,minimum size=5pt,label=below right:{\textcolor{cblue}{$n$}},label=above left:{\textcolor{cblue}{$\psi(n)$}}] (A) at ( \step*0, \step*0 ) {};
+\node[circle,fill=cblue,inner sep=0pt,minimum size=5pt,label=above:{\textcolor{cblue}{$n + \hat{\mu}$}}] (B) at ( \step*0, \step*1 ) {};
+\node[circle,fill=cblue,inner sep=0pt,minimum size=5pt,label=below:{\textcolor{cblue}{$n - \hat{\mu}$}}] (C) at ( \step*0,-\step*1 ) {};
+\node[circle,fill=cblue,inner sep=0pt,minimum size=5pt,label=right:{\textcolor{cblue}{$n + \hat{\nu}$}}] (D) at ( \step*1, \step*0 ) {};
+\node[circle,fill=cblue,inner sep=0pt,minimum size=5pt,label=left :{\textcolor{cblue}{$n - \hat{\nu}$}}] (E) at (-\step*1, \step*0 ) {};
+\node[circle,fill=cblue,inner sep=0pt,minimum size=5pt,label=above right:{\textcolor{cblue}{$n + \hat{\mu} + \hat{\nu}$}}] (F) at ( \step*1, \step*1 ) {};
+\node[circle,fill=cblue,inner sep=0pt,minimum size=5pt,label=above left: {\textcolor{cblue}{$n + \hat{\mu} - \hat{\nu}$}}] (G) at (-\step*1, \step*1 ) {};
+\node[circle,fill=cblue,inner sep=0pt,minimum size=5pt,label=below right:{\textcolor{cblue}{$n - \hat{\mu} + \hat{\nu}$}}] (H) at ( \step*1,-\step*1 ) {};
+\node[circle,fill=cblue,inner sep=0pt,minimum size=5pt,label=below left: {\textcolor{cblue}{$n - \hat{\mu} - \hat{\nu}$}}] (I) at (-\step*1,-\step*1 ) {};
+
+%\filldraw[black] ( \step*0, \step*0 ) circle (1pt) node(A)[anchor=north] {$n$};
+%\filldraw[black] ( \step*0, \step*1 ) circle (1pt) node(B)[anchor=south] {$n + \hat{\mu}$};
+%\filldraw[black] ( \step*1, \step*0 ) circle (1pt) node(C)[anchor=west ] {$n + \hat{\nu}$};
+%\filldraw[black] ( \step*0,-\step*1 ) circle (1pt) node(D)[anchor=north] {$n - \hat{\mu}$};
+%\filldraw[black] (-\step*1, \step*0 ) circle (1pt) node(E)[anchor=east ] {$n - \hat{\nu}$};
+%\filldraw[black] ( \step*1, \step*1 ) circle (1pt) node(F)[anchor=north] {};
+%\filldraw[black] (-\step*1,-\step*1 ) circle (1pt) node(G)[anchor=north] {};
+%\filldraw[black] ( \step*1,-\step*1 ) circle (1pt) node(H)[anchor=north] {};
+%\filldraw[black] (-\step*1, \step*1 ) circle (1pt) node(I)[anchor=north] {};
+
+% arrows
+\draw[cred,->]   (A.north) -- (B.south) node[midway,right] {\textcolor{cred}{$U_{\mu}(n)$}};
+\draw[cred,->]   (A.south) -- (C.north) node[midway,right] {\textcolor{cred}{$U_{-\mu}(n)$}};
+\draw[cgreen,->] (A.east)  -- (D.west)  node[midway,below] {\textcolor{cgreen}{$U_{\nu}(n)$}};
+\draw[cgreen,->] (A.west)  -- (E.east)  node[midway,below] {\textcolor{cgreen}{$U_{-\nu}(n)$}};
+
+\draw[->] (-5,-3) -- (-5,-2) node[midway,left]  {$\mu$};
+\draw[->] (-5,-3) -- (-4,-3) node[midway,below] {$\nu$};
+
+\end{tikzpicture}
+
+
+\end{document}

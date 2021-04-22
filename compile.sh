@@ -9,6 +9,12 @@ GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 
 if [ "$target" = "all" ]; then
+	if [ -e "out.bak" ]; then
+		rm -R out/*
+	else
+		mv out out.bak
+		mkdir out
+	fi
 	pdflatex -halt-on-error -output-directory out "$MAINTEX".tex
 	bibtex "out/$MAINTEX"
 	cd out

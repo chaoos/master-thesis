@@ -19,7 +19,6 @@
 \usepackage{pythontex} % python code within the document
 \usepackage{enumitem} % customising enumeration ex: 1), 2), 3), ...
 \usepackage{cancel} % strikethrough equations
-\usepackage{import}
 \usepackage[group-separator={,}]{siunitx} % thousand separator in large numbers
 \usepackage[nottoc,numbib]{tocbibind} % references in toc
 \usepackage[ruled,vlined,linesnumbered]{algorithm2e} % pseudocode listings
@@ -77,13 +76,8 @@
 \newcommand\numberthis{\addtocounter{equation}{1}\tag{\theequation}}
 
 \usepackage{tikz}
-\usetikzlibrary{
-  tikzmark, % arrow pointing to character in equation https://tex.stackexchange.com/questions/191217/arrow-pointing-to-subscript-in-equation
-  %arrows % used in plaquette.tex
-} 
-\usepackage[subpreambles=true]{standalone} % to include tikzpictures using \includestandalone
-
-%\newcommand{\midarrow}{\tikz \draw[-triangle 90] (0,0) -- +(.1,0);} % used in plaquette.tex
+\usetikzlibrary{tikzmark} % arrow pointing to character in equation https://tex.stackexchange.com/questions/191217/arrow-pointing-to-subscript-in-equation
+\usepackage{standalone} % to include tikzpictures using \includestandalone
 
 %\usepackage[bottom]{footmisc} % put footnote at the bottom of the page https://tex.stackexchange.com/questions/9425/how-to-fix-footnote-position-at-the-bottom-of-the-page
 
@@ -220,9 +214,7 @@ print("Python says ``Hello!''")
 
 \section{Non-abelian gauge theories}
 
-\label{sec:gauge_theories}
-
-Let's consider a set of $N$ complex independent Dirac spinors
+Let's consider a set of $N$ Dirac spinors
 
 \begin{align*}
     \psi(x) = \begin{pmatrix}
@@ -232,317 +224,60 @@ Let's consider a set of $N$ complex independent Dirac spinors
     \end{pmatrix},
 \end{align*}
 
-where every $\psi_a(x)$, $a \in \{1, \dots N\}$, has $4$ components accessed via spinor index $\alpha \in \{1, \dots 4\}$. Therefore we have a set of complex Grassmann-valued fields $\psi_{a}^{\alpha}(x)$, $a$ is called the \df{color index}, $\alpha$ is called the \df{spinor index}. Such a field theory that is invariant under the gauge group $SU(N)$ has to introduce a (massless) vectorial field $A_{\mu}(x)$, called the \df{gauge field}. It makes sense to demand the theory to be invariant under $SU(N)$, because basic quantum mechanics tells us that the phases are unobservable. Let's introduce the local gauge transformation under which we want the theory to be invariant
-
-\begin{align*}
-    \psi(x) \longrightarrow V(x) \psi(x),
-\end{align*}
-
-with $V(x) \in SU(N)$ unitary. The Lagrangian of the theory inevitably contains derivatives of these fields and since the transformation is local (different for every spacetime point $x$), we have to redefine a derivative that compensates for this. The derivative in arbitrary direction $n^{\mu}$ is
-
-\begin{align*}
-    n^{\mu} \partial_{\mu} \psi(x) = \lim_{\epsilon \to 0} \frac{ \psi(x + n \epsilon) - \psi(x) }{\epsilon}.
-\end{align*}
-
-The two fields appearing in this expression are evaulated at different spacetime points and thus transform differently under $V(x)$. In order for the kinetric expression in the Lagrangian $n^{\mu} \partial_{\mu}$ to be invariant under $SU(N)$, we introduce a \df{compensator field} $U(x,y)$, a scalar quantity that transforms under $SU(N)$ as
-
-\begin{align*}
-    U(x,y) \longrightarrow V(x) U(x,y) V^{\dagger}(y).
-\end{align*}
-
-$U(x,y)$ is a element of $SU(N)$ as well, with $U(x,x) = id$. We then redefine the derivative as
-
-\begin{align}
-    n^{\mu} D_{\mu} \psi(x) = \lim_{\epsilon \to 0} \frac{ \psi(x + n \epsilon) - U(x + n \epsilon, x) \psi(x) }{\epsilon}, \label{eq:cov_derivative1}
-\end{align}
-
-to compensate for the shift in $x$. We can Taylor-expand $U(x + n \epsilon, x)$ around $\epsilon = 0$ and find
-
-\begin{align*}
-    U(x + n \epsilon, x) &\approx U(x,x) + \frac{1}{1!} \frac{ \partial U }{ \partial x^{\mu} } \frac{ \partial (x^{\mu} + n^{\mu} \epsilon) }{ \partial \epsilon } \Biggr \rvert_{\epsilon = 0} \cdot \epsilon + O(\epsilon^2) \\
-    &= id + \frac{ \partial U }{ \partial x^{\mu} } \Biggr \rvert_{\epsilon = 0} n^{\mu} \epsilon + O(\epsilon^2) \\
-    &= id - i g \epsilon n^{\mu} A_{\mu}^a(x) T^a + O(\epsilon^2), \numberthis \label{eq:compensator1}
-\end{align*}
-
-where we introduced real-valued vectorial fields $A_{\mu}^a(x)$\footnote{$A_{\mu}^a(x)$ is an auxiliary field that is the infinitesimal limit of a compensator field, also called \df{connection}}, an arbitrary constant $g \in \mathbb{R}_{>0}$ and the generators $T^a \in su(N)$, the Lie-algebra of $SU(N)$. The fields $A_{\mu}^a(x)$ are defined by
-
-\begin{align*}
-    \frac{ \partial U }{ \partial x^{\mu} } \Biggr \rvert_{\epsilon = 0} \eqqcolon -ig A_{\mu}^a(x) T^a.
-\end{align*}
-
-Since $C_{x,n}(t) \coloneqq U(x + n t, x)$ for every $x$ and $n$ is a curve in $SU(N)$ going through $id$ at $t = 0$, its derivative evaluated at $t = 0$ is therfore an element of the Lie-algebra $su(N)$. Inserting this into \eqref{eq:cov_derivative1}
-
-\begin{align*}
-    n^{\mu} D_{\mu} \psi(x) &= \lim_{\epsilon \to 0} \frac{ \psi(x + n \epsilon) - \psi(x) + i g \epsilon n^{\mu} A_{\mu}^a(x) T^a \psi(x) }{\epsilon} \\
-    &= \lim_{\epsilon \to 0} \frac{ \psi(x + n \epsilon) - \psi(x) }{\epsilon} + ig n^{\mu} A_{\mu}^a(x) T^a \psi(x) \\
-    &= n^{\mu} \left( \partial_{\mu} + ig A_{\mu}^a(x) T^a \right) \psi(x),
-\end{align*}
-
-leads directly to the \df{gauge covariant derivative}
-
-\begin{align}
-    D_{\mu} = \partial_{\mu} + ig A_{\mu}^a(x) T^a. \label{eq:cov_derivative}
-\end{align}
-
-Since we introduced a new field and by this a corresponding particle, in order for the particle to have a propagator, we also have to implement a kinetic term. Obviously the kinetic term should be invariant under $SU(N)$ transformations. For this we need the plaquette\footnote{There are other (probably simpler and more elegant) methods to derive a kinetic term for the gauge fields, but the plaquette will arise again later in the context of lattice gauge theories. And as a physicist sometimes one has to go though some pain and suffer a little bit here and there - this is part of the game.}.
-
-\begin{definition}[Plaquette]
-
-Let $n_1 \neq n_2$ be two 4-vectors and $\epsilon > 0$. The \df{plaquette} (see figure \ref{fig:plaquette}) in the $(n_1, n_2)$-subspace is defined as 
-
-\begin{align}
-    \hat{U}(\epsilon,x) \coloneqq U(x, x + \epsilon n_2) U(x + \epsilon n_2, x + \epsilon n_2 + \epsilon n_1) U(x + \epsilon n_2 + \epsilon n_1, x + \epsilon n_1) U(x + \epsilon n_1, x).
-\end{align}
-
-\begin{figure}[H]
-  \centering
-  %\includestandalone[]{schemes/plaquette}
-  \subimport{schemes/}{plaquette}
-  \caption{Scheme of the plaquette $\hat{U}(\epsilon,x)$ in the $(n_1, n_2)$-subspace.}
-  \label{fig:plaquette}
-\end{figure}
-
-\end{definition}
-
-The plaquette $\hat{U}(\epsilon,x)$ is not invariant under $SU(N)$, but its trace over color space $tr(\hat{U}(\epsilon,x))$ is, because of the cyclicity of the trace. Using equation \eqref{eq:compensator1}, we can write
-
-\begin{align*}
-    U(x, y) &= \exp(-ig (x-y)^{\mu} A_{\mu}^a(\frac{x+y}{2}) T^a +  O((x-y)^2) ).
-\end{align*}
-
-We Taylor-expand $\hat{U}(\epsilon,x)$ around $\epsilon = 0$ and use results from theorem \ref{thm:plaquette} from the Appedix,
-
-\begin{align*}
-    \hat{U}(\epsilon,x) &= \frac{1}{0!} \hat{U}(0,x) + \frac{1}{1!} \frac{ \partial \hat{U} }{ \partial \epsilon } \Biggr \rvert_{\epsilon = 0} \cdot \epsilon + \frac{1}{2!} \frac{ \partial^2 \hat{U} }{ \partial \epsilon^2 } \Biggr \rvert_{\epsilon = 0} \cdot \epsilon^2 + O(\epsilon^3) \\
-    &= id + \frac{1}{2!} \epsilon^2 2 (-ig)^2 n_1^{\nu} A_{\nu}^b(x) n_2^{\mu} A_{\mu}^c(x) [T^c, T^b] \\
-    &+ \frac{1}{2!} \epsilon^2 2 (+n_1)^{\nu} (-ig) n_2^{\mu} \frac{ \partial A_{\mu}^a(x) }{ \partial x^{\nu} } T^a \\
-    &+ \frac{1}{2!} \epsilon^2 2 (-n_2)^{\nu} (-ig) n_1^{\mu} \frac{ \partial A_{\mu}^a(x) }{ \partial x^{\nu} } T^a + O(\epsilon^3) \\
-    &= id -ig \epsilon^2 [ \partial_1 A_2^a(x) T^a - \partial_2 A_1^a T^a  -ig A_1^b(x) A_2^c(x) i f^{cba} T^a ] \\
-    &= id -ig \epsilon^2 [ \underbrace{\partial_1 A_2^a(x) - \partial_2 A_1^a + g f^{abc} A_1^b(x) A_2^c(x)}_{ \eqqcolon F_{12}^a } ] T^a \\
-\end{align*}
-
-where we used the totally anti-symmetric \df{structure constants} of the Lie-algebra defined as $[T^a,T^c] = i f^{abc}T^c$. The expression in the square bracket of the last line is what we define as the \df{Yang-Mills field strength tensor}
-
-\begin{align}
-    F_{\mu \nu}^a = \partial_{\mu} A_{\nu}^a(x) - \partial_{\nu} A_{\mu}^a + g f^{abc} A_{\mu}^b(x) A_{\nu}^c(x). \label{eq:ymtensor}
-\end{align}
-
-The field strength tensor transforms in the same way as the plaquette $\hat{U}(\epsilon,x)$, thus the trace over $F_{\mu \nu}^a T^a$ in color space is invariant under $SU(N)$ transformations. In order to be Lorentz-invariant as well, we need to contract the indices and obtain (using the (arbitrary) normalisation convention $tr(T^a T^b) = \frac{1}{2} \delta^{ab}$)
-
-\begin{align}
-    tr( F_{\mu \nu}^a T^a F^{\mu \nu, b} T^b) &= F_{\mu \nu}^a F^{\mu \nu, b} tr(T^a T^b) \\
-    &= \frac{1}{2} F_{\mu \nu}^a F^{\mu \nu, a}.
-\end{align}
-
-The quadratic terms in the Lagrangian are always of the form $-\frac{1}{2} (\text{field})^2$. To honor this convention, we finally end up in an $SU(N)$-invariant Lagrangian, the \df{Yang-Mills Lagrangian} including the fermion part, of the form
-
-\begin{align}
-    \mathcal{L} = -\frac{1}{4} F_{\mu \nu}^a F^{\mu \nu, a} + \bar{\psi} \left( i \slashed{D} - m \right) \psi. \label{eq:ymlagrangian}
-\end{align}
-
-Where the \df{Dirac-adjoint} is defined as $\overline{\psi} = \psi i \gamma^0$ and $\slashed{D} = \gamma^{\mu} D_{\mu}$ is the \df{Feynman slash notation}. Just as in the abelian theory, there is no mass-term for the gauge fields, because this would violate the $SU(N)$-invariance. The fundamental particle which is represented by the field is therefore massless. The constant $g$ can be interpreted as \df{coupling constant}. The terms in the above Lagrangian are actually the only ones that can appear, if we demand the spacetime to have $D=4$ dimensions and parity- (P) and time-reversal- (T) invariance. The gauge part of the Lagrangian employs interactions among the gauge fields, namely the theory is equipped with 3- and 4-vertices.
+where $\psi_a(x)$, $a \in \{1, \dots N\}$, has spinor index $\alpha \in \{1, \dots 4\}$. Therefore we have a set of complex Grassmann-valued fields $\psi_{a}^{\alpha}(x)$. $a$ is called the color index. Such a field theory that is invariant under the gauge group $SU(N)$ has to introduce a gauge field $A$. TODO
 
 \begin{comment}
 TODO:
 non-abelian, hadronic physics, importance, renormalization problems, running coupling, pert theory in high enery phsyics, not in low energy regime
 \end{comment}
 
-\section{Lattice Gauge Theories}
+\section{lattice Gauge Theories}
 
-Non-abelian gauge theories with a certain number of fundamental fermionic particles can have the property of asymptotic freedom, meaning that the strength of the interaction becomes asymptotically weak as the distance between elementary particles decreases and the energy scale increases. Perturbatively such theories can only be treated in the high energy scale, where the running coupling constant is small to allow perturbative expansion of the problem. Conseqently at low energies, the interaction is strong leading to confinement. Lattice gauge theory is a non-perturbative approach to deal with aforementioned theories in the low energy regime by discretizing the problem on a finite spacetime lattice. The finiteness of the lattice volume results in a momentum cutoff at $1/a$ curing IR-divergencies, where $a$ is the \df{lattice spacing} (also called the \df{lattice constant}). Also, the finiteness of the lattice spacing on the other hand results in a cutoff at $a$ curing UV-divergencies. Lattice discretization of a field theory therefore acts as a regularization scheme.
+Non-abelian gauge theories with a certain number of fundamental fermionic particles can have the property of asymptotic freedom, meaning that the strength of the interaction becomes asymptotically weak as the distance between elementary particles decreases and the energy scale increases. Perturbatively such theories can only be treated in the high energy scale, where the running coupling constant is small to allow perturbative expansion of the problem. Conseuqently at low energies, the interaction is strong leading to confinement. Lattice gauge theory is a non-perturbative approach to deal with aforementioned theories in the low energy regime by discretizing the problem on a finite spacetime lattice. The finiteness of the lattice volume results in a momentum cutoff at $1/a$ curing IR-divergencies, where $a$ is the lattice spacing (also called the lattice constant). Also, the finiteness of the lattice spacing on the other hand results in a cutoff at $a$ curing UV-divergencies. Lattice discretization of a field theory therefore acts as a regularization scheme.
 
-\subsection{Euclidean theory}
+Starting from the Yang-Mills continuum Lagrangian in Minkowski spacetime
 
-Starting from the continuum Yang-Mills Lagrangian in Minkowski $D$-dimensional spacetime (the superscript $M$ stands for Minkowski, see equation \eqref{eq:ymlagrangian})
+\begin{align*}
+    \mathcal{L}_M = TODO + \bar{\psi} \left( i \slashed{D} - m \right) \psi,
+\end{align*}
+
+where for simplicity there is only one fundamental Dirac spinor field with mass $m$, the Dirac-adjoint is defined as $\bar{\psi} = \psi i \gamma^0$, $\slashed{D} = \gamma^{\mu} D_{\mu}$ is the Feynman slash notation, $D_{\mu} = \partial_{\mu} + ig A_{\mu}^a(x) T^a$ is the gauge covariant derivative\footnote{We use the particle physics convention of the metric tensor $\eta_{\mu \nu}$ with signature $(+,-,-,-)$}, $T^a$ are the generators of the Lie-algebra of the gauge group and $A_{\mu}^a(x)$ are the (massless) gauge fields. The $\gamma$-matrices obey the Cifford-algebra
+
+\begin{align*}
+    \{\gamma^{\mu}, \gamma^{\nu}\} = 2 \eta^{\mu \nu} \cdot id.
+\end{align*}
+
+The (Minkowski) action as usual is defined as
+
+\begin{align*}
+    \mathcal{S}_M = \int d^4x \mathcal{L}_M.
+\end{align*}
+
+We perform a Wick-rotation to obtain the Euclidean lagrangian and action. This is done, because in the Wick rotation in the path integral formulation translates as $e^{i \mathcal{S}_M} \to e^{-\mathcal{S}_E}$. The Euclidean path integral is then in the form of a classical statistical mechanics model, enabling us to interpret $e^{-S_E}$ as probability distribution.
+
+The Minkowski metric $\eta^{\mu \nu}$ becomes Euclidean if - through analytic continuation - we restrict the time coordinate to take imaginary values. The substitution is
 
 \begin{align}
-    \mathcal{L}_{YM}^M = \mathcal{L}_G^M + \mathcal{L}_F^M, \label{eq:cont_ym_lagrangian}
+    t \to i \tau, \label{eq:wick}
 \end{align}
 
-with fermion- (F) and gauge-part (G)
+
+where (real) $t$ is the Minkowski time coordinate and the real number $\tau$ is the Euclidean time coordinate. We have to take care when transforming the fields and derivatives to Euclidean spacetime. The fields transform as ($k \in \{1, 2, 3\}$)
 
 \begin{align*}
-    \mathcal{L}_F^M &= \bar{\psi} \left( i \slashed{D} - m \right) \psi, \\
-    \mathcal{L}_G^M &= - \frac{1}{4} F_{\mu \nu}^a F_a^{\mu \nu},
-\end{align*}
-
-where - for simplicity - there is only one fundamental Dirac spinor field with mass $m$, $D_{\mu} = \partial_{\mu} + ig A_{\mu}^a(x) T^a$ is the \df{gauge covariant derivative}\footnote{We use the particle physics convention of the metric tensor $\eta_{\mu \nu}$ with signature $(+,-,\dots,-)$. In $D=4$ dimensions, $\eta_{\mu \nu} = \mathrm{diag}(+1, -1, -1, -1)_{\mu \nu}$} (see equation \eqref{eq:cov_derivative}), $T^a$ are the generators of the Lie-algebra of the gauge group and $A_{\mu}^a(x)$ are the (massless) gauge fields introduced in the previous section \ref{sec:gauge_theories}. The (color) index $a$ runs from $1$ to $N^2-1$, where $N$ is degree of the special unitary symmetry group $SU(N)$. The \df{field strength tensor} is defined as (see equation \eqref{eq:ymtensor})
-
-\begin{align*}
-    F_{\mu \nu}^a = \partial_{\mu} A_{\nu}^a - \partial_{\nu} A_{\mu}^a - g f_{abc} A_{\mu}^b A_{\nu}^c.
-\end{align*}
-
-The $\gamma$-matrices obey the \df{Cifford-algebra}
-
-\begin{align}
-    \{\gamma^{\mu}, \gamma^{\nu}\} = 2 \eta^{\mu \nu} \cdot id, \label{eq:cliff}
-\end{align}
-
-with $\mu,\nu \in \{0, 1, \dots, D-1\}$ and $id$ is the identity operator in spinor space.
-
-The (Minkowski) action is as usual defined as the integral over spacetime of the Lagrangian
-
-\begin{align*}
-    \mathcal{S}_{YM}^M = \int d^4x \mathcal{L}_{YM}^M.
-\end{align*}
-
-We perform a \df{Wick-rotation} to obtain the Euclidean Lagrangian and action. This is done, because the Wick rotation in path integral formulation translates as $e^{i \mathcal{S}^M} \to e^{-\mathcal{S}^E}$, where $\mathcal{S}^E$ is a positive real number. The Euclidean path integral is then in the form of a classical statistical mechanics model, enabling us to interpret $e^{-S^E}$ as probability density.
-
-The Minkowski metric $\eta^{\mu \nu}$ becomes Euclidean if - through analytic continuation - we restrict the time coordinate to take imaginary values. The substitution is (for covariant and contravariant vectors)
-
-\begin{align*}
-    t &\longrightarrow - i \tau, \\ \numberthis \label{eq:wick}
-    x^0 &\longrightarrow - i x^4, \\
-    x_0 &\longrightarrow + i x_4,
-\end{align*}
-
-
-where (real) $t$ is the Minkowski time coordinate and the real number $\tau$ is the Euclidean time coordinate. Equation \eqref{eq:wick} only holds in signarture $(+,-,\dots,-)$, else the signs in front of the $i$ would be opposite. The fields transform as well, and the transformed Euclidean fields take $\tau$ instead of $t$ as time coordinate. We have to take care when transforming the fields and derivatives to Euclidean spacetime. The spinor fields transform as
-
-\begin{align*}
-    \psi(\vec{x}, t) &\longrightarrow S \psi_E(\vec{x}, \tau) \\
-    \psi(\vec{x}, t)^{\dagger} &\longrightarrow \psi_E(\vec{x}, \tau)^{\dagger} S, \\
-\end{align*}
-
-where $S$ is a (invertible) matrix in spinor space and still has to be determined. Since the gauge fields are vector quantities, they transform under Wick-rotation just as the coordinates $x^0 \to -ix^4$ and $x^k \to x^k$ with $k \in \{1, 2, 3\}$, but the fields appear with lower indcies and are therefore covariant. In analogy to the spacetime components $x_0 \to ix_4$,
-
-\begin{align*}
-    A^{0,a}(\vec{x}, t) &\longrightarrow - i (A_E)^{4,a}(\vec{x}, \tau) \\
-    A_0^a(\vec{x}, t)   &\longrightarrow + i (A_E)_4^a(\vec{x}, \tau) \\
-    A_k^a(\vec{x}, t)   &\longrightarrow (A_E)_k^a(\vec{x}, \tau).
+    \psi(\vec{x}, t) &\to i \gamma^0 \psi_E(\vec{x}, \tau), \\
+    \psi(\vec{x}, t)^{\dagger} &\to \psi_E(\vec{x}, \tau)^{\dagger} i \gamma^0, \\
+    A_k^a(\vec{x}, t) T^a &\to (A_E)_k^a(\vec{x}, \tau) T^a, \\
+    A_0^a(\vec{x}, t) T^a &\to i (A_E)_4^a(\vec{x}, \tau) T^a.
 \end{align*}
 
 Notice that when in Minkowski space $\mu$ takes values $0, 1, 2, 3$, $\mu = 0$ being the time component, but when in Euclidean space $\mu$ takes values $1, 2, 3, 4$, where $\mu = 4$ is the time component. Directly from equation \eqref{eq:wick}, we obtain the rules for derivatives and integral measures
 
 \begin{align*}
-    dt = dx^0 &\longrightarrow - i d x^4 = - i d \tau, \\
-    dx^k &\longrightarrow dx^k, \\
-    \partial_t = \partial_0 &\longrightarrow i \partial_4 = i \partial_{\tau}, \\
-    \partial^0 &\longrightarrow - i \partial^4, \\
-    \partial_k &\longrightarrow \partial_k.
+    dt &\to i d \tau, \\
+    \partial_t = \partial_0 &\to i \partial_4 = i \partial_{\tau}.
 \end{align*}
 
-Let's first transform the fermion and interaction part of $\mathcal{L}_{YM}^M$ (we write the space and time components explicitly)
-
-\begin{align*}
-    \mathcal{L}_{F}^M &= \overline{\psi} \left( i \gamma^{\mu} \left( \partial_{\mu} + ig A_{\mu}^a T^a \right)  - m \right) \psi \\
-    &= \overline{\psi}(\vec{x},t) \left( i \gamma^{\mu} \partial_{\mu} - g \gamma^{\mu} A_{\mu}^a(\vec{x}, t) T^a - m \right) \psi(\vec{x},t) \\
-    &\stackrel{\text{WR}}{\longrightarrow} \psi_E^{\dagger}(\vec{x},\tau) S i \gamma^0 \left( i \gamma^0 i \partial_4 + i \gamma^k \partial_k - g \gamma^0 i (A_E)_4^a(\vec{x}, \tau) T^a - g \gamma^k (A_E)_k^a(\vec{x}, \tau) T^a - m \right) S \psi_E(\vec{x},\tau).
-\end{align*}
-
-We want in the Euclidean Lagrangian the term $\gamma_E^{\mu} \partial_{\mu}$ to appear with Euclidean versions of the $\gamma$-matrices. To fullfill these requirements, we need the following theorem.
-
-\begin{theorem}[Constructing the Euclidean Clifford algebra]
-
-Let $\gamma^{\mu}$ obey the Clifford algebra, equation \eqref{eq:cliff}. Let $S$ be an invertible operator in spinor space. Then the Euclidean $\gamma$-matrices defined as 
-
-\begin{align*}
-    \gamma_E^4 &\coloneqq S^{-1} \gamma^0 S \\
-    \gamma_E^k &\coloneqq i S^{-1} \gamma^k S.
-\end{align*}
-
-satisfy the Euclidean Clifford algebra
-
-\begin{align*}
-    \{\gamma_E^{\mu}, \gamma_E^{\nu}\} = 2 \delta^{\mu \nu} \cdot id,
-\end{align*}
-
-where $\delta^{\mu \nu}$ has signature $(+, +, \dots, +)$.
-
-\end{theorem}
-
-\begin{proof}
-
-It's straight forward to check the properties
-
-\begin{align*}
-    \{\gamma_E^4, \gamma_E^4\} &= \{ S^{-1} \gamma^0 S, S^{-1} \gamma^0 S \} \\
-    &= 2 S^{-1} \gamma^0 S S^{-1} \gamma^0 S \\
-    &= 2 S^{-1} \gamma^0 \gamma^0 S \\
-    &= S^{-1} \{\gamma^0, \gamma^0\} S \\
-    &= 2 \eta^{00} \cdot id \\
-    &= 2 \delta^{44} \cdot id.
-\end{align*}
-
-Let $k,l \in \{1, 2, 3\}$
-
-\begin{align*}
-    \{\gamma_E^k, \gamma_E^l\} &= \{ i S^{-1} \gamma^k S, i S^{-1} \gamma^l S \} \\
-    &= - \{ S^{-1} \gamma^k S, S^{-1} \gamma^l S \} \\
-    &= - S^{-1} \{\gamma^k, \gamma^l \} S \\
-    &= - S^{-1} 2 \eta^{kl} S \\
-    &= 2 \delta^{kl} \cdot id.
-\end{align*}
-
-And finally, let $k \in \{1, 2, 3\}$
-
-\begin{align*}
-    \{\gamma_E^4, \gamma_E^k\} &= \{ S^{-1} \gamma^0 S, i S^{-1} \gamma^k S \} \\
-    &= i S^{-1} \{\gamma^0, \gamma^l \} S  \\
-    &= 0.
-\end{align*}
-
-\end{proof}
-
-It remains to determine the operator $S$. Since the Wick rotation does not affect space coordinates $x^k$, it should also not rotate the space components of the $\gamma^k$ \cite{van1996}. It therefore makes sense to demand that the spatial $\gamma$-matrices commute with $S$ and the temporal one satisfies
-
-\begin{align*}
-    [S, \gamma^k] = 0, \\
-    S \gamma^0 = \gamma^0 S^{-1}.
-\end{align*}
-
-Using the above restriction, we end up in
-
-\begin{align*}
-    S &= e^{\frac{\theta}{2} \gamma^4 \gamma^5 }, \\
-    \gamma^4 &\coloneqq i \gamma^0, \\
-    \gamma^5 &\coloneqq \gamma^1 \gamma^2 \gamma^3 \gamma^4,
-\end{align*}
-
-Where $\theta$ is an arbitrary angle. Now we can replace the Minkowskian $\gamma$-matrices with the Euclidean ones.
-
-\begin{align*}
-\begin{split}
-    \mathcal{L}_{F}^M \stackrel{\text{WR}}{\longrightarrow}{}& \psi_E^{\dagger}(\vec{x},\tau) i \gamma^0 \Bigl[ - S^{-1} \gamma^0 S \partial_4 + i S^{-1} \gamma^k S \partial_k - m\\
-         & - i g S^{-1} \gamma^0 S (A_E)_4^a(\vec{x}, \tau) T^a - g S^{-1} \gamma^k S (A_E)_k^a(\vec{x}, \tau) T^a \Bigr] \psi_E(\vec{x},\tau)
-\end{split} \\
-\begin{split}
-    ={}& - \psi_E^{\dagger}(\vec{x},\tau) i \gamma^0 \Bigl[ (S^{-1} \gamma^0 S) \partial_4 - (i S^{-1} \gamma^k S) \partial_k + m\\
-         & + i g (S^{-1} \gamma^0 S) (A_E)_4^a(\vec{x}, \tau) T^a - i g (i S^{-1} \gamma^k S) (A_E)_k^a(\vec{x}, \tau) T^a \Bigr] \psi_E(\vec{x},\tau)
-\end{split} \\
-\begin{split}
-    ={}& - \overline{\psi}_E(\vec{x},\tau) \Bigl[ \gamma_E^4 \partial_4 + \gamma_E^k \partial_k + m \\
-         & + ig \gamma_E^4 (A_E)_4^a(\vec{x}, \tau) T^a + ig \gamma_E^k (A_E)_k^a(\vec{x}, \tau) T^a \Bigr] \psi_E(\vec{x},\tau)
-\end{split} \\
-\begin{split}
-    ={}& - \overline{\psi}_E(\vec{x},\tau) \Bigl[ \gamma_E^{\mu} \partial_{\mu} + m + ig \gamma_E^{\mu} (A_E)_{\mu}^a(\vec{x}, \tau) T^a \Bigr] \psi_E(\vec{x},\tau).
-\end{split} \\
-\begin{split}
-    ={}& - \overline{\psi}_E \Bigl[ \gamma_E^{\mu} \partial_{\mu} + m + ig \gamma_E^{\mu} (A_E)_{\mu}^a T^a \Bigr] \psi_E = - \mathcal{L}_E.
-\end{split}
-\end{align*}
-
-And we obtain the fermion and interaction part of the Euclidean Lagrangian $\mathcal{L}_E$. The action transforms as
-
-\begin{align*}
-    i \mathcal{S}_{F}^M &= i \int d^4x \mathcal{L}_{F}^M = i \int d^3\vec{x} dt \mathcal{L}_{F}^M \\
-    &\stackrel{\text{WR}}{\longrightarrow} - i \int d^3\vec{x} (-i d\tau) \mathcal{L}_{F}^E = - \int d^4x \mathcal{L}_{F}^E = - \mathcal{S}_{F}^E,
-\end{align*}
-
-as desired to model a probability density in the path integral. Next we look at the pure gauge Lagrangian $\mathcal{L}_{G}^M$. The trace over the field strength tensor transforms just as it is
-
-\begin{align*}
-    \mathcal{L}_G^M &= - \frac{1}{4} F_{\mu \nu}^a F_a^{\mu \nu} \\
-    &\stackrel{\text{WR}}{\longrightarrow} - \frac{1}{4} (F_E)_{\mu \nu}^a (F_E)_a^{\mu \nu} = - \mathcal{L}_G^E,
-\end{align*}
-
-because the Euclidean field strength tensor transforms trivally. It derives as
-
-\begin{align*}
-    (F_E)_{\mu \nu}^a = \partial_{\mu} (A_E)_{\nu}^a - \partial_{\nu} (A_E)_{\mu}^a - g f_{abc} (A_E)_{\mu}^b (A_E)_{\nu}^c.
-\end{align*}
-
-\subsection{Lattice-Discretisation}
 
 One usually uses the same lattice spacing $a$ in all spatial and time directions ($\hbar = 1$). Of importance is only that the value of $a$ is chosen small, because it determines to what length and time scale the system can be resolved. The limit $a \to 0$ is called the continuum limit.
 
@@ -550,8 +285,7 @@ The lattice is structured as follows.
 
 \begin{figure}[H]
   \centering
-  %\includestandalone[]{schemes/link_variable}
-  \subimport{schemes/}{link_variable}
+  \includestandalone[]{schemes/link_variable}
   \caption{TODO.}
   \label{fig:link_variable}
 \end{figure}
@@ -588,8 +322,7 @@ Floating point numbers are omnipresent in the scientific applications. In the \a
 The \df{IEEE 754 floating point format} \cite{ieee754_1985} is defined using the \df{number of exponent bits} $e$ and the \df{number of mantissa bits} $m$ respectivetly. A binary floating point number is illustrated in Figure \ref{fig:float}.
 
 \begin{figure}[H]
-  %\includestandalone[width=\textwidth]{schemes/float}
-  \resizebox{\textwidth}{!}{\subimport{schemes/}{float}}
+  \includestandalone[width=\textwidth]{schemes/float}
   \caption{Binary representation of a IEEE 754 $n$-bit precision floating-point number. The \textcolor{corange}{orange} bit represents the \textcolor{corange}{sign bit}, the \textcolor{cblue}{blue} bits represent the fixed-length \textcolor{cblue}{e exponent bits} and the \textcolor{cgreen}{green} bits represent the fixed-length \textcolor{cgreen}{m mantissa bits}. Notice that $n = \textcolor{corange}{1} + \textcolor{cblue}{e} + \textcolor{cgreen}{m}$.}
   \label{fig:float}
 \end{figure}
@@ -833,8 +566,7 @@ The posit datatype is designed to be a replacement for the IEEE floating point f
 The goal is to utilise the number of bits more efficiently and remove these inconsistencies. The key idea is to place half of all numbers between $0$ and $1$ and the other half are the reciprocals (the reciprocal of $0$ being $\pm \infty$). The number can then be drawn on a projective real number circle \cite{gustafson2017}. The structure of a binary posit number is illustrated in Figure \ref{fig:posit}.
 
 \begin{figure}[H]
-  %\includestandalone[width=\textwidth]{schemes/posit}
-  \resizebox{\textwidth}{!}{\subimport{schemes/}{posit}}
+  \includestandalone[width=\textwidth]{schemes/posit}
   \caption{Binary representation of a $n$-bit posit number. As with regular floats the \textcolor{corange}{orange} bit represents the \textcolor{corange}{sign bit}, the \textcolor{cyellow}{yellow} bit(s) represent the variable length \textcolor{cyellow}{regime bit(s)} terminated by the \textcolor{cbrown}{brown} bit that is the \textcolor{cbrown}{opposite regime bit}, the \textcolor{cblue}{blue} bit(s) represent the variable-length \textcolor{cblue}{exponent bit(s)} and the \textcolor{cgreen}{green} bit(s) represent the variable-length \textcolor{cgreen}{mantissa bit(s)}.}
   \label{fig:posit}
 \end{figure}
@@ -1777,8 +1509,7 @@ Domain decomposition is a way to partition the large system into (possibly many)
 
 \begin{figure}[H]
   \centering
-  %\includestandalone[]{schemes/domain_decomposition}
-  \subimport{schemes/}{domain_decomposition}
+  \includestandalone[]{schemes/domain_decomposition}
   \caption{$d=2$ dimensional example of a decomposition of a lattice $\Omega$ into domains named $\Omega_i$.}
   \label{fig:ddecomp}
 \end{figure}
@@ -1799,8 +1530,7 @@ Whereas the division into domains on the lattice is straightforward, the represe
 
 \begin{figure}[H]
   \centering
-  %\includestandalone[]{schemes/dd_matrix}
-  \subimport{schemes/}{dd_matrix}
+  \includestandalone[]{schemes/dd_matrix}
   \caption{Schematic of the Dirac-operator in term of a large sparse matrix. If the components of the black blocks are arranged such that they appear first, then the decomposition from figure \ref{fig:ddecomp} can be translated into a matrix with blocks as in the picture. $D_i$ describes the Dirac-operator restricted to block $i$ and $D_{\partial b}$ ($D_{\partial w}$) is the Dirac-operator restricted to the external boundaries of the black (white) blocks. The color external boundary operators can be decomposed into external boundary operators of the $i$-th block; $D_{\partial^{*}_i}$. The right side describes a vector decomposed into the same $2n$ domains $\psi_1, \dots, \psi_{2n}$. The upper half corresponds to the black blocks and the lower half to the white blocks.}
   \label{fig:ddecomp_matrix}
 \end{figure}
@@ -1872,7 +1602,7 @@ EO-reconditioning also in reduced precision?
 
 \begin{proposal}{Performing the MR steps on the GPU}{sap_mr_gpu}
 
-The preconditioning procedure involves \code{mnr} \acrfull{mr} steps to be taken on each block in each Schwarz cycle to approximate a solution to the block problem. Since blocks of the same color are independent on each other and the Dirac operator acting only on a specific block involves no communication whatsoever, we can conclude that the procedure of solving a subproblem is a problem \textit{local} to the block and self-contained in the sense that it can be solved independently and without MPI communication among ranks. This could be a very handy starting point when going towards GPU-utilisation. Once the souce vector and the restricted Dirac operator are transfered to the GPU (both stay constant during the solving process), the problem can be solved on the GPU without involving any communication with other ranks or GPUs. This can also be beneficial, because of the following argument: The local lattice of one single rank, can be subdivided into multiple blocks as well (imagine figure \ref{fig:ddecomp} being the local lattice). The actual implementation solves the gray (white) blocks in a local lattice sequentially\footnote{By iterating over the blocks, see \code{sap()} at line \num{717}ff in \code{modules/sap/sap.c} in \cite{openqxd}.}. Since all the gray (white) problems within the local lattice can be solved simulaneously, the code does not exploit the full concurrency potential of the procedure. Solving the subproblems on the GPU, one could launch \acrshort{mr} solvers on all gray blocks simultaneously followed by all white blocks. Keeping in mind proposal \ref{pp:sap_reduced_precision}, the \acrshort{mr} solver can be called in mixed or even reduced precision.
+The preconditioning procedure involves \code{mnr} \acrfull{mr} steps to be taken on each block in each Schwarz cycle to approximate a solution to the block problem. Since blocks of the same color are independent on each other and the Dirac operator acting only on a specific block involves no communication whatsoever, we can conclude that the procedure of solving a subproblem is a problem \textit{local} to the block and self-contained in the sense that it can be solved independently and without MPI communication among ranks. This could be a very handy starting point when going towards GPU-utilisation. Once the souce vector and the restricted Dirac operator are transfered to the GPU, the problem can be solved on the GPU without involving any communication with other ranks or GPUs. This can also be beneficial, because of the following argument: The local lattice of one single rank, can be subdivided into multiple blocks as well (imagine figure \ref{fig:ddecomp} being the local lattice). The actual implementation solves the gray (white) blocks in a local lattice sequentially\footnote{By iterating over the blocks, see \code{sap()} at line \num{717}ff in \code{modules/sap/sap.c} in \cite{openqxd}.}. Since all the gray (white) problems within the local lattice can be solved simulaneously, the code does not exploit the full concurrency potential of the procedure. Solving the subproblems on the GPU, one could launch \acrshort{mr} solvers on all gray blocks simultaneously followed by all white blocks. Keeping in mind proposal \ref{pp:sap_reduced_precision}, the \acrshort{mr} solver can be called in mixed or even reduced precision.
 
 For a specific implementation of the GPU-solver, one option is to encode the restricted Dirac-operator in one of the sparse matrix formats (for example \acrshort{csr}) and use already existing libraries (for example \cite{bell2008} for \acrshort{cuda}) for an application to a spinor. Comparing the implementation of the Dirac-operator in QUDA (see ref. \cite{clark2010}), it is advisable to not rely on such generic libraries, because they ignore further symmetries and structure of the operator. The problem lies mostly in the memory-boundedness of the procedure.
 
@@ -2114,11 +1844,11 @@ In the current version of openQxD \cite{openqxd}, the outer \acrshort{gcr} solve
 
 \label{sec:sap_gcr_results}
 
-The complete \acrshort{sapgcr} kernel was implemented using Python in the exact same way as the \code{fgcr()} function from the source code \footnote{See line 212ff in \code{modules/linsolv/fgcr.c} in \cite{openqxd}.}. The Dirac operator \code{Dop\_dble()} was extracted in the same way as for the \code{cgne()} kernel previously (see section \ref{sec:simulating_cgne}) using the same configuration. The python implementation contains a floating point datatype for the reduction variables separately (\code{rdtype}). It also accepts a "large" datatype (\code{ldtype}) by which the restart steps are calculated in and a "small" datatype (\code{sdtype}) in which the regular and the \acrshort{mr} steps are performed in. The result is obtained in terms of the "large" datatype. There are various configuration settings to choose from (see table \ref{tab:sap_gcr_settings}).
+The complete \acrshort{sapgcr} kernel was implemented using Python in the exact same way as the \code{fgcr()} function from the source code \footnote{See line 212ff in \code{modules/linsolv/fgcr.c} in \cite{openqxd}.}. The Dirac operator \code{Dop\_dble()} was extracted in the same way as for the \code{cgne()} kernel previously (see section \ref{sec:simulating_cgne}) using the same configuration. The python implementation contains a floating point datatype for the reduction variables separately (\code{rdtype}). It also accepts a "large" datatype (\code{ldtype}) by which the restart steps are calculated in and a "small" datatype (\code{sdtype}) in which the regular steps are performed in. The result is obtained in terms of the "large" datatype. There are various configuration settings to choose from (see table \ref{tab:sap_gcr_settings}).
 
 \begin{table}[H]
 \centering
-    \begin{tabular}{ |p{1.5cm}|p{6cm}|p{4.5cm}|  }
+    \begin{tabular}{ |p{2cm}|p{5cm}|p{5cm}|  }
         \hline
         setting & meaning & comment \\
         \hline\hline
@@ -2151,10 +1881,10 @@ The possible datatypes for \code{ldtype}, \code{rdtype} and \code{sdtype} are \g
 The following plot series should give an estimate on how much speed improvement can be expected for a GPU-implementation of the solver algorithm. The results should also hint on how to optimally choose the (many) parameters for the solver. It has to be kept in mind that the transfer of the Dirac-operator (full, boundary or blocked) is not part of the time measurements; it is assumed that the operators already reside on the correct places (CPU memory or GPU memory), only spinors are transfered back and forth. Figures \ref{fig:sap_gcr0} - \ref{fig:sap_gcr3} contain the measurements. Every datapoint represents the average of at least \num{20} runs of the \code{SAP\_GCR} kernel in the given configuration and Dirac-operator. The y-axis denotes the duration in seconds and the x-axis shows the configuration (\code{ncy}, \code{nmr}) as well as the block size (\code{bs}) increasing in computational effort per GCR-step from left to right.
 
 
-Two configurations are non-standard; $(n_{cy}, n_{mr}) = (0,0)$ and "adaptive". The former indicates no preconditioning (thus a pure \acrshort{gcr} run) and in the latter configuration the parameters $n_{cy}$, $n_{mr}$ where chosen automatically in every iteration anew, the block size was chosen to be the largest possible. The adaptive choice was done as follows: If - after a Schwarz-cycle - the norm of the residual is not lower than the previous residual norm, the preconditioning phase is exited. Thus, at least one Scharz-cycle is performed. A similar strategy is applied to determine the number of MR-steps: if - after at least \num{4} MR-steps - the norm of the blocked residual is larger than \num{0.9} times the previous residual norm, the MR-solver of that block exits. So, every block is treated differently in every cycle. A maximum of \num{20} Schwarz-cycles and \num{20} MR-steps on each block would be performed if the above exit conditions will never kick in. Therefore the adaptive version tries to find the optimal configuration in every step and every block separately.
+Two configurations are non-standard; $(n_{cy}, n_{mr}) = (0,0)$ and "adaptive". The former indicates no preconditioning and in the latter configuration the parameters $n_{cy}$, $n_{mr}$ where chosen automatically in every iteration anew, the block size was chosen to be the largest possible. The adaptive choice was done as follows: If - after a Schwarz-cycle - the norm of the residual is not lower than the previous residual norm, the preconditioning phase is exited. Thus, at least one Scharz-cycle is performed. A similar strategy is applied to determine the number of MR-steps: if - after at least \num{4} MR-steps - the norm of the blocked residual is larger than \num{0.9} times the previous residual norm, the MR-solver of that block exits. So, every block is treated differently in every cycle. A maximum of \num{20} Schwarz-cycles and \num{20} MR-steps would be performed if the above exit conditions will never kick in.
 
 
-The colors denote the datatype setup (\code{ldtype}, \code{rdtype}, \code{sdtype}) and the marker symbols indicate whether the calculation was performed purely on the CPU (circles; \textcolor{cbrown}{$\circ$}, \textcolor{cred}{$\circ$}, \textcolor{cblue}{$\circ$}), purely on the GPU (crosses; \textcolor{cbrown}{$\times$}, \textcolor{cred}{$\times$}, \textcolor{cblue}{$\times$}) or a hybrid variant, where only the MR-steps are calculated on the GPU and the remainder on the CPU, see proposal \ref{pp:sap_mr_gpu} (diamonds; \textcolor{cbrown}{$\diamond$}, \textcolor{cred}{$\diamond$}, \textcolor{cblue}{$\diamond$}). All combinations of the above configurations are present in the plots. The different plots show results from different matrices. \num{2} matrices where extracted directly from a run of openQxD (\code{sf\_no\_cstar\_8x8x8x8} and \code{sf\_no\_cstar\_16x16x16x16}), whereas \num{2} further matrices where taken from \cite{davis2011}. The matrix \code{conf6\_0-8x8-2} taken from \cite{davis2011} has a parameter $0 \le k \le k_c$. The closer $k$ is to its critical value $k_c$ the worse the matrix is conditioned. The used values for $k$ and $k_c$ are given in the title of the plots. The relative residual was chosen to be $10^{-6}$ and the number of GCR-steps until restart \code{nkv=7}.
+The colors denote the datatype setup (\code{ldtype}, \code{rdtype}, \code{sdtype}) and the marker symbols indicate whether the calculation was performed purely on the CPU (circles; \textcolor{cbrown}{$\circ$}, \textcolor{cred}{$\circ$}, \textcolor{cblue}{$\circ$}), purely on the GPU (crosses; \textcolor{cbrown}{$\times$}, \textcolor{cred}{$\times$}, \textcolor{cblue}{$\times$}) or a hybrid variant, where only the MR-steps are calculated on the GPU and the rest on the CPU, see proposal \ref{pp:sap_mr_gpu} (diamonds; \textcolor{cbrown}{$\diamond$}, \textcolor{cred}{$\diamond$}, \textcolor{cblue}{$\diamond$}). All combinations of the above configurations are present in the plots. The different plots show results from different matrices. \num{2} matrices where extracted directly from a run of openQxD (\code{sf\_no\_cstar\_8x8x8x8} and \code{sf\_no\_cstar\_16x16x16x16}), whereas \num{2} further matrices where taken from \cite{davis2011}. The matrix \code{conf6\_0-8x8-2} taken from \cite{davis2011} has a parameter $0 \le k \le k_c$. The closer $k$ is to its critical value $k_c$ the worse the matrix is conditioned. The used values for $k$ and $k_c$ are given in the title of the plots. The relative residual was chosen to be $10^{-6}$ and the number of GCR-steps until restart \code{nkv=7}.
 
 \begin{figure}
     \centering
@@ -2778,45 +2508,6 @@ TODO
 \section*{Appendices}
 \addcontentsline{toc}{section}{Appendices}
 \renewcommand{\thesubsection}{\Alph{subsection}}
-
-\subsection{Proofs}
-\label{sec:proofs}
-
-\begin{theorem}[Plaquette]
-
-\label{thm:plaquette}
-
-Let a function $F(x)$ be defined as 
-
-\begin{align*}
-    F_x(\epsilon) \coloneqq e^{-\epsilon f(x + \epsilon a)} e^{-\epsilon g(x + \epsilon b)} e^{\epsilon f(x + \epsilon c)} e^{\epsilon g(x+ \epsilon d)},
-\end{align*}
-
-where $x,a,b,c,d$ are $4$-vectors and $f(x),g(x)$ are non commuting functions of $x$. Then the derivatives of $F_x(\epsilon)$ are
-
-\begin{align}
-    \frac{ \partial F_x }{ \partial \epsilon } \Biggr \rvert_{\epsilon = 0} &= 0 \label{eq:deriv_plaq1} \\
-    \frac{ \partial^2 F_x }{ \partial \epsilon^2 } \Biggr \rvert_{\epsilon = 0} &= 2[f(x),g(x)] + 2[ (c-a)^{\mu}f^{\prime}_{\mu}(x) + (d-b)^{\mu}g^{\prime}_{\mu}(x) ], \label{eq:deriv_plaq2}
-\end{align}
-
-where a short-hand notation for the derivatives was used; $f^{\prime}_{\mu}(x) \coloneqq \frac{ \partial f }{ \partial x^{\mu} } \bigg \rvert_{x}$.
-
-\end{theorem}
-
-\begin{proof}
-
-Starting with equation \eqref{eq:deriv_plaq1},
-
-\begin{align*}
-    \frac{ \partial F_x }{ \partial \epsilon } \Biggr \rvert_{\epsilon = 0} &= F_x(\epsilon) [ - \epsilon a^{\mu} f^{\prime}_{\mu}(x + \epsilon a) - f(x + \epsilon a) - \epsilon b^{\mu} g^{\prime}_{\mu}(x + \epsilon b) - g(x + \epsilon b) \\
-    &+ \epsilon c^{\mu} f^{\prime}_{\mu}(x + \epsilon c) + f(x + \epsilon c) + \epsilon d^{\mu} g^{\prime}_{\mu}(x + \epsilon d) + g(x + \epsilon d) ] \bigg \rvert_{\epsilon = 0} \\
-    &= [-f(x) - g(x) + f(x) + g(x)] \\
-    &= 0.
-\end{align*}
-
-TODO: second derivative.
-
-\end{proof}
 
 \subsection{Code}
 \label{sec:code}

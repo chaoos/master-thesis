@@ -1,0 +1,35 @@
+\documentclass{standalone}
+\thispagestyle{empty}
+\usepackage{tikz}
+\usetikzlibrary{decorations.markings}
+
+% definition of all the colors
+\usepackage{xcolor}
+\input{../include/colors.tex}
+
+\begin{document}
+\begin{tikzpicture}
+
+\def\step{2}
+\node[circle,inner sep=0pt,minimum size=0pt,label=below left :{$x$}] (A) at ( \step*0, \step*0 ) {};
+\node[circle,inner sep=0pt,minimum size=0pt,label=below right:{$x + n_2 \epsilon$}] (B) at ( \step*1, \step*0 ) {};
+\node[circle,inner sep=0pt,minimum size=0pt,label=above right:{$x + n_2 \epsilon + n_1 \epsilon$}] (C) at ( \step*1, \step*1 ) {};
+\node[circle,inner sep=0pt,minimum size=0pt,label=above left :{$x + n_1 \epsilon$}] (D) at ( \step*0, \step*1 ) {};
+
+\begin{scope}[thick,decoration={
+    markings,
+    mark=at position 0.5 with {\arrow{>}}}
+    ] 
+    \draw[postaction={decorate}] (A)--(B);
+    \draw[postaction={decorate}] (B)--(C);
+    \draw[postaction={decorate}] (C)--(D);
+    \draw[postaction={decorate}] (D)--(A);
+\end{scope}
+
+\draw[->] (-4,0) -- (-4,1) node[midway,left]  {$n_1$};
+\draw[->] (-4,0) -- (-3,0) node[midway,below] {$n_2$};
+
+\node[circle,inner sep=0pt,minimum size=0pt] (E) at ( 6,0 ) {};
+
+\end{tikzpicture}
+\end{document}
