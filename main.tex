@@ -222,6 +222,8 @@ print("Python says ``Hello!''")
 
 \label{sec:gauge_theories}
 
+The goal of this section is to derive a Lagrangian descibing fundamental fermions that is Lorentz-invariant (coming from special relativity) as well as invariant under local phase-transformations (coming from basic quantum mechanics).
+
 Let's consider a set of $N$ complex independent Dirac spinors
 
 \begin{align*}
@@ -232,39 +234,76 @@ Let's consider a set of $N$ complex independent Dirac spinors
     \end{pmatrix},
 \end{align*}
 
-where every $\psi_a(x)$, $a \in \{1, \dots N\}$, has $4$ components accessed via spinor index $\alpha \in \{1, \dots 4\}$. Therefore we have a set of complex Grassmann-valued fields $\psi_{a}^{\alpha}(x)$, $a$ is called the \df{color index}, $\alpha$ is called the \df{spinor index}. Such a field theory that is invariant under the gauge group $SU(N)$ has to introduce a (massless) vectorial field $A_{\mu}(x)$, called the \df{gauge field}. It makes sense to demand the theory to be invariant under $SU(N)$, because basic quantum mechanics tells us that the phases are unobservable. Let's introduce the local gauge transformation under which we want the theory to be invariant
+where every $\psi_a(x)$, $a \in \{1, \dots N\}$, has $4$ components accessed via spinor index $\alpha \in \{1, \dots 4\}$. We have a set of complex Grassmann-valued fields $\psi_{a}^{\alpha}(x)$, $a$ is called the \df{color index}, $\alpha$ is called the \df{spinor index}. It makes sense to demand the theory to be invariant under $SU(N)$-transformations, because basic quantum mechanics tells us that these phases are unobservable. Such a field theory that is invariant under the gauge group $SU(N)$ has to introduce (massless) vectorial fields $A_{\mu}(x)$, called the \df{gauge fields}. From special relativity, we also demand the theory to be Lorentz-invariant. The goal is to construct a Lagrangian for fermionic fields that satisfies these symmetries.
+
+Let's introduce the local\footnote{The phase depends on the spacetime coordinate $x$.} gauge transformation under which we want the theory to be invariant
 
 \begin{align*}
     \psi(x) \longrightarrow V(x) \psi(x),
 \end{align*}
 
-with $V(x) \in SU(N)$ unitary. The Lagrangian of the theory inevitably contains derivatives of these fields and since the transformation is local (different for every spacetime point $x$), we have to redefine a derivative that compensates for this. The derivative in arbitrary direction $n^{\mu}$ is
+with $V(x) \in SU(N)$ unitary. Since we want our fermions to posses a non-zero mass, the Lagrangian will contain a term quadratic in the field $\psi$. A first approach of a $SU(N)$-invariant expression would be a term proportional to $\psi^{\dagger} \psi$. Unfortunately $\psi$ is Grassmann valued, thus anti-commutes with itself, meaning the mentioned term is equal to zero\footnote{To be pedantic, $0$ \textit{is} $SU(N)$-invariant.}. Special relativity also demands the term to be a Lorentz-scalar, which $\psi^{\dagger} \psi$ is not. Under Lorentz-tranformation $\Lambda$, $\psi$ and $\psi(x)^{\dagger}$ transform as
+
+\begin{align*}
+    \psi(x) &\longrightarrow \Lambda \psi(x), \\
+    \psi(x)^{\dagger} &\longrightarrow \psi(x)^{\dagger} \Lambda^{\dagger}.
+\end{align*}
+
+We can use a property of the $\gamma$-matrices here. The $\gamma$-matrices are defined such that they obey the \df{Clifford-algebra}
+
+\begin{align}
+    \{\gamma^{\mu}, \gamma^{\nu}\} = 2 \eta^{\mu \nu} \cdot id, \label{eq:cliff}
+\end{align}
+
+with $\mu,\nu \in \{0, 1, \dots, D-1\}$, where $D$ is the spacetime dimension and $id$ is the identity operator in spinor space. The needed property of the $\gamma$-matrices is
+
+\begin{align*}
+    \Lambda^{\dagger} \gamma^{\mu} = \gamma^{\mu} \Lambda^{-1}.
+\end{align*}
+
+With this, it makes sense to define the \df{Dirac-adjoint} as $\overline{\psi} \coloneqq \psi i \gamma^0$ and construct a Lorentz- and $SU(N)$-invariant quadratic expression $c \overline{\psi} \psi$, with $c \in \mathbb{C}$.
+
+The Lagrangian of the theory inevitably contains derivatives of $\psi$ and since the transformation is local (different for every spacetime point $x$), we have to redefine a derivative that compensates for this. The \df{directional derivative} along direction $n$ is
 
 \begin{align*}
     n^{\mu} \partial_{\mu} \psi(x) = \lim_{\epsilon \to 0} \frac{ \psi(x + n \epsilon) - \psi(x) }{\epsilon}.
 \end{align*}
 
-The two fields appearing in this expression are evaluated at different spacetime points and thus transform differently under $V(x)$. In order for the kinetic expression in the Lagrangian $n^{\mu} \partial_{\mu}$ to be invariant under $SU(N)$, we introduce a \df{compensator field} $U(x,y)$, a scalar quantity that transforms under $SU(N)$ as
+The two fields appearing in this expression are evaluated at different spacetime points and thus transform differently under $V(x)$. In order for the kinetic expression in the Lagrangian $n^{\mu} \partial_{\mu}$ to be invariant under $SU(N)$, we introduce a compensator for the shifts in the derivative.
+
+\begin{definition}[Compensator field]
+
+The \df{compensator field} $U(x,y)$ is a non-local marix quantity that transforms under $V(x) \in SU(N)$ as
 
 \begin{align*}
     U(x,y) \longrightarrow V(x) U(x,y) V^{\dagger}(y).
 \end{align*}
 
-$U(x,y)$ is a element of $SU(N)$ as well, with $U(x,x) = id$. We then redefine the derivative as
+$U(x,y)$ is a element of $SU(N)$ for all $x,y$, with $U(x,x) = id$.
+
+\end{definition}
+
+We then redefine the derivative as
 
 \begin{align}
     n^{\mu} D_{\mu} \psi(x) = \lim_{\epsilon \to 0} \frac{ \psi(x + n \epsilon) - U(x + n \epsilon, x) \psi(x) }{\epsilon}, \label{eq:cov_derivative1}
 \end{align}
 
-to compensate for the shift in $x$. We can Taylor-expand $U(x + n \epsilon, x)$ around $\epsilon = 0$ and find
+to compensate for the shift in $x$. Now, the derivative transforms as
 
 \begin{align*}
-    U(x + n \epsilon, x) &\approx U(x,x) + \frac{1}{1!} \frac{ \partial U }{ \partial x^{\mu} } \frac{ \partial (x^{\mu} + n^{\mu} \epsilon) }{ \partial \epsilon } \Biggr \rvert_{\epsilon = 0} \cdot \epsilon + O(\epsilon^2) \\
+    n^{\mu} D_{\mu} \psi(x) \longrightarrow n^{\mu} V(x) D_{\mu} \psi(x).
+\end{align*}
+
+We can Taylor-expand $U(x + n \epsilon, x)$ around $\epsilon = 0$ and find
+
+\begin{align*}
+    U(x,x + n \epsilon) &\approx U(x,x) + \frac{1}{1!} \frac{ \partial U }{ \partial x^{\mu} } \frac{ \partial (x^{\mu} + n^{\mu} \epsilon) }{ \partial \epsilon } \Biggr \rvert_{\epsilon = 0} \cdot \epsilon + O(\epsilon^2) \\
     &= id + \frac{ \partial U }{ \partial x^{\mu} } \Biggr \rvert_{\epsilon = 0} n^{\mu} \epsilon + O(\epsilon^2) \\
     &= id - i g \epsilon n^{\mu} A_{\mu}^a(x) T^a + O(\epsilon^2), \numberthis \label{eq:compensator1}
 \end{align*}
 
-where we introduced real-valued vectorial fields $A_{\mu}^a(x)$\footnote{$A_{\mu}^a(x)$ is an auxiliary field that is the infinitesimal limit of a compensator field, also called \df{connection}}, an arbitrary constant $g \in \mathbb{R}_{>0}$ and the generators $T^a \in su(N)$, the Lie-algebra of $SU(N)$. The fields $A_{\mu}^a(x)$ are defined by
+where we introduced real-valued bosonic vector-fields $A_{\mu}^a(x)$\footnote{$A_{\mu}^a(x)$ is an auxiliary field that is the infinitesimal limit of a compensator field, also called \df{connection}}, an arbitrary constant $g \in \mathbb{R}_{>0}$ and the generators $T^a \in su(N)$, the Lie-algebra of $SU(N)$. The fields $A_{\mu}^a(x)$ are defined by
 
 \begin{align*}
     \frac{ \partial U }{ \partial x^{\mu} } \Biggr \rvert_{\epsilon = 0} \eqqcolon -ig A_{\mu}^a(x) T^a.
@@ -278,69 +317,115 @@ Since $C_{x,n}(t) \coloneqq U(x + n t, x)$ for every $x$ and $n$ is a curve in $
     &= n^{\mu} \left( \partial_{\mu} + ig A_{\mu}^a(x) T^a \right) \psi(x),
 \end{align*}
 
-leads directly to the \df{gauge covariant derivative}
+which leads directly to the \df{gauge covariant derivative}
 
 \begin{align}
-    D_{\mu} = \partial_{\mu} + ig A_{\mu}^a(x) T^a. \label{eq:cov_derivative}
+    D_{\mu} \coloneqq \partial_{\mu} + ig A_{\mu}^a(x) T^a. \label{eq:cov_derivative}
 \end{align}
 
-Since we introduced a new field and by this a corresponding particle, in order for the particle to have a propagator, we also have to implement a kinetic term. Obviously the kinetic term should be invariant under $SU(N)$ transformations. For this we need the plaquette\footnote{There are other (probably simpler and more elegant) methods to derive a kinetic term for the gauge fields, but the plaquette will arise again later in the context of lattice gauge theories. And as a physicist sometimes one has to go though some pain and suffer a little bit here and there - this is part of the game.}.
+Since we introduced a new field and by this a corresponding particle, in order for the particle to have a propagator, we also have to implement a kinetic term that is quadratic in $A_{\mu}^a$ or its derivatives. Obviously the kinetic term should be invariant under $SU(N)$ transformations. For this we need the plaquette\footnote{There are other (probably simpler and more elegant) methods to derive a kinetic term for the gauge fields, but the plaquette will arise again later in the context of lattice gauge theories. And as a physicist sometimes one has to go though some pain and suffer a little bit here and there - this is part of the game.}.
 
 \begin{definition}[Plaquette]
 
 Let $n_1 \neq n_2$ be two 4-vectors and $\epsilon > 0$. The \df{plaquette} (see figure \ref{fig:plaquette}) in the $(n_1, n_2)$-subspace is defined as 
 
 \begin{align}
-    \hat{U}(\epsilon,x) \coloneqq U(x, x + \epsilon n_2) U(x + \epsilon n_2, x + \epsilon n_2 + \epsilon n_1) U(x + \epsilon n_2 + \epsilon n_1, x + \epsilon n_1) U(x + \epsilon n_1, x).
+    \hat{U}_{n_1,n_2}(\epsilon,x) \coloneqq U(x, x + \epsilon n_2) U(x + \epsilon n_2, x + \epsilon n_2 + \epsilon n_1) U(x + \epsilon n_2 + \epsilon n_1, x + \epsilon n_1) U(x + \epsilon n_1, x).
 \end{align}
 
 \begin{figure}[H]
   \centering
   %\includestandalone[]{schemes/plaquette}
   \subimport{schemes/}{plaquette}
-  \caption{Scheme of the plaquette $\hat{U}(\epsilon,x)$ in the $(n_1, n_2)$-subspace.}
+  \caption{Scheme of the plaquette $\hat{U}_{n_1,n_2}(\epsilon,x)$ in the $(n_1, n_2)$-subspace.}
   \label{fig:plaquette}
 \end{figure}
 
 \end{definition}
 
-The plaquette $\hat{U}(\epsilon,x)$ is not invariant under $SU(N)$, but its trace over color space $tr(\hat{U}(\epsilon,x))$ is, because of the cyclicity of the trace. Using equation \eqref{eq:compensator1}, we can write
+The plaquette $\hat{U}_{n_1,n_2}(\epsilon,x)$ is not invariant under $SU(N)$, but its trace over color space $tr(\hat{U}_{n_1,n_2}(\epsilon,x))$ is, because of the cyclicity of the trace. Using equation \eqref{eq:compensator1}, we can write
 
 \begin{align*}
-    U(x, y) &= \exp(-ig (x-y)^{\mu} A_{\mu}^a(\frac{x+y}{2}) T^a +  O((x-y)^2) ).
+    U(x, y) &= \exp(-ig (x-y)^{\mu} A_{\mu}^a(\frac{x+y}{2}) T^a +  O((x-y)^2) ) \\
+    U(x + \epsilon n_1, x + \epsilon n_2) &= \exp(-ig \epsilon (n_1 - n_2)^{\mu} A_{\mu}^a(x + \epsilon \frac{n_1 + n_2}{2} ) T^a +  O(\epsilon^2) ) \numberthis \label{eq:uexp}.
 \end{align*}
 
-We Taylor-expand $\hat{U}(\epsilon,x)$ around $\epsilon = 0$ and use results from theorem \ref{thm:plaquette} from the Appendix,
+If $\epsilon$ is small we can expand
 
 \begin{align*}
-    \hat{U}(\epsilon,x) &= \frac{1}{0!} \hat{U}(0,x) + \frac{1}{1!} \frac{ \partial \hat{U} }{ \partial \epsilon } \Biggr \rvert_{\epsilon = 0} \cdot \epsilon + \frac{1}{2!} \frac{ \partial^2 \hat{U} }{ \partial \epsilon^2 } \Biggr \rvert_{\epsilon = 0} \cdot \epsilon^2 + O(\epsilon^3) \\
+    A_{\mu}^a(x + \epsilon n) = A_{\mu}^a(x) + \epsilon n^{\nu} \partial_{\nu} A_{\mu}^a(x) + O(\epsilon^2)
+\end{align*}
+
+and insert it in equation \eqref{eq:uexp},
+
+\begin{multline*}
+    U(x + \epsilon n_1, x + \epsilon n_2) = \\
+    \exp(-ig \epsilon (n_1 - n_2)^{\mu} A_{\mu}^a(x) T^a - ig \frac{\epsilon^2}{2} (n_1+n_2)^{\nu} \partial_{\nu} (n_1 - n_2)^{\mu} A_{\mu}^a(x) T^a + O(\epsilon^3) ).
+\end{multline*}
+
+Using this formula as well as the Baker–Campbell–Hausdorff formula\footnote{In this case we used the BCH-formula on steroids,
+
+\begin{align*}
+  e^{\epsilon A} e^{\epsilon B} e^{\epsilon C} e^{\epsilon D} = e^{\epsilon A + \epsilon B + \epsilon C + \epsilon D + \frac{\epsilon^2}{2} [A,B] + \frac{\epsilon^2}{2} [A,C] + \frac{\epsilon^2}{2} [A,D] + \frac{\epsilon^2}{2} [B,C] + \frac{\epsilon^2}{2} [B,D] + \frac{\epsilon^2}{2} [C,D] + O(\epsilon^3) }.
+\end{align*}
+
+} we obtain
+
+\begin{align*}
+    \hat{U}_{n_1,n_2}(\epsilon,x) = \exp \Bigg( &+ig \epsilon n_2^{\mu} A_{\mu}^a(x) T^a + ig \frac{\epsilon^2}{2} n_2^{\nu} \partial_{\nu} n_2^{\mu} A_{\mu}^a(x) T^a \Bigg. \\
+    \Bigg. &+ig \epsilon n_1^{\mu} A_{\mu}^a(x) T^a + ig \frac{\epsilon^2}{2} (n_1+\textcolor{cyellow}{2 n_2})^{\nu} \partial_{\nu} n_1^{\mu} A_{\mu}^a(x) T^a \Bigg. \\
+    \Bigg. &-ig \epsilon n_2^{\mu} A_{\mu}^a(x) T^a - ig \frac{\epsilon^2}{2} (\textcolor{cyellow}{2 n_1}+n_2)^{\nu} \partial_{\nu} n_2^{\mu} A_{\mu}^a(x) T^a \Bigg. \\
+    \Bigg. &-ig \epsilon n_1^{\mu} A_{\mu}^a(x) T^a - ig \frac{\epsilon^2}{2} n_1^{\nu} \partial_{\nu} n_1^{\mu} A_{\mu}^a(x) T^a \Bigg. \\
+    \Bigg. &-\frac{1}{2} g^2 \epsilon^2 n_2^{\mu} A_{\mu}^a(x) n_1^{\nu} A_{\nu}^b(x) [T^a,T^b] +\frac{1}{2} g^2 \epsilon^2 n_2^{\mu} A_{\mu}^a(x) n_1^{\nu} A_{\nu}^b(x) [T^a,T^b] \Bigg. \\
+    \Bigg. &\textcolor{cyellow}{+\frac{1}{2} g^2 \epsilon^2 n_1^{\mu} A_{\mu}^a(x) n_2^{\nu} A_{\nu}^b(x) [T^a,T^b] -\frac{1}{2} g^2 \epsilon^2 n_2^{\mu} A_{\mu}^a(x) n_1^{\nu} A_{\nu}^b(x) [T^a,T^b] + O(\epsilon^3)} \Bigg)
+\end{align*}
+
+By staring long enough at this expression, we see that there are a lot of terms cancelling each other; the first terms in the first \num{4} lines cancel exactly, the second terms in the first \num{4} lines all cancel except the terms involving $\textcolor{cyellow}{2 n_1}$ and $\textcolor{cyellow}{2 n_2}$, and the two terms in the fifth line cancel, and the two terms in the sixth line are actually the same. Thus, we have \num{3} terms surviving corresponding to the \textcolor{cyellow}{yellow} color. Using the directed fields and derivatives $n_i^{\mu} A_{\mu}^a(x) \eqqcolon A_i^a(x)$ and $n_j^{\nu} \partial_{\nu} n_i^{\mu} A_{\mu}^a(x) \eqqcolon \partial_j A_i^a(x)$, we end up in
+
+\begin{align*}
+    \hat{U}_{n_1,n_2}(\epsilon,x) = \exp \Bigg( -ig \epsilon^2 [ \underbrace{\partial_1 A_2^a(x) - \partial_2 A_1^a(x) + g f^{abc} A_1^b(x) A_2^c(x)}_{\eqqcolon F_{12}^a} ] T^a + O(\epsilon^3) \Bigg) \numberthis \label{eq:plaq_exp}
+\end{align*}
+
+where we used the totally anti-symmetric \df{structure constants} of the Lie-algebra defined via the commutation relations $[T^a,T^c] = i f^{abc}T^c$.
+
+\begin{comment}
+
+We Taylor-expand $\hat{U}_{n_1,n_2}(\epsilon,x)$ around $\epsilon = 0$ and use results from theorem \ref{thm:plaquette} from the Appendix,
+
+\begin{align*}
+    \hat{U}_{n_1,n_2}(\epsilon,x) &= \frac{1}{0!} \hat{U}_{n_1,n_2}(0,x) + \frac{1}{1!} \frac{ \partial \hat{U}_{n_1,n_2} }{ \partial \epsilon } \Biggr \rvert_{\epsilon = 0} \cdot \epsilon + \frac{1}{2!} \frac{ \partial^2 \hat{U}_{n_1,n_2} }{ \partial \epsilon^2 } \Biggr \rvert_{\epsilon = 0} \cdot \epsilon^2 + O(\epsilon^3) \\
     &= id + \frac{1}{2!} \epsilon^2 2 (-ig)^2 n_1^{\nu} A_{\nu}^b(x) n_2^{\mu} A_{\mu}^c(x) [T^c, T^b] \\
-    &+ \frac{1}{2!} \epsilon^2 2 (+n_1)^{\nu} (-ig) n_2^{\mu} \frac{ \partial A_{\mu}^a(x) }{ \partial x^{\nu} } T^a \\
-    &+ \frac{1}{2!} \epsilon^2 2 (-n_2)^{\nu} (-ig) n_1^{\mu} \frac{ \partial A_{\mu}^a(x) }{ \partial x^{\nu} } T^a + O(\epsilon^3) \\
-    &= id -ig \epsilon^2 [ \partial_1 A_2^a(x) T^a - \partial_2 A_1^a T^a  -ig A_1^b(x) A_2^c(x) i f^{cba} T^a ] \\
-    &= id -ig \epsilon^2 [ \underbrace{\partial_1 A_2^a(x) - \partial_2 A_1^a + g f^{abc} A_1^b(x) A_2^c(x)}_{ \eqqcolon F_{12}^a } ] T^a \\
+    &\phantom{= } + \frac{1}{2!} \epsilon^2 2 (+n_1)^{\nu} (-ig) n_2^{\mu} \frac{ \partial A_{\mu}^a(x) }{ \partial x^{\nu} } T^a \\
+    &\phantom{= } + \frac{1}{2!} \epsilon^2 2 (-n_2)^{\nu} (-ig) n_1^{\mu} \frac{ \partial A_{\mu}^a(x) }{ \partial x^{\nu} } T^a + O(\epsilon^3) \\
+    &= id -ig \epsilon^2 [ \partial_1 A_2^a(x) T^a - \partial_2 A_1^a T^a  -ig A_1^b(x) A_2^c(x) i f^{cba} T^a ] + O(\epsilon^3)\\
+    &= id -ig \epsilon^2 [ \underbrace{\partial_1 A_2^a(x) - \partial_2 A_1^a + g f^{abc} A_1^b(x) A_2^c(x)}_{ \eqqcolon F_{12}^a } ] T^a + O(\epsilon^3) \\
+    &= \exp( -ig \epsilon^2 F_{12}^a T^a + O(\epsilon^3) ) \numberthis \label{eq:plaq_exp}
 \end{align*}
 
-where we used the totally anti-symmetric \df{structure constants} of the Lie-algebra defined as $[T^a,T^c] = i f^{abc}T^c$. The expression in the square bracket of the last line is what we define as the \df{Yang-Mills field strength tensor}
+where we used the totally anti-symmetric \df{structure constants} of the Lie-algebra defined via the commutation relations $[T^a,T^c] = i f^{abc}T^c$.
+
+\end{comment}
+
+The expression in the square bracket of the last line is what we define as the \df{Yang-Mills field strength tensor}\footnote{When replacing $n_1$ and $n_2$ with unit vectors in arbitrary direction $\mu$ and $\nu$ respectively, we can set $F_{12}^a = F_{\mu \nu}^a$.}
 
 \begin{align}
     F_{\mu \nu}^a = \partial_{\mu} A_{\nu}^a(x) - \partial_{\nu} A_{\mu}^a + g f^{abc} A_{\mu}^b(x) A_{\nu}^c(x). \label{eq:ymtensor}
 \end{align}
 
-The field strength tensor transforms in the same way as the plaquette $\hat{U}(\epsilon,x)$, thus the trace over $F_{\mu \nu}^a T^a$ in color space is invariant under $SU(N)$ transformations. In order to be Lorentz-invariant as well, we need to contract the indices and obtain (using the (arbitrary) normalisation convention $tr(T^a T^b) = \frac{1}{2} \delta^{ab}$)
+The field strength tensor transforms in the same way as the plaquette $\hat{U}_{n_1,n_2}(\epsilon,x)$, thus the trace over $F_{\mu \nu}^a T^a$ in color space is invariant under $SU(N)$ transformations. In order to be Lorentz-invariant as well, we need a Lorentz-scalar. Thus we need to contract the indices and obtain\footnote{The (arbitrary) normalisation convention used is $tr(T^a T^b) = \frac{1}{2} \delta^{ab}$.}
 
 \begin{align}
     tr( F_{\mu \nu}^a T^a F^{\mu \nu, b} T^b) &= F_{\mu \nu}^a F^{\mu \nu, b} tr(T^a T^b) \\
     &= \frac{1}{2} F_{\mu \nu}^a F^{\mu \nu, a}.
 \end{align}
 
-The quadratic terms in the Lagrangian are always of the form $-\frac{1}{2} (\text{field})^2$. To honour this convention, we finally end up in an $SU(N)$-invariant Lagrangian, the \df{Yang-Mills Lagrangian} including the fermion part, of the form
+The quadratic terms in the Lagrangian are always of the form $-\frac{1}{2} (\text{field})^2$. To honour this convention, we finally end up in a Lorentz- and $SU(N)$-invariant Lagrangian including the fermion part, the \df{Yang-Mills Lagrangian} \cite{yang1954}, of the form
 
 \begin{align}
     \mathcal{L} = -\frac{1}{4} F_{\mu \nu}^a F^{\mu \nu, a} + \bar{\psi} \left( i \slashed{D} - m \right) \psi. \label{eq:ymlagrangian}
 \end{align}
 
-Where the \df{Dirac-adjoint} is defined as $\overline{\psi} = \psi i \gamma^0$ and $\slashed{D} = \gamma^{\mu} D_{\mu}$ is the \df{Feynman slash notation}. Just as in the Abelian theory, there is no mass-term for the gauge fields, because this would violate the $SU(N)$-invariance. The fundamental particle which is represented by the field is therefore massless. The constant $g$ can be interpreted as \df{coupling constant}. The terms in the above Lagrangian are actually the only ones that can appear, if we demand the spacetime to have $D=4$ dimensions and parity- (P) and time-reversal- (T) invariance. The gauge part of the Lagrangian employs interactions among the gauge fields, namely the theory is equipped with 3- and 4-vertices.
+Where $\slashed{D} = \gamma^{\mu} D_{\mu}$ is the \df{Feynman slash notation}. Just as in the Abelian theory, there is no term quadratic in $A$ proportional to $m_A A_{\mu}^a A^{\mu,a}$, a mass-term for the gauge fields, because this would violate the $SU(N)$-invariance. The fundamental particle which is represented by the field must therefore be massless $m_A = 0$. The constant $g$ can be interpreted as \df{coupling constant}. The terms in the above Lagrangian are actually the only ones that can appear if we demand the spacetime to have $D=4$ dimensions and parity- (P) and time-reversal- (T) invariance. The gauge part of the Lagrangian employs interactions among the gauge fields, namely the theory is equipped with pure 3- and 4-vertices of gauge bosons.
 
 \begin{comment}
 TODO:
@@ -349,7 +434,7 @@ non-abelian, hadronic physics, importance, renormalization problems, running cou
 
 \section{Lattice Gauge Theories}
 
-Non-Abelian gauge theories with a certain number of fundamental fermionic particles can have the property of asymptotic freedom, meaning that the strength of the interaction becomes asymptotically weak as the distance between elementary particles decreases and the energy scale increases. Perturbatively such theories can only be treated in the high energy scale, where the running coupling constant is small to allow perturbative expansion of the problem. Consequently at low energies, the interaction is strong leading to confinement. Lattice gauge theory is a non-perturbative approach to deal with aforementioned theories in the low energy regime by discretizing the problem on a finite spacetime lattice. The finiteness of the lattice volume results in a momentum cutoff at $1/a$ curing IR-divergencies, where $a$ is the \df{lattice spacing} (also called the \df{lattice constant}). Also, the finiteness of the lattice spacing on the other hand results in a cutoff at $a$ curing UV-divergencies. Lattice discretization of a field theory therefore acts as a regularisation scheme.
+Non-Abelian gauge theories with a certain number of fundamental fermionic particles can have the property of asymptotic freedom, meaning that the strength of the interaction becomes asymptotically weak as the distance between elementary particles decreases and the energy scale increases. Perturbatively such theories can only be treated in the high energy scale, where the running coupling constant is small to allow perturbative expansion of the problem. Consequently at low energies, the interaction is strong leading to confinement. Lattice gauge theory is a non-perturbative approach to deal with aforementioned theories in the low energy regime by discretising the problem on a finite spacetime lattice. The finiteness of the lattice volume results in a momentum cutoff at $1/a$ curing IR-divergencies, where $a$ is the \df{lattice spacing} (also called the \df{lattice constant}). Also, the finiteness of the lattice spacing on the other hand results in a cutoff at $a$ curing UV-divergencies. Lattice discretisation of a field theory therefore acts as a regularisation scheme.
 
 \subsection{Euclidean theory}
 
@@ -371,14 +456,6 @@ where - for simplicity - there is only one fundamental Dirac spinor field with m
 \begin{align*}
     F_{\mu \nu}^a = \partial_{\mu} A_{\nu}^a - \partial_{\nu} A_{\mu}^a - g f_{abc} A_{\mu}^b A_{\nu}^c.
 \end{align*}
-
-The $\gamma$-matrices obey the \df{Clifford-algebra}
-
-\begin{align}
-    \{\gamma^{\mu}, \gamma^{\nu}\} = 2 \eta^{\mu \nu} \cdot id, \label{eq:cliff}
-\end{align}
-
-with $\mu,\nu \in \{0, 1, \dots, D-1\}$ and $id$ is the identity operator in spinor space.
 
 The (Minkowski) action is as usual defined as the integral over spacetime of the Lagrangian
 
@@ -542,7 +619,48 @@ because the Euclidean field strength tensor transforms trivially. It derives as
     (F_E)_{\mu \nu}^a = \partial_{\mu} (A_E)_{\nu}^a - \partial_{\nu} (A_E)_{\mu}^a - g f_{abc} (A_E)_{\mu}^b (A_E)_{\nu}^c.
 \end{align*}
 
-\subsection{Lattice-Discretisation}
+\subsection{Lattice Discretisation}
+
+To discretise the theory, from now on we work in $D=4$ dimensional Euclidean spacetime and discretise the spacetime in terms of a lattice.
+
+\begin{definition}[4D lattice]
+
+Let $L_0, L_1, L_2, L_3 \in \mathbb{N}$ be natural numbers, define the \df{full lattice volume} as $V \coloneqq L_0 \cdot L_1 \cdot L_2 \cdot L_3$ and the \df{full 4D lattice} of volume $V$ as
+
+\begin{align*}
+    \Lambda \coloneqq \{ n = (n_0, n_1, n_2, n_3) \mid n_i \in \{0, 1, \dots, L_i - 1 \}, i \in \{0,1,2,3\} \}.
+\end{align*}
+
+\end{definition}
+
+We define the \df{lattice spacing} $a > 0$ (also called \df{lattice constant}), which is a real number of mass dimension 1\footnote{We use particle physics units $c = \hbar = 1$ in which length and time have the same unit. It is therefore legal to use the same $a$ as lattice spacing in all $4$ spacetime dimensions.}. Using this we can span the (finite) 4D spacetime lattice.
+
+We start by discretising the gauge-part of the theory. Here our effort in deriving the gauge-part using the plaquette will bear fruit. We note the gauge-part of the Lagrangian (we drop the subscript $E$ for "Euclidean" from now on)
+
+\begin{align*}
+    \mathcal{L}_G &= \frac{1}{4} F_{\mu \nu}^a F^{\mu \nu, a} \\
+    &= \frac{1}{2} \sum_{\mu, \nu} tr( F_{\mu \nu}^a F_{\mu \nu}^b T^a T^b).
+\end{align*}
+
+Notice that in Euclidean spacetime upper and lower Lorentz-indices do not differ, $F_{\mu \nu}^a = F^{\mu \nu, a}$. The Lagrangian was actually constructed as the trace over the sum of plaquettes in all possible $(\mu, \nu)$-subspaces. To see this, we reuse the result from equation \eqref{eq:plaq_exp} with $n_1 = e_{\mu}$ and $n_2 = e_{\nu}$, where $e_{\mu}$ is the unit vector in direction $\mu$,
+
+\begin{align*}
+    \hat{U}_{\mu \nu}(\epsilon,x) &= \exp(-ig \epsilon^2 F_{\mu \nu}^a T^a + O(\epsilon^3) ) \\
+    &= \delta_{\mu \nu} \cdot id -ig \epsilon^2 F_{\mu \nu}^a T^a + i O(\epsilon^3) + \frac{1}{2!}(-ig \epsilon^2)^2 \textcolor{cyellow}{F_{\mu \nu}^a F_{\mu \nu}^b T^a T^b } + \delta_{\mu \nu} O(\epsilon^6).
+\end{align*}
+
+This is the plaquette in subspace $(e_{\mu}, e_{\nu})$. In the last line, the exponential was written in its series form, where it has to be noted that there is no sum over the Lorentz-indices $\mu,\nu$ in the expression above. Also when tracking down the $O(\epsilon^3)$-term, it turns out to be imaginary. The \textcolor{cyellow}{yellow} term is actually the same that is traced and summed over in the Lagrangian. Solving the equation for the yellow part and taking the real-part on both sides,
+
+\begin{align*}
+    F_{\mu \nu}^a F_{\mu \nu}^b T^a T^b = \frac{2}{g^2 \epsilon^4} Re \left[ \delta_{\mu \nu} \cdot id - \hat{U}_{\mu \nu}(\epsilon,x) \right] + \delta_{\mu \nu} O(\epsilon^{2})
+\end{align*}
+
+and inserting this expression into the Lagrangian gives
+
+\begin{align*}
+    \mathcal{L}_G &= \frac{1}{2} \sum_{\mu, \nu} tr( F_{\mu \nu}^a F_{\mu \nu}^b T^a T^b) \\
+    &= \frac{1}{g^2 \epsilon^4} \sum_{\mu, \nu} Re \; tr\left[ \delta_{\mu \nu} \cdot id - \hat{U}_{\mu \nu}(\epsilon,x) \right] + O(\epsilon^{2}).
+\end{align*}
 
 One usually uses the same lattice spacing $a$ in all spatial and time directions ($\hbar = 1$). Of importance is only that the value of $a$ is chosen small, because it determines to what length and time scale the system can be resolved. The limit $a \to 0$ is called the continuum limit.
 
@@ -822,11 +940,15 @@ The posit datatype is designed to be a replacement for the IEEE floating point f
 
 \begin{itemize}
     \item The appearance of \acrshortpl{nan}. They are considered unnatural, because a specific bit pattern describing a number that is not a number is a contradiction.
-    \item The \acrshortpl{nan} and the fact that floats have two different representations for the number zero ($0$ and $-0$) lead to very complicated and slow comparison units.
+    \item The \acrshortpl{nan} and the fact that floats have two different bit-representations for the number zero ($0$ and $-0$) lead to very complicated and slow comparison units as well as (funny) theoretical contradictions\footnotemark.
+
+\footnotetext{According to IEEE 754 floating point arithmetic, it holds $\frac{1}{\infty} = 0$ and $\frac{1}{-\infty} = -0$, but we have $0 = -0$. This implies $\infty = - \infty$, but (also according to IEEE 754) $\infty > - \infty$.}
+
     \item Floats may under- or overflow, because the standard employs the round to nearest even rounding rule ($\pm \infty$ and $0$ are considered even).
     \item Floats are non-associative and non-distributive\footnotemark leading to rounding errors that have to be taken into account, specially in scientific computing.
     \item The standard gives no guarantee of bit-identical results across systems.
 \end{itemize}
+
 
 \footnotetext{There was even a system using IEEE 754 that had non-commutative floating point operations \cite{cody1980}.}
 
@@ -2192,7 +2314,7 @@ As further general observation, the power of the \acrshort{sapgcr} solver is onl
 
 An analysis of the different datatypes shows that the general trend is the lower the involved datatypes are in bit-length, the faster the solution is obtained, which makes sense in memory-bound problems. The setups with \gls{binary32} in reduction variables and as "small" datatype appear to be the most efficient. On the CPU they display on average a speedup compared to the case where only \gls{binary64} was used of $S = 1.246$. However, of the given datatype setups one should choose the one where the datatype of reduction variables (\code{rdtype}) is set to \gls{binary64} preventing over- or underflows. This was already discussed in section \ref{sec:simulating_cgne}.
 
-Looking at the fist plot (\code{sf\_no\_cstar\_8x8x8x8}), as expected the preconditioning gives no significant improvement; on the CPU only \num{4} setups were faster than the one without preconditioning, on the GPU even none of the preconditioning setups beats the trivial case. Of the CPU ones that were faster than the trivial case, all had the same configuration $(n_{cy}, n_{mr}) = (1,4)$, but different block sizes. This shows that if the operator is well-conditioned, too much preconditioning worsens the performance. $(n_{cy}, n_{mr}) = (1,4)$ is the configuration with the least amount of preconditioning. The CPU run-time shows a strong dependence on the configuration; there are even certain configurations (for example $(n_{cy}, n_{mr}) = (4,6)$) that are more than \num{40} times slower than the no preconditioning case.
+Looking at the fist plot (\code{sf\_no\_cstar\_8x8x8x8}), as expected the preconditioning gives no significant improvement; on the CPU only \num{4} setups were faster than the one without preconditioning, on the GPU even none of the preconditioning setups beats the trivial case. Of the CPU ones that were faster than the trivial case, all had the same configuration $(n_{cy}, n_{mr}) = (1,4)$, but different block sizes. This shows that if the operator is well-conditioned, too much preconditioning worsens the performance. $(n_{cy}, n_{mr}) = (1,4)$ is the configuration with the least amount of preconditioning. The CPU run-time shows a strong dependence on the configuration; there are even certain configurations (for example $(n_{cy}, n_{mr}) = (4,6)$) that are more than \num{40} times slower than the no preconditioning case. A wrong choice of configuration parameters can thus lead to a significant performance decrease, whatever exactly "wrong" means in this context. The adaptive choice of parameters should here come to the rescue.
 
 The operator \code{sf\_no\_cstar\_16x16x16x16} has a very similar behaviour as \code{sf\_no\_cstar\_8x8x8x8}, because it is well-conditioned as well. The very same configurations give speedup compared to the case without preconditioning, this time both the CPU and GPU variants improved. The claim that the pure-GPU variant slows down with smaller block sizes is even more visible in this plot, since there are \num{8} block sizes to work on. Looking at the behaviour within a certain constant block size, the algorithm seems to be very sensitive to changes in the configuration. As an example block size $bs= 8^2 \cdot 16^2$, one would expect the run-time to either increase or decrease with respect to the amount of preconditioning. The actual results show a more complex dependence with an exceptional case at $(n_{cy}, n_{mr}) = (2,8)$. That exceptional case can be seen with all block sizes and on the CPU, GPU as well as in the hybrid case. The plot of \code{sf\_no\_cstar\_8x8x8x8} features such an exceptional case as well at $(n_{cy}, n_{mr}) = (4,6)$. However, with both matrices any preconditioning makes the run-time worse, they might not be very representative.
 
@@ -2789,14 +2911,14 @@ TODO
 Let a function $F(x)$ be defined as 
 
 \begin{align*}
-    F_x(\epsilon) \coloneqq e^{-\epsilon f(x + \epsilon a)} e^{-\epsilon g(x + \epsilon b)} e^{\epsilon f(x + \epsilon c)} e^{\epsilon g(x+ \epsilon d)},
+    F_x(\epsilon) \coloneqq e^{-\epsilon f(x + \epsilon a_1)} e^{-\epsilon g(x + \epsilon a_2)} e^{\epsilon f(x + \epsilon a_3)} e^{\epsilon g(x+ \epsilon a_4)},
 \end{align*}
 
-where $x,a,b,c,d$ are $4$-vectors and $f(x),g(x)$ are non commuting functions of $x$. Then the derivatives of $F_x(\epsilon)$ are
+where $x,a_1,a_2,a_3,a_4$ are $4$-vectors and $f(x),g(x)$ are non commuting functions of $x$. Then the derivatives of $F_x(\epsilon)$ are
 
 \begin{align}
     \frac{ \partial F_x }{ \partial \epsilon } \Biggr \rvert_{\epsilon = 0} &= 0 \label{eq:deriv_plaq1} \\
-    \frac{ \partial^2 F_x }{ \partial \epsilon^2 } \Biggr \rvert_{\epsilon = 0} &= 2[f(x),g(x)] + 2[ (c-a)^{\mu}f^{\prime}_{\mu}(x) + (d-b)^{\mu}g^{\prime}_{\mu}(x) ], \label{eq:deriv_plaq2}
+    \frac{ \partial^2 F_x }{ \partial \epsilon^2 } \Biggr \rvert_{\epsilon = 0} &= 2[f(x),g(x)] + 2[ (a_3-a_1)^{\mu}f^{\prime}_{\mu}(x) + (a_4-a_2)^{\mu}g^{\prime}_{\mu}(x) ], \label{eq:deriv_plaq2}
 \end{align}
 
 where a short-hand notation for the derivatives was used; $f^{\prime}_{\mu}(x) \coloneqq \frac{ \partial f }{ \partial x^{\mu} } \bigg \rvert_{x}$.
@@ -2805,12 +2927,22 @@ where a short-hand notation for the derivatives was used; $f^{\prime}_{\mu}(x) \
 
 \begin{proof}
 
+Let's introduce some shorthand notation:
+
+\begin{align}
+    F_x(\epsilon) \coloneqq \underbrace{e^{-\epsilon f_1(x + \epsilon a_1)}}_{\eqqcolon F_1(\epsilon)} \underbrace{e^{-\epsilon f_2(x + \epsilon a_2)}}_{\eqqcolon F_2(\epsilon)} \underbrace{e^{\epsilon f_3(x + \epsilon a_3)}}_{\eqqcolon F_3(\epsilon)} \underbrace{e^{\epsilon f_4(x+ \epsilon a_4)}}_{\eqqcolon F_4(\epsilon)},
+\end{align}
+
+such that for $j \in \{1,2,3,4\}$ we have $F_j(\epsilon) = \exp( (-1)^{\lceil j/2 \rceil} \epsilon f_j(x + \epsilon a_j))$ with $f(x) = f_1(x) = f_3(x)$ and $g(x) = f_2(x) = f_4(x)$.
+
 Starting with equation \eqref{eq:deriv_plaq1},
 
 \begin{align*}
-    \frac{ \partial F_x }{ \partial \epsilon } \Biggr \rvert_{\epsilon = 0} &= F_x(\epsilon) [ - \epsilon a^{\mu} f^{\prime}_{\mu}(x + \epsilon a) - f(x + \epsilon a) - \epsilon b^{\mu} g^{\prime}_{\mu}(x + \epsilon b) - g(x + \epsilon b) \\
-    &+ \epsilon c^{\mu} f^{\prime}_{\mu}(x + \epsilon c) + f(x + \epsilon c) + \epsilon d^{\mu} g^{\prime}_{\mu}(x + \epsilon d) + g(x + \epsilon d) ] \bigg \rvert_{\epsilon = 0} \\
-    &= [-f(x) - g(x) + f(x) + g(x)] \\
+    \frac{ \partial F_x }{ \partial \epsilon } \Biggr \rvert_{\epsilon = 0} &= \bigg[ F_1(\epsilon) ( -f(x + \epsilon a_1) -\epsilon f^{\prime}_{\mu}(x + \epsilon a_1) ) F_2(\epsilon) F_3(\epsilon) F_4(\epsilon) \\
+    &+ F_1(\epsilon) F_2(\epsilon) ( -g(x + \epsilon a_2) -\epsilon g^{\prime}_{\mu}(x + \epsilon a_2) ) F_3(\epsilon) F_4(\epsilon) \\
+    &+ F_1(\epsilon) F_2(\epsilon) F_3(\epsilon) ( f(x + \epsilon a_3) +\epsilon f^{\prime}_{\mu}(x + \epsilon a_3) ) F_4(\epsilon) \\
+    &+ F_1(\epsilon) F_2(\epsilon) F_3(\epsilon) F_4(\epsilon) ( g(x + \epsilon a_4) +\epsilon g^{\prime}_{\mu}(x + \epsilon a_4) ) \bigg] \Biggr \rvert_{\epsilon = 0} \\
+    &= - f(x) - g(x) + f(x) + g(x) \\
     &= 0.
 \end{align*}
 

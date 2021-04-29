@@ -12,9 +12,9 @@
 
 \def\step{2}
 \node[circle,inner sep=0pt,minimum size=0pt,label=below left :{$x$}] (A) at ( \step*0, \step*0 ) {};
-\node[circle,inner sep=0pt,minimum size=0pt,label=below right:{$x + n_2 \epsilon$}] (B) at ( \step*1, \step*0 ) {};
-\node[circle,inner sep=0pt,minimum size=0pt,label=above right:{$x + n_2 \epsilon + n_1 \epsilon$}] (C) at ( \step*1, \step*1 ) {};
-\node[circle,inner sep=0pt,minimum size=0pt,label=above left :{$x + n_1 \epsilon$}] (D) at ( \step*0, \step*1 ) {};
+\node[circle,inner sep=0pt,minimum size=0pt,label=below right:{$x + \epsilon n_2$}] (B) at ( \step*1, \step*0 ) {};
+\node[circle,inner sep=0pt,minimum size=0pt,label=above right:{$x + \epsilon n_2 + \epsilon n_1$}] (C) at ( \step*1, \step*1 ) {};
+\node[circle,inner sep=0pt,minimum size=0pt,label=above left :{$x + \epsilon n_1$}] (D) at ( \step*0, \step*1 ) {};
 
 \begin{scope}[thick,decoration={
     markings,
