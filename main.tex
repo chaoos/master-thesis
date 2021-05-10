@@ -39,6 +39,18 @@
   \mathbin{\text{\scalebox{.75}{\rotatebox[origin=c]{45}{$\Box$}}}}%
 }
 
+% the square symbol
+\DeclareRobustCommand{\msquare}{%
+  \mathbin{\text{\scalebox{.75}{$\Box$}}}%
+}
+
+% the circle symbol
+\DeclareRobustCommand{\mcirc}{%
+  \mathbin{\text{\scalebox{.75}{$\bigcirc$}}}%
+}
+
+\DeclareMathOperator{\spn}{span} % the span command, use as \spn{bla}
+
 % setup for the \num, siunitx package
 %\sisetup{round-mode = figures}
 
@@ -182,6 +194,38 @@ which is a large sparse matrix. Hence, many systems of linear equations must
 be solved involving this matrix; it is this requirement that makes lattice QCD
 a grand challenge subject. In such linear solvers, the application of the Dirac
 operator to a vector is the most compute intensive kernel.
+
+from "Accelerating Lattice Quantum Field Theory Calculations via Interpolator Optimization
+Using Noisy Intermediate-Scale Quantum Computing"
+
+This technique, named lattice quantum field theory (LQFT),
+plays an important role in modern particle and nuclear
+physics and has been essential in testing the standard model
+against precise measurements of the decays and interactions
+of particles at frontier machines such as the Large
+Hadron Collider [3,4].
+[3] S. Aoki et al. (Flavour Lattice Averaging Group), arXiv:
+1902.08191.
+[4] C. Lehner et al. (USQCD Collaboration), Eur. Phys. J. A 55,
+195 (2019).
+
+Precisely, to determine matrix elements of
+interest in some state in a LQFT computation, such as those
+describing an interaction or decay process, correlation functions
+are calculated which encode the creation, interaction,
+and annihilation, of the state in question. These correlation
+functions, however, receive contaminating contributions from
+themany other stateswith the quantumnumbers of the state of
+interest. In order to reliably extract the desired piece, the
+contributions fromall of these unwanted higher-energy states
+must be suppressed. Typically, this is achieved via an
+evolution in the Euclidean time of the calculation; the
+unwanted states are exponentially suppressed by the energy
+gap to the ground state at large times, but at the cost of an
+exponential growth in the statistical noise of the Monte Carlo
+sampling used in the computation (and thus computational
+cost)
+
 \end{comment}
 
 TODO
@@ -222,7 +266,7 @@ print("Python says ``Hello!''")
 
 \label{sec:gauge_theories}
 
-The goal of this section is to derive a Lagrangian descibing fundamental fermions that is Lorentz-invariant (coming from special relativity) as well as invariant under local phase-transformations (coming from basic quantum mechanics).
+The goal of this section is to derive a Lagrangian describing fundamental fermions that is Lorentz-invariant (coming from special relativity) as well as invariant under local phase-transformations (coming from basic quantum mechanics).
 
 Let's consider a set of $N$ complex independent Dirac spinors
 
@@ -239,17 +283,17 @@ where every $\psi_a(x)$, $a \in \{1, \dots N\}$, has $4$ components accessed via
 Let's introduce the local\footnote{The phase depends on the spacetime coordinate $x$.} gauge transformation under which we want the theory to be invariant
 
 \begin{align*}
-    \psi(x) \longrightarrow V(x) \psi(x),
+    \psi(x) \longrightarrow \tilde{\psi}(x) = V(x) \psi(x),
 \end{align*}
 
-with $V(x) \in SU(N)$ unitary. Since we want our fermions to posses a non-zero mass, the Lagrangian will contain a term quadratic in the field $\psi$. A first approach of a $SU(N)$-invariant expression would be a term proportional to $\psi^{\dagger} \psi$. Unfortunately $\psi$ is Grassmann valued, thus anti-commutes with itself, meaning the mentioned term is equal to zero\footnote{To be pedantic, $0$ \textit{is} $SU(N)$-invariant.}. Special relativity also demands the term to be a Lorentz-scalar, which $\psi^{\dagger} \psi$ is not. Under Lorentz-tranformation $\Lambda$, $\psi$ and $\psi(x)^{\dagger}$ transform as
+with $V(x) \in SU(N)$ unitary. Since we want our fermions to posses a non-zero mass, the Lagrangian will contain a term quadratic in the field $\psi$. A first approach of a $SU(N)$-invariant expression would be a term proportional to $\psi^{\dagger} \psi$. Unfortunately $\psi$ is Grassmann valued, thus anti-commutes with itself, meaning the mentioned term is equal to zero\footnote{To be pedantic, $0$ \textit{is} $SU(N)$- and Lorentz-invariant.}. Special relativity also demands the term to be a Lorentz-scalar, which $\psi^{\dagger} \psi$ is not. Under Lorentz-transformation $\Lambda$, $\psi$ and $\psi(x)^{\dagger}$ transform as
 
 \begin{align*}
     \psi(x) &\longrightarrow \Lambda \psi(x), \\
     \psi(x)^{\dagger} &\longrightarrow \psi(x)^{\dagger} \Lambda^{\dagger}.
 \end{align*}
 
-We can use a property of the $\gamma$-matrices here. The $\gamma$-matrices are defined such that they obey the \df{Clifford-algebra}
+We can use a property of the $\gamma$-matrices here. The $\gamma$-matrices are defined such that they obey the \df{Clifford-algebra}\footnote{We use the particle physics convention of the metric tensor $\eta_{\mu \nu}$ with signature $(+,-,\dots,-)$. In $D=4$ dimensions, $\eta_{\mu \nu} = \mathrm{diag}(+1, -1, -1, -1)_{\mu \nu}$}
 
 \begin{align}
     \{\gamma^{\mu}, \gamma^{\nu}\} = 2 \eta^{\mu \nu} \cdot id, \label{eq:cliff}
@@ -265,9 +309,9 @@ With this, it makes sense to define the \df{Dirac-adjoint} as $\overline{\psi} \
 
 The Lagrangian of the theory inevitably contains derivatives of $\psi$ and since the transformation is local (different for every spacetime point $x$), we have to redefine a derivative that compensates for this. The \df{directional derivative} along direction $n$ is
 
-\begin{align*}
-    n^{\mu} \partial_{\mu} \psi(x) = \lim_{\epsilon \to 0} \frac{ \psi(x + n \epsilon) - \psi(x) }{\epsilon}.
-\end{align*}
+\begin{align}
+    n^{\mu} \partial_{\mu} \psi(x) = \lim_{\epsilon \to 0} \frac{ \psi(x + n \epsilon) - \psi(x) }{\epsilon}. \label{eq:dir_derivative}
+\end{align}
 
 The two fields appearing in this expression are evaluated at different spacetime points and thus transform differently under $V(x)$. In order for the kinetic expression in the Lagrangian $n^{\mu} \partial_{\mu}$ to be invariant under $SU(N)$, we introduce a compensator for the shifts in the derivative.
 
@@ -275,9 +319,9 @@ The two fields appearing in this expression are evaluated at different spacetime
 
 The \df{compensator field} $U(x,y)$ is a non-local marix quantity that transforms under $V(x) \in SU(N)$ as
 
-\begin{align*}
-    U(x,y) \longrightarrow V(x) U(x,y) V^{\dagger}(y).
-\end{align*}
+\begin{align}
+    U(x,y) \longrightarrow \tilde{U}(x,y) = V(x) U(x,y) V^{\dagger}(y). \label{eq:trafo_compensator}
+\end{align}
 
 $U(x,y)$ is a element of $SU(N)$ for all $x,y$, with $U(x,x) = id$.
 
@@ -286,33 +330,33 @@ $U(x,y)$ is a element of $SU(N)$ for all $x,y$, with $U(x,x) = id$.
 We then redefine the derivative as
 
 \begin{align}
-    n^{\mu} D_{\mu} \psi(x) = \lim_{\epsilon \to 0} \frac{ \psi(x + n \epsilon) - U(x + n \epsilon, x) \psi(x) }{\epsilon}, \label{eq:cov_derivative1}
+    n^{\mu} D_{\mu} \psi(x) = \lim_{\epsilon \to 0} \frac{ U(x,x + \epsilon n) \psi(x + \epsilon n) - \psi(x) }{\epsilon}, \label{eq:cov_derivative1}
 \end{align}
 
-to compensate for the shift in $x$. Now, the derivative transforms as
+to compensate for the shift in $x$. Now, the derivative term transforms as desired,
 
 \begin{align*}
-    n^{\mu} D_{\mu} \psi(x) \longrightarrow n^{\mu} V(x) D_{\mu} \psi(x).
+    n^{\mu} D_{\mu} \psi(x) \longrightarrow n^{\mu} \tilde{D}_{\mu} \tilde{\psi}(x) = n^{\mu} V(x) D_{\mu} \psi(x).
 \end{align*}
 
-We can Taylor-expand $U(x + n \epsilon, x)$ around $\epsilon = 0$ and find
+Since the compensator field is non-local and thus not representing a physical particle, we Taylor-expand $U(x + n \epsilon, x)$ around $\epsilon = 0$ and find
 
 \begin{align*}
-    U(x,x + n \epsilon) &\approx U(x,x) + \frac{1}{1!} \frac{ \partial U }{ \partial x^{\mu} } \frac{ \partial (x^{\mu} + n^{\mu} \epsilon) }{ \partial \epsilon } \Biggr \rvert_{\epsilon = 0} \cdot \epsilon + O(\epsilon^2) \\
-    &= id + \frac{ \partial U }{ \partial x^{\mu} } \Biggr \rvert_{\epsilon = 0} n^{\mu} \epsilon + O(\epsilon^2) \\
-    &= id - i g \epsilon n^{\mu} A_{\mu}^a(x) T^a + O(\epsilon^2), \numberthis \label{eq:compensator1}
+    U(x,x + \epsilon n) &\approx U(x,x) + \frac{1}{1!} \frac{ \partial U }{ \partial x^{\mu} } \frac{ \partial (x^{\mu} + \epsilon n^{\mu}) }{ \partial \epsilon } \Biggr \rvert_{\epsilon = 0} \cdot \epsilon + O(\epsilon^2) \\
+    &= id + \frac{ \partial U }{ \partial x^{\mu} } \Biggr \rvert_{\epsilon = 0} \epsilon n^{\mu} + O(\epsilon^2) \\
+    &= id + i g \epsilon n^{\mu} A_{\mu}^a(x) T^a + O(\epsilon^2), \numberthis \label{eq:compensator1}
 \end{align*}
 
-where we introduced real-valued bosonic vector-fields $A_{\mu}^a(x)$\footnote{$A_{\mu}^a(x)$ is an auxiliary field that is the infinitesimal limit of a compensator field, also called \df{connection}}, an arbitrary constant $g \in \mathbb{R}_{>0}$ and the generators $T^a \in su(N)$, the Lie-algebra of $SU(N)$. The fields $A_{\mu}^a(x)$ are defined by
+where we introduced a local real-valued bosonic vector-fields $A_{\mu}^a(x)$\footnote{$A_{\mu}^a(x)$ is an auxiliary field that is the infinitesimal limit of a compensator field, also called a \df{connection} on a fibre-bundle.}, an arbitrary constant $g \in \mathbb{R}_{>0}$ and the generators $T^a \in su(N)$, the Lie-algebra of $SU(N)$. The fields $A_{\mu}^a(x)$ are defined by
 
 \begin{align*}
-    \frac{ \partial U }{ \partial x^{\mu} } \Biggr \rvert_{\epsilon = 0} \eqqcolon -ig A_{\mu}^a(x) T^a.
+    \frac{ \partial U }{ \partial x^{\mu} } \Biggr \rvert_{\epsilon = 0} \eqqcolon ig A_{\mu}^a(x) T^a.
 \end{align*}
 
-Since $C_{x,n}(t) \coloneqq U(x + n t, x)$ for every $x$ and $n$ is a curve in $SU(N)$ going through $id$ at $t = 0$, its derivative evaluated at $t = 0$ is therefore an element of the Lie-algebra $su(N)$. Inserting this into \eqref{eq:cov_derivative1}
+Since $C_{x,n}(t) \coloneqq U(x, x + t n)$ for every $x$ and $n$ is a curve in $SU(N)$ going through $id$ at $t = 0$, its derivative evaluated at $t = 0$ is therefore an element of the Lie-algebra $su(N)$\footnote{The Lie-algebra element is $-ig A_{\mu}^a(x) T^a$, where $-ig A_{\mu}^a(x)$ are the coefficients for the generators $T^a$. The sum over $a$ is implicit.}. Inserting this into \eqref{eq:cov_derivative1}
 
 \begin{align*}
-    n^{\mu} D_{\mu} \psi(x) &= \lim_{\epsilon \to 0} \frac{ \psi(x + n \epsilon) - \psi(x) + i g \epsilon n^{\mu} A_{\mu}^a(x) T^a \psi(x) }{\epsilon} \\
+    n^{\mu} D_{\mu} \psi(x) &= \lim_{\epsilon \to 0} \frac{ \psi(x + \epsilon n) + i g \epsilon n^{\mu} A_{\mu}^a(x) T^a \psi(x + \epsilon n) - \psi(x) }{\epsilon} \\
     &= \lim_{\epsilon \to 0} \frac{ \psi(x + n \epsilon) - \psi(x) }{\epsilon} + ig n^{\mu} A_{\mu}^a(x) T^a \psi(x) \\
     &= n^{\mu} \left( \partial_{\mu} + ig A_{\mu}^a(x) T^a \right) \psi(x),
 \end{align*}
@@ -343,11 +387,68 @@ Let $n_1 \neq n_2$ be two 4-vectors and $\epsilon > 0$. The \df{plaquette} (see 
 
 \end{definition}
 
-The plaquette $\hat{U}_{n_1,n_2}(\epsilon,x)$ is not invariant under $SU(N)$, but its trace over color space $tr(\hat{U}_{n_1,n_2}(\epsilon,x))$ is, because of the cyclicity of the trace. Using equation \eqref{eq:compensator1}, we can write
+The plaquette $\hat{U}_{n_1,n_2}(\epsilon,x)$ is not invariant under $SU(N)$, but its trace over color space $tr(\hat{U}_{n_1,n_2}(\epsilon,x))$ is, because of the cyclicity of the trace. In the continuum theory the compensator field $U(x,y)$ is understood as the parallel transport of a curve connecting $x$ and $y$.
+
+\begin{theorem}[The compensator field $U(x,y)$ as parallel transporter]
+
+\label{thm:pexp}
+
+The unique $SU(N)$-valued object satisfying the defining transformation law \eqref{eq:trafo_compensator} is
+
+\begin{align}
+    U(x,y) = P \exp( ig \int_{y}^{x} d z^{\mu} A_{\mu}^a(z) T^a ), \label{eq:realu}
+\end{align}
+
+where $P$ is the \df{path-ordering} operator.
+
+\end{theorem}
+
+Equation \eqref{eq:realu} can be interpreted that a fermion moving from $x$ to $y$ picks up a (path-ordered) phase given by $A_{\mu}^a$ integrated over that path, thus $U(x,y)$ "links" spacetime points $x$ and $y$.
+
+\begin{proof}
+
+We have to show that \eqref{eq:realu} transforms as \eqref{eq:trafo_compensator}. First we denote the curve starting from $y$ as $\gamma(s)$, with $\gamma(0)=y$, then the role of the variable endpoint $x$ is taken by $\gamma(s)$,
 
 \begin{align*}
-    U(x, y) &= \exp(-ig (x-y)^{\mu} A_{\mu}^a(\frac{x+y}{2}) T^a +  O((x-y)^2) ) \\
-    U(x + \epsilon n_1, x + \epsilon n_2) &= \exp(-ig \epsilon (n_1 - n_2)^{\mu} A_{\mu}^a(x + \epsilon \frac{n_1 + n_2}{2} ) T^a +  O(\epsilon^2) ) \numberthis \label{eq:uexp}.
+    U(\gamma(s) ,y) = P \exp( ig \int_{y}^{\gamma(s)} d z^{\mu} A_{\mu}^a(z) T^a ).
+\end{align*}
+
+$U(\gamma(s) ,y)$ satisfies the differential equation
+
+\begin{align*}
+    \frac{d}{ds} U(\gamma(s) ,y) &= U(\gamma(s) ,y) \bigg\{ ig \frac{d}{ds} \int_{y}^{\gamma(s)} d z^{\mu} A_{\mu}^a(z) T^a \bigg\} \\
+    &= U(\gamma(s) ,y) \bigg\{ ig \frac{d \gamma^{\mu}}{ds} A_{\mu}^a(\gamma(s)) T^a \bigg\},
+\end{align*}
+
+or equivalently
+
+\begin{align}
+    \frac{dx^{\mu}}{ds} D_{\mu} U(x,y) = 0. \label{eq:Udgl}
+\end{align}
+
+Since the solution to a first order differential equation with a fixed boundary condition must be unique, equation \eqref{eq:realu} is therefore the unique solution to the above differential equation. A defining property of the covariant derivative was, that when applied to a fermion field, it transforms as
+
+\begin{align*}
+    D_{\mu} \psi(x) &\longrightarrow \tilde{D}_{\mu} \tilde{\psi}(x) = \textcolor{cyellow}{V(x) D_{\mu}} \psi(x), \\
+    D_{\mu} \psi(x) &\longrightarrow \tilde{D}_{\mu} \tilde{\psi}(x) = \textcolor{cyellow}{\tilde{D}_{\mu} V(x)} \psi(x),
+\end{align*}
+
+meaning that the $\textcolor{cyellow}{yellow}$ parts must be equal (as operators acting to the right applied to \textit{any} field) and $\tilde{D}_{\mu}$ is written in terms of the transformed fields $\tilde{A}_{\mu}^a$. We have not derived a transformation rule for $A_{\mu}^a(x)$. We also don't have to because, if $U(x,y)$ is the solution to \eqref{eq:Udgl}, then
+
+\begin{align*}
+    \frac{dx^{\mu}}{ds} \left[ \tilde{D}_{\mu} V(x) U(x,y) V^{\dagger}(y) \right] &= \frac{dx^{\mu}}{ds} \left[ \tilde{D}_{\mu} V(x) U(x,y) \right] V^{\dagger}(y) \\
+    &= V(x) \left[ \frac{dx^{\mu}}{ds} D_{\mu} U(x,y) \right] V^{\dagger}(y) \\
+    &= 0,
+\end{align*}
+
+using $V(x) D_{\mu} = \tilde{D}_{\mu} V(x)$ in the second line. Therefore $V(x) U(x,y) V^{\dagger}(y)$ is the (unique) solution to the transformed differential equation and thus must be the transformed version of $U(x,y)$ under $SU(N)$.
+
+\end{proof}
+
+If $x$ and $y$ are not far appart - say $y=x+\epsilon n$, for an $\epsilon>0$ small - the integrals within the path-ordered exponential can be approximated as the differnence between the two spacetime points in every direction $\mu$ multiplied by the value of $A_{\mu}^a(x)$ evaluated between the two points\footnote{This is in priciple the midpoint rule within a Riemann sum that has only one summand. The  approximation is good up to $O(\epsilon^3)$.},
+
+\begin{align*}
+    U(x + \epsilon n_1, x + \epsilon n_2) &= \exp(-ig \epsilon (n_1 - n_2)^{\mu} A_{\mu}^a(x + \epsilon \frac{n_1 + n_2}{2} ) T^a +  O(\epsilon^3) ) \numberthis \label{eq:uexp}.
 \end{align*}
 
 If $\epsilon$ is small we can expand
@@ -380,7 +481,7 @@ Using this formula as well as the Baker–Campbell–Hausdorff formula\footnote{
     \Bigg. &\textcolor{cyellow}{+\frac{1}{2} g^2 \epsilon^2 n_1^{\mu} A_{\mu}^a(x) n_2^{\nu} A_{\nu}^b(x) [T^a,T^b] -\frac{1}{2} g^2 \epsilon^2 n_2^{\mu} A_{\mu}^a(x) n_1^{\nu} A_{\nu}^b(x) [T^a,T^b] + O(\epsilon^3)} \Bigg)
 \end{align*}
 
-By staring long enough at this expression, we see that there are a lot of terms cancelling each other; the first terms in the first \num{4} lines cancel exactly, the second terms in the first \num{4} lines all cancel except the terms involving $\textcolor{cyellow}{2 n_1}$ and $\textcolor{cyellow}{2 n_2}$, and the two terms in the fifth line cancel, and the two terms in the sixth line are actually the same. Thus, we have \num{3} terms surviving corresponding to the \textcolor{cyellow}{yellow} color. Using the directed fields and derivatives $n_i^{\mu} A_{\mu}^a(x) \eqqcolon A_i^a(x)$ and $n_j^{\nu} \partial_{\nu} n_i^{\mu} A_{\mu}^a(x) \eqqcolon \partial_j A_i^a(x)$, we end up in
+By staring long enough at this expression, we see that there are a lot of terms cancelling each other; the first terms in the first \num{4} lines cancel exactly, the second terms in the first \num{4} lines all cancel except the terms involving $\textcolor{cyellow}{2 n_1}$ and $\textcolor{cyellow}{2 n_2}$, the two terms in the fifth line cancel, and the two terms in the sixth line are actually the same. Thus, we have \num{3} terms surviving corresponding to the \textcolor{cyellow}{yellow} color. Using the directed fields and derivatives $n_i^{\mu} A_{\mu}^a(x) \eqqcolon A_i^a(x)$ and $n_j^{\nu} \partial_{\nu} n_i^{\mu} A_{\mu}^a(x) \eqqcolon \partial_j A_i^a(x)$, we end up in
 
 \begin{align*}
     \hat{U}_{n_1,n_2}(\epsilon,x) = \exp \Bigg( -ig \epsilon^2 [ \underbrace{\partial_1 A_2^a(x) - \partial_2 A_1^a(x) + g f^{abc} A_1^b(x) A_2^c(x)}_{\eqqcolon F_{12}^a} ] T^a + O(\epsilon^3) \Bigg) \numberthis \label{eq:plaq_exp}
@@ -427,6 +528,22 @@ The quadratic terms in the Lagrangian are always of the form $-\frac{1}{2} (\tex
 
 Where $\slashed{D} = \gamma^{\mu} D_{\mu}$ is the \df{Feynman slash notation}. Just as in the Abelian theory, there is no term quadratic in $A$ proportional to $m_A A_{\mu}^a A^{\mu,a}$, a mass-term for the gauge fields, because this would violate the $SU(N)$-invariance. The fundamental particle which is represented by the field must therefore be massless $m_A = 0$. The constant $g$ can be interpreted as \df{coupling constant}. The terms in the above Lagrangian are actually the only ones that can appear if we demand the spacetime to have $D=4$ dimensions and parity- (P) and time-reversal- (T) invariance. The gauge part of the Lagrangian employs interactions among the gauge fields, namely the theory is equipped with pure 3- and 4-vertices of gauge bosons.
 
+\subsection{Observables}
+
+In path integral formalism the \df{expectation value} of a arbitrary observable $\mathcal{O}$ written in terms of field degrees of freedom is given by
+
+\begin{align}
+    \langle \mathcal{O}[\psi, \bar{\psi}, A] \rangle \coloneqq \lim_{t \to \infty(1-i \epsilon)} \frac{ \int \mathcal{D}\psi \mathcal{D} \bar{\psi} \mathcal{D} A \mathcal{O}[\psi, \bar{\psi}, A] e^{iS[\psi, \bar{\psi}, A]} }{ \int \mathcal{D}\psi \mathcal{D} \bar{\psi} \mathcal{D} A e^{iS[\psi, \bar{\psi}, A]} }. \label{eq:expectation_value}
+\end{align}
+
+The observable can be any combination of time-ordered products of gauge- and fermion-fields, so called \df{time-ordered correlations functions} of fields. The part in the denominatior is called the \df{partition function} of the system and usually denoted by $Z$,
+
+\begin{align*}
+    Z = \int \mathcal{D}\psi \mathcal{D} \bar{\psi} \mathcal{D} A e^{iS[\psi, \bar{\psi}, A]}.
+\end{align*}
+
+The expectation value has an unconventional limit that has to be taken from the expression\footnote{Only physicists come up with the idea to take a limit containing an infinitesimal $\epsilon$ multiplied by infinity. Calling it unconventional barely does justice. Suprisingly this expression is mathematically legal, because $\epsilon$ is held constant while taking the limit. Nonetheless it hurts the eye.}. The limit has a slight tilt in the complex plane in order to suppress terms of the form $e^{-i \Delta E_n T}$, where $E_n = E_n - E$ denotes the energy difference of the state with quantum number $n$ to the state considered in the observable. Only the term with the least suppressed weight and the lowest $\Delta E_m$ for some $E_m \approx E$ survives the limit. Using that particaly limit, exactly the state considered in the observable is projected out.
+
 \begin{comment}
 TODO:
 non-abelian, hadronic physics, importance, renormalization problems, running coupling, pert theory in high enery phsyics, not in low energy regime
@@ -451,7 +568,7 @@ with fermion- (F) and gauge-part (G)
     \mathcal{L}_G^M &= - \frac{1}{4} F_{\mu \nu}^a F_a^{\mu \nu},
 \end{align*}
 
-where - for simplicity - there is only one fundamental Dirac spinor field with mass $m$, $D_{\mu} = \partial_{\mu} + ig A_{\mu}^a(x) T^a$ is the \df{gauge covariant derivative}\footnote{We use the particle physics convention of the metric tensor $\eta_{\mu \nu}$ with signature $(+,-,\dots,-)$. In $D=4$ dimensions, $\eta_{\mu \nu} = \mathrm{diag}(+1, -1, -1, -1)_{\mu \nu}$} (see equation \eqref{eq:cov_derivative}), $T^a$ are the generators of the Lie-algebra of the gauge group and $A_{\mu}^a(x)$ are the (massless) gauge fields introduced in the previous section \ref{sec:gauge_theories}. The (color) index $a$ runs from $1$ to $N^2-1$, where $N$ is degree of the special unitary symmetry group $SU(N)$. The \df{field strength tensor} is defined as (see equation \eqref{eq:ymtensor})
+where - for simplicity - there is only one fundamental Dirac spinor field with mass $m$, $D_{\mu} = \partial_{\mu} + ig A_{\mu}^a(x) T^a$ is the \df{gauge covariant derivative} (see equation \eqref{eq:cov_derivative}), $T^a$ are the generators of the Lie-algebra of the gauge group and $A_{\mu}^a(x)$ are the (massless) gauge fields introduced in the previous section \ref{sec:gauge_theories}. The (color) index $a$ runs from $1$ to $N^2-1$, where $N$ is degree of the special unitary symmetry group $SU(N)$. The \df{field strength tensor} is defined as (see equation \eqref{eq:ymtensor})
 
 \begin{align*}
     F_{\mu \nu}^a = \partial_{\mu} A_{\nu}^a - \partial_{\nu} A_{\mu}^a - g f_{abc} A_{\mu}^b A_{\nu}^c.
@@ -498,6 +615,8 @@ Notice that when in Minkowski space $\mu$ takes values $0, 1, 2, 3$, $\mu = 0$ b
     \partial^0 &\longrightarrow - i \partial^4, \\
     \partial_k &\longrightarrow \partial_k.
 \end{align*}
+
+\subsubsection{Fermion part}
 
 Let's first transform the fermion and interaction part of $\mathcal{L}_{YM}^M$ (we write the space and time components explicitly)
 
@@ -568,7 +687,7 @@ It remains to determine the operator $S$. Since the Wick rotation does not affec
     S \gamma^0 = \gamma^0 S^{-1}.
 \end{align*}
 
-Using the above restriction, we end up in
+The second equation makes sense, because then the Dirac-adjoint transforms as $\overline{\psi}(\vec{x}, t) \stackrel{\text{WR}}{\longrightarrow} \overline{\psi_E}(\vec{x}, \tau) S^{-1}$, cancelling the $S$ when multiplied with $\psi$. Using the above restrictions, we end up in
 
 \begin{align*}
     S &= e^{\frac{\theta}{2} \gamma^4 \gamma^5 }, \\
@@ -606,14 +725,18 @@ And we obtain the fermion and interaction part of the Euclidean Lagrangian $\mat
     &\stackrel{\text{WR}}{\longrightarrow} - i \int d^3\vec{x} (-i d\tau) \mathcal{L}_{F}^E = - \int d^4x \mathcal{L}_{F}^E = - \mathcal{S}_{F}^E,
 \end{align*}
 
-as desired to model a probability density in the path integral. Next we look at the pure gauge Lagrangian $\mathcal{L}_{G}^M$. The trace over the field strength tensor transforms just as it is
+as desired to model a probability density in the path integral.
+
+\subsubsection{Gauge part}
+
+Next we look at the pure gauge Lagrangian $\mathcal{L}_{G}^M$. The Euclidean field strength tensor consists of derivatives and gauge fields, both transform equally under the Wick-rotation. Thus, the trace over the field strength tensor transforms just as it is
 
 \begin{align*}
     \mathcal{L}_G^M &= - \frac{1}{4} F_{\mu \nu}^a F_a^{\mu \nu} \\
-    &\stackrel{\text{WR}}{\longrightarrow} - \frac{1}{4} (F_E)_{\mu \nu}^a (F_E)_a^{\mu \nu} = - \mathcal{L}_G^E,
+    &\stackrel{\text{WR}}{\longrightarrow} - \frac{1}{4} (F_E)_{\mu \nu}^a (F_E)_a^{\mu \nu} = - \mathcal{L}_G^E.
 \end{align*}
 
-because the Euclidean field strength tensor transforms trivially. It derives as
+Using the same rules for derivatives and gauge fields, it derives as
 
 \begin{align*}
     (F_E)_{\mu \nu}^a = \partial_{\mu} (A_E)_{\nu}^a - \partial_{\nu} (A_E)_{\mu}^a - g f_{abc} (A_E)_{\mu}^b (A_E)_{\nu}^c.
@@ -621,11 +744,11 @@ because the Euclidean field strength tensor transforms trivially. It derives as
 
 \subsection{Lattice Discretisation}
 
-To discretise the theory, from now on we work in $D=4$ dimensional Euclidean spacetime and discretise the spacetime in terms of a lattice.
+To discretise the theory, from now on we work in $D=4$ dimensional Euclidean spacetime. The spacetime is discretized in terms of a lattice.
 
 \begin{definition}[4D lattice]
 
-Let $L_0, L_1, L_2, L_3 \in \mathbb{N}$ be natural numbers, define the \df{full lattice volume} as $V \coloneqq L_0 \cdot L_1 \cdot L_2 \cdot L_3$ and the \df{full 4D lattice} of volume $V$ as
+Let $L_0, L_1, L_2, L_3 \in \mathbb{N}$ be natural numbers, define the \df{full lattice volume} in terms of the lattice spacing as $V \coloneqq L_0 \cdot L_1 \cdot L_2 \cdot L_3$ and the \df{full 4D lattice} of volume $V$ as
 
 \begin{align*}
     \Lambda \coloneqq \{ n = (n_0, n_1, n_2, n_3) \mid n_i \in \{0, 1, \dots, L_i - 1 \}, i \in \{0,1,2,3\} \}.
@@ -633,38 +756,77 @@ Let $L_0, L_1, L_2, L_3 \in \mathbb{N}$ be natural numbers, define the \df{full 
 
 \end{definition}
 
-We define the \df{lattice spacing} $a > 0$ (also called \df{lattice constant}), which is a real number of mass dimension 1\footnote{We use particle physics units $c = \hbar = 1$ in which length and time have the same unit. It is therefore legal to use the same $a$ as lattice spacing in all $4$ spacetime dimensions.}. Using this we can span the (finite) 4D spacetime lattice.
+We define the \df{lattice spacing} $a > 0$ (also called \df{lattice constant}), which is a real number of mass dimension 1\footnote{We use particle physics units $c = \hbar = 1$ in which length and time have the same unit. It is therefore legal to use the same $a$ for a lattice spacing in all $4$ spacetime dimensions.}. This spans the (finite) 4D spacetime lattice, where each point $n$ on the lattice corresponds to a physical point $x = an$ in spacetime.
 
-We start by discretising the gauge-part of the theory. Here our effort in deriving the gauge-part using the plaquette will bear fruit. We note the gauge-part of the Lagrangian (we drop the subscript $E$ for "Euclidean" from now on)
+We start by discretising the gauge-part of the theory. Here our effort in deriving the gauge-part using the plaquette will bear fruit. Note the gauge-part of the Lagrangian (the subscript $E$ for "Euclidean" is dropped from now on)
 
 \begin{align*}
     \mathcal{L}_G &= \frac{1}{4} F_{\mu \nu}^a F^{\mu \nu, a} \\
     &= \frac{1}{2} \sum_{\mu, \nu} tr( F_{\mu \nu}^a F_{\mu \nu}^b T^a T^b).
 \end{align*}
 
-Notice that in Euclidean spacetime upper and lower Lorentz-indices do not differ, $F_{\mu \nu}^a = F^{\mu \nu, a}$. The Lagrangian was actually constructed as the trace over the sum of plaquettes in all possible $(\mu, \nu)$-subspaces. To see this, we reuse the result from equation \eqref{eq:plaq_exp} with $n_1 = e_{\mu}$ and $n_2 = e_{\nu}$, where $e_{\mu}$ is the unit vector in direction $\mu$,
+In the second step, the sum over $\mu$ and $\nu$ was explicitly written. Notice that in Euclidean spacetime upper and lower Lorentz-indices do not differ, $F_{\mu \nu}^a = F^{\mu \nu, a}$. The Lagrangian was actually constructed as the trace over the sum of plaquettes in all possible $(\mu, \nu)$-subspaces. To see this, we reuse the result from equation \eqref{eq:plaq_exp} with $n_1 = \hat{\mu}$ and $n_2 = \hat{\nu}$, where $\hat{\mu}$ is the unit vector in direction $\mu$,
 
 \begin{align*}
     \hat{U}_{\mu \nu}(\epsilon,x) &= \exp(-ig \epsilon^2 F_{\mu \nu}^a T^a + O(\epsilon^3) ) \\
     &= \delta_{\mu \nu} \cdot id -ig \epsilon^2 F_{\mu \nu}^a T^a + i O(\epsilon^3) + \frac{1}{2!}(-ig \epsilon^2)^2 \textcolor{cyellow}{F_{\mu \nu}^a F_{\mu \nu}^b T^a T^b } + \delta_{\mu \nu} O(\epsilon^6).
 \end{align*}
 
-This is the plaquette in subspace $(e_{\mu}, e_{\nu})$. In the last line, the exponential was written in its series form, where it has to be noted that there is no sum over the Lorentz-indices $\mu,\nu$ in the expression above. Also when tracking down the $O(\epsilon^3)$-term, it turns out to be imaginary. The \textcolor{cyellow}{yellow} term is actually the same that is traced and summed over in the Lagrangian. Solving the equation for the yellow part and taking the real-part on both sides,
+This is the plaquette in subspace $(\hat{\mu}, \hat{\nu})$. In the last line, the exponential was written in terms of its series representation, where it has to be noted that there is no sum over the Lorentz-indices $\mu,\nu$ in the expression above. Also when tracking down the $O(\epsilon^3)$-term, it turns out to be imaginary. The \textcolor{cyellow}{yellow} term is actually the same that is traced and summed over in the Lagrangian. Solving the equation for the yellow part and taking the trace of the real-part on both sides (the trace over the yellow part itself is real),
 
 \begin{align*}
-    F_{\mu \nu}^a F_{\mu \nu}^b T^a T^b = \frac{2}{g^2 \epsilon^4} Re \left[ \delta_{\mu \nu} \cdot id - \hat{U}_{\mu \nu}(\epsilon,x) \right] + \delta_{\mu \nu} O(\epsilon^{2})
+    tr( F_{\mu \nu}^a F_{\mu \nu}^b T^a T^b) = \frac{2}{g^2 \epsilon^4} Re \; tr\left[ \delta_{\mu \nu} \cdot id - \hat{U}_{\mu \nu}(\epsilon,x) \right] + \delta_{\mu \nu} O(\epsilon^{2}).
 \end{align*}
 
-and inserting this expression into the Lagrangian gives
+ By taking the real-part, the $O(\epsilon^3)$-term vanishes. Inserting this expression into the Lagrangian gives
 
 \begin{align*}
     \mathcal{L}_G &= \frac{1}{2} \sum_{\mu, \nu} tr( F_{\mu \nu}^a F_{\mu \nu}^b T^a T^b) \\
     &= \frac{1}{g^2 \epsilon^4} \sum_{\mu, \nu} Re \; tr\left[ \delta_{\mu \nu} \cdot id - \hat{U}_{\mu \nu}(\epsilon,x) \right] + O(\epsilon^{2}).
 \end{align*}
 
-One usually uses the same lattice spacing $a$ in all spatial and time directions ($\hbar = 1$). Of importance is only that the value of $a$ is chosen small, because it determines to what length and time scale the system can be resolved. The limit $a \to 0$ is called the continuum limit.
+This is still the continuum Lagrangian, but written in terms of plaquettes of size $\epsilon$ instead of the field strength tensor. The term above is also purely real by construction, thus $e^{-S_G}$ can be interpreted as probability density.
 
-The lattice is structured as follows.
+Here we discretize the involved $SU(N)$-valued compensator fields $U(x,x+\epsilon \hat{\mu})$. At this point we can just replace $\epsilon$ with the lattice spacing $a$ and only keep the fields in discrete spacetime points $an$ for $n \in \Lambda$. All fundamental fields and objects are therefore replaced with their discretized counterparts,
+
+\begin{align*}
+    U(x,x + \epsilon \hat{\mu}) = U(an,an + a\hat{\mu}) &\longrightarrow U_{\mu}(n), \\
+    \hat{U}_{\mu \nu}(\epsilon, x) = \hat{U}_{\mu \nu}(a, an) &\longrightarrow \hat{U}_{\mu \nu}(n), \\
+    A_{\mu}^b(x) = A_{\mu}^b(an) &\longrightarrow A_{\mu}^b(n), \\
+    \psi(x) = \psi(an) &\longrightarrow \psi(n).
+\end{align*}
+
+Integrals and derivatives are replaced as well,
+
+\begin{align*}
+    \int dx^D f(x) &\longrightarrow a^D \sum_{n \in \Lambda} f(n), \\
+    \partial_{\mu} f(x) &\longrightarrow \frac{1}{2a} \left( f(n+\hat{\mu}) - f(n-\hat{\mu}) \right).
+\end{align*}
+
+The derivative was discretized by using the fact that if the function $f(x)$ is smooth, then the right-hand and the left hand derivatives are equal and thus $\partial_{\mu} = \frac{1}{2}(\partial_{+\mu} + \partial_{-\mu})$. Recalling the definition of the directional derivative along $n$, equation \eqref{eq:dir_derivative}, we define the \df{left-hand or forward derivative} in direction $n=+\hat{\mu}$ and the \df{right-hand or backward derivative} in direction $n=-\hat{\mu}$ respectively
+
+\begin{align*}
+    n^{\mu} \partial_{\mu} \psi(x) &\stackrel{n = +\hat{\mu}}{=} \lim_{\epsilon \to 0^{+}} \frac{ \psi(x + \epsilon \hat{\mu}) - \psi(x) }{\epsilon} &\eqqcolon \partial_{+\mu} \psi(x), \\
+    n^{\mu} \partial_{\mu} \psi(x) &\stackrel{n = -\hat{\mu}}{=} - \lim_{\epsilon \to 0^{+}} \frac{ \psi(x - \epsilon \hat{\mu}) - \psi(x) }{\epsilon} = \lim_{\epsilon \to 0^{+}} \frac{ \psi(x) - \psi(x - \epsilon \hat{\mu}) }{\epsilon} &\eqqcolon \partial_{-\mu} \psi(x).
+\end{align*}
+
+
+This very much looks like central differences with lattice spacing $a/2$, but we only have nearest neighbour interactions and the error is smaller than with forward or backward differences. The same holds for the covariant derivative, which is then replaced by
+
+\begin{align*}
+    D_{\mu} f(x) = \frac{1}{2} \left[ D_{+\mu} + D_{-\mu} \right] f(x) \longrightarrow \frac{1}{2a} \left[ U_{\mu}(n) f(n+\hat{\mu}) - U_{-\mu}(n) f(n-\hat{\mu}) \right]
+\end{align*}
+
+with 
+
+\begin{align*}
+    D_{+\mu} f(x) = \lim_{\epsilon \to 0^{+}} \frac{ U(x,x + \epsilon \hat{\mu}) f(x + \epsilon \hat{\mu}) - f(x) }{\epsilon} &\longrightarrow \frac{1}{a} \left[ U_{\mu}(n) \psi(n + \hat{\mu}) - \psi(n) \right], \\
+    D_{-\mu} f(x) = \lim_{\epsilon \to 0^{+}} \frac{ f(x) - U(x,x - \epsilon \hat{\mu}) f(x - \epsilon \hat{\mu}) }{\epsilon} &\longrightarrow \frac{1}{a} \left[ \psi(n) - U_{-\mu}(n) \psi(n - \hat{\mu}) \right].
+\end{align*}
+
+The $\pm$ in $D_{\pm \mu}$, analogue to the directional derivatives, denotes left-hand or right-hand gauge covariant derivatives in direction $\mu$. One usually uses the same lattice spacing $a$ in all spatial and time directions ($\hbar = 1$). Of importance is only that the value of $a$ is chosen small, because it determines to what length and time scale the system can be resolved. The limit $a \to 0$ is called the \df {naive continuum limit}.
+
+The lattice is structured as in figure \ref{fig:link_variable}.
 
 \begin{figure}[H]
   \centering
@@ -674,7 +836,41 @@ The lattice is structured as follows.
   \label{fig:link_variable}
 \end{figure}
 
-Since the link variables $U_{\mu}(n)$ connect neighbouring spinors $\psi(n)$ and $\psi(n + \hat{\mu})$ they reside visually "in-between" the lattice points. The index $\mu$ decorating the link variable is a directed one; it can take 8 values in a 4D lattice, the possible values are therefore $\mu \in \{-4, -3, -2, -1, 1, 2, 3, 4\}$. Using this notation, we have $U_{\mu}(n) = U_{-\mu}(n + \hat{\mu})^{\dagger}$, because the connection between lattice site $n$ and $n + \mu$ is equal in both directions. The spinor fields $\psi(n)_{\alpha,a}$ residing on the lattice points carry color- ($a$) and spinor indices ($\alpha$).
+Since the compensator fields $U_{\mu}(n)$ (their discretized variants are usually called \df{link variables}) connect neighbouring spinors $\psi(n)$ and $\psi(n + \hat{\mu})$ they reside visually "in-between" the lattice points. The index $\mu$ decorating the link variable is a directed one; it can take 8 values in a 4D lattice, the possible (Euclidean) values are $\mu \in \{\pm 1, \pm 2, \pm 3, \pm 4\}$. Using this notation, we have $U_{\mu}(n) = U_{-\mu}(n + \hat{\mu})^{\dagger}$, because the connection between lattice site $n$ and $n + \mu$ is equal in both directions\footnote{This follows directly from equation \eqref{eq:realu}}. The spinor fields $\psi(n)_{\alpha,a}$ residing on the lattice points carry color- ($a$) and spinor indices ($\alpha$). Therfore for each lattice site, we have \num{12} complex numbers from the fermion fields and \num{4} $SU(3)$ matrices coming from the link variables.
+
+The full discretized Yang-Mills action is
+
+\begin{align*}
+    \mathcal{S} = \mathcal{S}_G + \mathcal{S}_F,
+\end{align*}
+
+with
+
+\begin{align*}
+    \mathcal{S}_G &= \frac{1}{g^2} \sum_{n \in \Lambda} \sum_{\mu, \nu} Re \; tr\left[ \delta_{\mu \nu} \cdot id - \hat{U}_{\mu \nu}(n) \right], \\
+    \mathcal{S}_F &= a^4 \sum_{n \in \Lambda} \bar{\psi}(n) \underbrace{\left[ \sum_{\mu} \frac{\gamma^{\mu}}{2} (D_{+\mu} + D_{-\mu}) + m \right]}_{\coloneqq D} \psi(n).
+\end{align*}
+
+The expression in the square brackets sandwiched by the fermion fields is the (naive) \df{Dirac-operator}. One of the problems with that term is that it brings so called \df{doublers} into the theory, artifacts from the lattice discretisation. Doublers are unphysical poles in the fermion propagagor $D^{-1}$ and thus correspond to particles that do not exist in the continuum theory with only one pole. In 4 dimensional spacetime, the action above incorporates \num{15} unphysical doublers\footnote{For general D-dimensional spacetime the theory would contain $2^D -1$ doublers. Of the total $2^D$ poles only one is physical.}. Wilson found a solution to this problem \cite{wilson1974}, namely he added term proportional to $a$ to the above expression which vanishes in the continuum limit. The \df{Wilson-Dirac-operator} then is
+
+\begin{align*}
+    D_W = \sum_{\mu} \frac{\gamma^{\mu}}{2} (D_{+\mu} + D_{-\mu}) + m - \frac{a}{2} \sum_{\mu} D_{-\mu} D_{+\mu}.
+\end{align*}
+
+This \df{$O(a)$-improvement} eliminates the doubler states, but breaks chiral symmetry. There are several other extensions of the action to deal with doublers and chiral symmetry breaking, for example the Sheikholeslami-Wohlert-term \cite{sheikholeslami1985} or the Lüscher-Weisz action \cite{luscher1985}. Unfortunately no improvement led to a lattice theory with correct continuum limit maintaining chiral symmetry, while simulaneously introducing no doublers. It is even proven that such a lattice discretisation does not exist \cite{nielsen1981}. Evidently continuous rotational, translational and Lorentz-symmetry is broken as well by the lattice description.
+
+However, the next step is to translate expectation values \eqref{eq:expectation_value} to the lattice description of the theory. First, the \df{Euclidean expectation value}
+
+\begin{align*}
+    \langle \mathcal{O}[\psi, \bar{\psi}, A] \rangle \coloneqq \lim_{\tau \to \infty} \frac{ \int \mathcal{D}\psi \mathcal{D} \bar{\psi} \mathcal{D} A \mathcal{O}[\psi, \bar{\psi}, A] e^{-S[\psi, \bar{\psi}, A]} }{ \int \mathcal{D}\psi \mathcal{D} \bar{\psi} \mathcal{D} A e^{-S[\psi, \bar{\psi}, A]} }.
+\end{align*}
+
+The strange limit from the Minkovskian expectation value \eqref{eq:expectation_value} has vanished, because of the Wick-rotation of the time-variable. While evaluating the functional integral exactly is clearly not feasable, but since the term $e^{-S}$ in the Euclidean spacetime can be seen as a probability density, we can interpret the functional integral as a expectation value in the statistical sense.
+
+\begin{comment}
+another approach to remove doublers
+from https://en.wikipedia.org/wiki/Staggered_fermion: A particular way to resolve this problem, first proposed by Leonard Susskind and John Kogut ( Kogut-Susskind fermion), is the staggered fermion approach where a new nonlocal action is constructed where the Dirac operator is treated as a square root.
+\end{comment}
 
 \begin{comment}
 TODO: as a renormalization scheme, observables, ...
@@ -682,6 +878,12 @@ boundary conditions, specially SF type,
 
 By introducing the finite lattice the the measure of the functional integral Dpsi (which in principle are infinite regular integrals) has been translated into many \footnote{To be precise, it's 12 times N^4 complex integrals; or 24*N^4 real integral} regular complex integral measures dpsi_{alpha,a}(n). The gauge field measure DA analogously translated into 4*N^4 SU(N) group valued measures DU_{\mu}(n) - integrations over the group. However the fields are reduced to a countable number of regular numbers.
 
+from: Digitizing Gauge Fields: Lattice Monte Carlo Results for Future Quantum Computers
+The Haar measure has the property that
+ integral dU TrU = 0 (8)
+where U is an SU(N) matrix. The integral
+Eq. (8) can be thought of as the expectation
+value of a Wilson loop in a theory where e􀀀S = 1.
 
 \end{comment}
 
@@ -1508,7 +1710,7 @@ There are some remarks to note about the method of conjugate gradient.
         M^{-1} A \vec{x} = M^{-1} \vec{b}.
     \end{align*}
 
-    It is assumed $M$ is such that is is easy to insert and it approximates $A$ in some way, resulting in $M^{-1} A$ to be better conditioned than was $A$. An examples of a particular preconditioner $M$ would be a diagonal matrix, with diagonal entries of $D$. It is indeed easy to invert and it approximates $A$ quite well if $A$ has non-zero diagonal entries and most off-diagonal entries are zero.
+    It is assumed $M$ is such that it is easy to invert and it approximates $A$ in some way, resulting in $M^{-1} A$ to be better conditioned than $A$\footnote{Or stated differently, that $M^{-1}A$ has a more clustered spectrum than $A$.}. An example of a particular preconditioner $M$ would be a diagonal matrix, with diagonal entries of $D$. It is indeed easy to invert and it approximates $A$ quite well if $A$ has non-zero diagonal entries and most off-diagonal entries are zero.
 \end{remark}
 
 \begin{remark}[\acrfull{cgne}]
@@ -1895,6 +2097,8 @@ because $\psi_o$ follows from the solution $\psi_e$ via
 
 \subsection{Schwarz Alternating Procedure}
 
+\label{sec:ddecomp}
+
 Domain decomposition is a way to partition the large system into (possibly many) smaller sub-problems with regularly updated boundary conditions coming from solutions of neighbouring sub-problems. They fit very well into the notion of parallel processing, because the sub-problem can be chosen to be contained in one single rank. The full lattice is split into sub-lattices called \df{local lattice}. Each rank has its own local lattice, the size of which is determined at compilation time. The full lattice consists of the ensemble of all local lattices arranged in a grid. It is therefore advisable to choose the size of decomposed sub-domains as a divisor of the local lattice size such that one or more blocks fit into one rank. These sub-problems can then be solved using a iterative solving method.
 
 \begin{figure}[H]
@@ -2270,63 +2474,98 @@ The complete \acrshort{sapgcr} kernel was implemented using Python in the exact 
 The possible datatypes for \code{ldtype}, \code{rdtype} and \code{sdtype} are \gls{binary64} and \gls{binary32}. Unfortunately there was no possibility to use \gls{binary16}, \gls{bfloat16} or \gls{tensorfloat32}, even though modern GPUs such as the one tested on support these datatypes, because the tensor-cores are not able to accelerate sparse matrix-vector products.
 
 
-The following plot series should give an estimate on how much speed improvement can be expected for a GPU-implementation of the solver algorithm. The results should also hint on how to optimally choose the (many) parameters for the solver. It has to be kept in mind that the transfer of the Dirac-operator (full, boundary or blocked) is not part of the time measurements; it is assumed that the operators already reside on the correct places (CPU memory or GPU memory), only spinors are transferred back and forth. Figures \ref{fig:sap_gcr0} - \ref{fig:sap_gcr3} contain the measurements. Every data-point represents the average of at least \num{20} runs of the \code{SAP\_GCR} kernel in the given configuration and Dirac-operator. The y-axis denotes the duration in seconds and the x-axis shows the configuration (\code{ncy}, \code{nmr}) as well as the block size (\code{bs}) increasing in computational effort per GCR-step from left to right.
+The following plot series should give an estimate on how much speed improvement can be expected for a GPU-implementation of the solver algorithm. The results should also hint on how to optimally choose the (many) parameters for the solver. It has to be kept in mind that the transfer of the Dirac-operator (full, boundary or blocked) is not part of the time measurements; it is assumed that the operators already reside on the correct places (CPU memory or GPU memory), only spinors are transferred back and forth. Figures \ref{fig:sap_gcr_start} - \ref{fig:sap_gcr_end} contain the measurements. Every data-point represents the average of at least \num{20} runs of the \code{SAP\_GCR} kernel in the given configuration and Dirac-operator. The y-axis denotes the duration in seconds and the x-axis shows the configuration (\code{ncy}, \code{nmr}) as well as the block size (\code{bs}) increasing in computational effort per GCR-step from left to right.
 
 
-Two configurations are non-standard; $(n_{cy}, n_{mr}) = (0,0)$ and "adaptive". The former indicates no preconditioning (thus a pure \acrshort{gcr} run) and in the latter configuration the parameters $n_{cy}$, $n_{mr}$ where chosen automatically in every iteration anew, the block size was chosen to be the largest possible. The adaptive choice was done as follows: If - after a Schwarz-cycle - the norm of the residual is not lower than the previous residual norm, the preconditioning phase is exited. Thus, at least one Schwarz-cycle is performed. A similar strategy is applied to determine the number of MR-steps: if - after at least \num{4} MR-steps - the norm of the blocked residual is larger than \num{0.9} times the previous residual norm, the MR-solver of that block exits. So, every block is treated differently in every cycle. A maximum of \num{20} Schwarz-cycles and \num{20} MR-steps on each block would be performed if the above exit conditions will never kick in. Therefore the adaptive version tries to find the optimal configuration in every step and every block separately.
+Two configurations are non-standard; $(n_{cy}, n_{mr}) = (0,0)$ and "adaptive". The former indicates no preconditioning (thus a pure \acrshort{gcr} run) and in the latter configuration the parameters $n_{cy}$, $n_{mr}$ where chosen automatically in every iteration anew (see proposal \ref{pp:adaptive}).
 
 
-The colors denote the datatype setup (\code{ldtype}, \code{rdtype}, \code{sdtype}) and the marker symbols indicate whether the calculation was performed purely on the CPU (circles; \textcolor{cbrown}{$\circ$}, \textcolor{cred}{$\circ$}, \textcolor{cblue}{$\circ$}), purely on the GPU (crosses; \textcolor{cbrown}{$\times$}, \textcolor{cred}{$\times$}, \textcolor{cblue}{$\times$}) or a hybrid variant, where only the MR-steps are calculated on the GPU and the remainder on the CPU, see proposal \ref{pp:sap_mr_gpu} (diamonds; \textcolor{cbrown}{$\diamond$}, \textcolor{cred}{$\diamond$}, \textcolor{cblue}{$\diamond$}). All combinations of the above configurations are present in the plots. The different plots show results from different matrices. \num{2} matrices where extracted directly from a run of openQxD (\code{sf\_no\_cstar\_8x8x8x8} and \code{sf\_no\_cstar\_16x16x16x16}), whereas \num{2} further matrices where taken from \cite{davis2011}. The matrix \code{conf6\_0-8x8-2} taken from \cite{davis2011} has a parameter $0 \le k \le k_c$. The closer $k$ is to its critical value $k_c$ the worse the matrix is conditioned. The used values for $k$ and $k_c$ are given in the title of the plots. The relative residual was chosen to be $10^{-6}$ and the number of GCR-steps until restart \code{nkv=7}.
+The colors denote the datatype setup (\code{ldtype}, \code{rdtype}, \code{sdtype}) and the marker symbols indicate whether the calculation was performed purely on the CPU (circles; \textcolor{cbrown}{$\mcirc$}, \textcolor{cred}{$\mcirc$}, \textcolor{cblue}{$\mcirc$}), purely on the GPU (crosses; \textcolor{cbrown}{$\times$}, \textcolor{cred}{$\times$}, \textcolor{cblue}{$\times$}) or a hybrid variant, where only the MR-steps are calculated on the GPU and the remainder on the CPU, see proposal \ref{pp:sap_mr_gpu} (diamonds; \textcolor{cbrown}{$\diamond$}, \textcolor{cred}{$\diamond$}, \textcolor{cblue}{$\diamond$}). Runs of openQxD dealing with the exact same problem are shown by black squares (if available, squares; $\msquare$). All combinations of the above configurations are present in the plots. The different plots show results from different matrices. \num{3} matrices where extracted directly from a run of openQxD (figures \ref{fig:sap_gcr_sf_8x8x8x8}, \ref{fig:sap_gcr_sf_8x8x8x8_2} and \ref{fig:sap_gcr_sf_16x16x16x16}), whereas \num{2} further matrices where taken from \cite{davis2011} (figures \ref{fig:sap_gcr_conf6_0-8x8-20_0.15717} and \ref{fig:sap_gcr_conf6_0-8x8-20_0.15}). The matrix \code{conf6\_0-8x8-2} taken from \cite{davis2011} has a parameter $0 \le k \le k_c$, the hopping parameter. The closer $k$ is to its critical value $k_c$ the worse the matrix is conditioned. The used values for $k$ and $k_c$ are given in the title of the plots. The relative residual was chosen to be $10^{-6}$ and the number of GCR-steps until restart \code{nkv=7}.
 
 \begin{figure}
     \centering
-    \includegraphics[width=1.0\textwidth]{plots/sap_gcr0}
-    \caption{Time measurements for the \code{SAP\_GCR} kernel on different matrices and configurations. The measurements where conducted on an AMD EPYC 7742 CPU @ 2.25GHz with 512 GB memory and an NVIDIA A100 SXM4 GPU with 40 GB memory.}
+    \includegraphics[width=1.0\textwidth]{plots/sap_gcr_sf_no_cstar_8x8x8x8_lattice_8x8x8x8_res=1e-06_nkv=7}
+    \caption{Time measurements for the \code{SAP\_GCR} kernel on different matrices and configurations. The measurements where conducted on an AMD EPYC 7742 CPU @ 2.25GHz with 512 GB memory and an NVIDIA A100 (via SXM4) GPU with 40 GB memory.}
     \label{fig:sap_gcr0}
+    \label{fig:sap_gcr_start}
+    \label{fig:sap_gcr_sf_8x8x8x8}
 \end{figure}
 
 \begin{figure}
     \centering
-    \includegraphics[width=1.0\textwidth]{plots/sap_gcr1}
-    \caption{Time measurements for the \code{SAP\_GCR} kernel on different matrices and configurations. The measurements where conducted on an AMD EPYC 7742 CPU @ 2.25GHz with 512 GB memory and an NVIDIA A100 SXM4 GPU with 40 GB memory.}
+    \includegraphics[width=1.0\textwidth]{plots/sap_gcr_conf6_0-8x8-20_kc=0.15717_k=0.15717_lattice_8x8x8x8_res=1e-06_nkv=7}
+    \caption{Time measurements for the \code{SAP\_GCR} kernel on different matrices and configurations. The measurements where conducted on an AMD EPYC 7742 CPU @ 2.25GHz with 512 GB memory and an NVIDIA A100 (via SXM4) GPU with 40 GB memory.}
     \label{fig:sap_gcr1}
+    \label{fig:sap_gcr_conf6_0-8x8-20_0.15717}
 \end{figure}
 
 \begin{figure}
     \centering
-    \includegraphics[width=1.0\textwidth]{plots/sap_gcr2}
-    \caption{Time measurements for the \code{SAP\_GCR} kernel on different matrices and configurations. The measurements where conducted on an AMD EPYC 7742 CPU @ 2.25GHz with 512 GB memory and an NVIDIA A100 SXM4 GPU with 40 GB memory.}
+    \includegraphics[width=1.0\textwidth]{plots/sap_gcr_conf6_0-8x8-20_kc=0.15717_k=0.15_lattice_8x8x8x8_res=1e-06_nkv=7}
+    \caption{Time measurements for the \code{SAP\_GCR} kernel on different matrices and configurations. The measurements where conducted on an AMD EPYC 7742 CPU @ 2.25GHz with 512 GB memory and an NVIDIA A100 (via SXM4) GPU with 40 GB memory.}
     \label{fig:sap_gcr2}
+    \label{fig:sap_gcr_conf6_0-8x8-20_0.15}
 \end{figure}
 
 \begin{figure}
     \centering
-    \includegraphics[width=1.0\textwidth]{plots/sap_gcr3}
-    \caption{Time measurements for the \code{SAP\_GCR} kernel on different matrices and configurations. The measurements where conducted on an AMD EPYC 7742 CPU @ 2.25GHz with 512 GB memory and an NVIDIA A100 SXM4 GPU with 40 GB memory.}
+    \includegraphics[width=1.0\textwidth]{plots/sap_gcr_sf_no_cstar_16x16x16x16_lattice_16x16x16x16_res=1e-06_nkv=7}
+    \caption{Time measurements for the \code{SAP\_GCR} kernel on different matrices and configurations. The measurements where conducted on an AMD EPYC 7742 CPU @ 2.25GHz with 512 GB memory and an NVIDIA A100 (via SXM4) GPU with 40 GB memory.}
     \label{fig:sap_gcr3}
+    \label{fig:sap_gcr_sf_16x16x16x16}
 \end{figure}
 
-\subsubsection{Discussion of figures \ref{fig:sap_gcr0} - \ref{fig:sap_gcr3}}
+\begin{figure}
+    \centering
+    \includegraphics[width=1.0\textwidth]{plots/sap_gcr_sf_no_cstar_8x8x8x8_2_lattice_8x8x8x8_res=1e-06_nkv=7}
+    \caption{Time measurements for the \code{SAP\_GCR} kernel on different matrices and configurations. The measurements where conducted on an Intel(R) 6130 @ 2.10GHz with 1.5 TB memory and an NVIDIA V100 (via PCIe) GPU with 16 GB memory.}
+    \label{fig:sap_gcr4}
+    \label{fig:sap_gcr_end}
+    \label{fig:sap_gcr_sf_8x8x8x8_2}
+\end{figure}
 
-An apparent trend visible in all plots is that the pure-GPU variants are most efficient when the block size is large (the number of blocks is small). The pure-CPU variants behave different - the block size has less influence on the run-time. In general, the pure-GPU variants are faster than the pure-CPU ones. This comes from the fact that they take advantage of concurrency. The hybrid-variants are as expected in-between them.
+\subsubsection{Discussion of figures \ref{fig:sap_gcr_start} - \ref{fig:sap_gcr_end}}
 
-As further general observation, the power of the \acrshort{sapgcr} solver is only fully unfolded if the condition number of the operator is large; the plots of \code{sf\_no\_cstar\_8x8x8x8} and \code{sf\_no\_cstar\_16x16x16x16} show no significant performance improvement of the SAP-preconditioning compared to a pure GCR solver without preconditioning \footnote{The runs with configuration $(n_{cy}, n_{mr}) = (0,0)$}, whereas the runs on \code{conf6\_0-8x8-2} do.
+An apparent trend visible in the whole plot series is that the pure-GPU variants are most efficient when the block size is large (the number of blocks is small). The pure-CPU variants behave different - the block size has less influence on the run-time. In general, the pure-GPU variants are faster than the pure-CPU ones. This comes from the fact that they take advantage of concurrency. The hybrid-variants are as expected in-between them, behaving similarly to the pure-GPU ones.
 
-An analysis of the different datatypes shows that the general trend is the lower the involved datatypes are in bit-length, the faster the solution is obtained, which makes sense in memory-bound problems. The setups with \gls{binary32} in reduction variables and as "small" datatype appear to be the most efficient. On the CPU they display on average a speedup compared to the case where only \gls{binary64} was used of $S = 1.246$. However, of the given datatype setups one should choose the one where the datatype of reduction variables (\code{rdtype}) is set to \gls{binary64} preventing over- or underflows. This was already discussed in section \ref{sec:simulating_cgne}.
+As further general observation, the power of the \acrshort{sapgcr} solver is only fully unfolded if the condition number of the operator is large; the plots of \code{sf\_no\_cstar\_8x8x8x8}, \code{sf\_no\_cstar\_8x8x8x8\_2} and \code{sf\_no\_cstar\_16x16x16x16} (figures \ref{fig:sap_gcr_sf_8x8x8x8}, \ref{fig:sap_gcr_sf_8x8x8x8_2} and \ref{fig:sap_gcr_sf_16x16x16x16}) show no significant performance improvement of the SAP-preconditioning compared to a pure GCR solver without preconditioning \footnote{The runs with configuration $(n_{cy}, n_{mr}) = (0,0)$}, whereas the runs on \code{conf6\_0-8x8-2} do (figures \ref{fig:sap_gcr_conf6_0-8x8-20_0.15717} and \ref{fig:sap_gcr_conf6_0-8x8-20_0.15}).
 
-Looking at the fist plot (\code{sf\_no\_cstar\_8x8x8x8}), as expected the preconditioning gives no significant improvement; on the CPU only \num{4} setups were faster than the one without preconditioning, on the GPU even none of the preconditioning setups beats the trivial case. Of the CPU ones that were faster than the trivial case, all had the same configuration $(n_{cy}, n_{mr}) = (1,4)$, but different block sizes. This shows that if the operator is well-conditioned, too much preconditioning worsens the performance. $(n_{cy}, n_{mr}) = (1,4)$ is the configuration with the least amount of preconditioning. The CPU run-time shows a strong dependence on the configuration; there are even certain configurations (for example $(n_{cy}, n_{mr}) = (4,6)$) that are more than \num{40} times slower than the no preconditioning case. A wrong choice of configuration parameters can thus lead to a significant performance decrease, whatever exactly "wrong" means in this context. The adaptive choice of parameters should here come to the rescue.
+An analysis of the different datatypes shows that the general trend is the lower the involved datatypes are in bit-length, the faster the solution is obtained, which makes sense in memory-bound problems. The setups with \gls{binary32} in reduction variables (\code{rdtype}) and as "small" datatype (\code{sdtype}) appear to be the most efficient. On the CPU they display on average a speedup compared to the case where only \gls{binary64} was used of $S = 1.246$. However, of the given datatype setups one should choose the one where the datatype of reduction variables (\code{rdtype}) is set to \gls{binary64} preventing over- or underflows. This was already discussed in section \ref{sec:simulating_cgne} for the \acrshort{cgne}-solver.
+
+Looking at the fist plot, figure \ref{fig:sap_gcr_sf_8x8x8x8}, as expected the preconditioning gives no significant improvement; on the CPU only \num{4} setups were faster than the one without preconditioning, on the GPU even none of the preconditioning setups beats the trivial case. Of all the CPU cases that were faster than the trivial case, all had the same configuration $(n_{cy}, n_{mr}) = (1,4)$, but different block sizes. This shows that if the operator is well-conditioned, too much preconditioning worsens the performance. $(n_{cy}, n_{mr}) = (1,4)$ is the configuration with the least amount of preconditioning. The CPU run-time shows a strong dependence on the configuration; there are even certain configurations (for example $(n_{cy}, n_{mr}) = (4,6)$) that are more than \num{40} times slower than the no preconditioning case. A wrong choice of configuration parameters can thus lead to a significant performance decrease, whatever "wrong" means exactly in this context. However, the plots show that performance of the algorithm is very sensitive to the choice of these parameters. The adaptive variant should here come to the rescue.
 
 The operator \code{sf\_no\_cstar\_16x16x16x16} has a very similar behaviour as \code{sf\_no\_cstar\_8x8x8x8}, because it is well-conditioned as well. The very same configurations give speedup compared to the case without preconditioning, this time both the CPU and GPU variants improved. The claim that the pure-GPU variant slows down with smaller block sizes is even more visible in this plot, since there are \num{8} block sizes to work on. Looking at the behaviour within a certain constant block size, the algorithm seems to be very sensitive to changes in the configuration. As an example block size $bs= 8^2 \cdot 16^2$, one would expect the run-time to either increase or decrease with respect to the amount of preconditioning. The actual results show a more complex dependence with an exceptional case at $(n_{cy}, n_{mr}) = (2,8)$. That exceptional case can be seen with all block sizes and on the CPU, GPU as well as in the hybrid case. The plot of \code{sf\_no\_cstar\_8x8x8x8} features such an exceptional case as well at $(n_{cy}, n_{mr}) = (4,6)$. However, with both matrices any preconditioning makes the run-time worse, they might not be very representative.
 
 Continuing to the matrix \code{conf6\_0-8x8-2} where the condition number depends on how close the $k = 0.15$ parameter is at its critical value $k_c = 0.15717$. This is the regime where the preconditioning shows benefits. For the pure-CPU cases, we see no strong dependence on the amount of preconditioning, but on the block size. Small block sizes seem to be beneficial, whereas the pure-GPU variant prefers large block sizes. Similar to the above analysis, the good condition number again give not much speedup gain, when comparing the preconditioned cases with the trivial case.
 
-Using the same matrix as above, but at the critical point $k=k_c$, we are in the regime where the \acrshort{sapgcr} algorithm shows its true potential; nearly all cases performed better than the trivial case without any preconditioning. The pure-GPU cases behave as usual - large block sizes are better. This time even the pure-CPU shows a dependence on the block size. Although, it's a weak dependence, but with smaller block sizes the CPU seems to perform slightly better (on contrary to the GPU). The hybrid cases - as usual in-between - are closer to the pure-GPU ones, because despite being hybrid most of the work is done on the GPU. the pattern within a certain block size is repeating and the best amount of preconditioning seems to be at $(n_{cy}, n_{mr}) = (4,6)$.
+Using the same matrix as above, but at the critical point $k=k_c$, we are in the regime where the \acrshort{sapgcr} algorithm shows its true potential; nearly all cases performed better than the trivial case without any preconditioning. The pure-GPU cases behave as usual - large block sizes are better. This time even the pure-CPU shows a dependence on the block size. Although, it's a weak dependence, but with smaller block sizes the CPU seems to perform slightly better (on contrary to the GPU). The hybrid cases - as usual in-between - are closer to the pure-GPU ones, because despite being hybrid most of the work is done on the GPU. The pattern within a certain block size is repeating and the best amount of preconditioning seems to be at $(n_{cy}, n_{mr}) = (4,6)$.
+
+Last but not least, the second matrix from openQxD \code{sf\_no\_cstar\_8x8x8x8\_2} (figure \ref{fig:sap_gcr_sf_8x8x8x8_2}) shows similar patterns as the matrix first matrix with the same configuration. The measurement was repeated in order to check whether there is a visible pattern common to both matrices. Unfortunately this is not the case. Although it is noticable that there is also an exceptional configuration that took disproportionally longer than the others at $(n_{cy}, n_{mr}) = (12,2)$. More importantly it is not the same configuration, making it hard to determine the best set of parameters beforehand and at the same time maintaining an perfect amount of preconditioning for all invocations of the solver.
 
 %The discussion is just a more extreme version of the previous paragraph. Within all block sizes, one can see the same pattern repeating. It seems that the configurations involving large amounts of preconditioning (large \code{ncy}, \code{nmr}) perform worse.
 
 \subsubsection{Conclusion}
 
 In general two different patterns can be observed in the above plot series. Either the matrix is bad conditioned and one can see that most of the preconditioned runs perform better than no preconditioning. Or the matrix is good conditioned and the preconditioned cases perform worse. In both cases the pattern within a block size repeats in other blocks sizes, but shifted. We see two types of patterns. For bad conditioned systems the pattern shows that the ideal case is at some point in the middle. On the other hand for well-conditioned system, the pattern seems random, but a increase of run-time with more preconditioning (higher values of $n_{cy}$ and $n_{mr}$) can be seen. Since the systems are already well conditioned, too much preconditioning can worsen the run-time.
+
+
+Since the algorithm is applied to many different Dirac-operators among evolving \acrshort{hmc}-trajectories - some well-conditioned, some ill-conditioned - it can be hard or even impossible to choose a set of parameters suitable for all cases. Specially, it is unavoidable to accidentially make a choice that falls on a configuration with exceptional long convergence time for a certain Dirac-operator within the long running HMC-simulation. It is therefore advisable to have the possibility to change the parameters during an active run or a configuration that adapts.
+
+\begin{proposal}{Adaptive choice of parameters in \acrshort{sapgcr}}{adaptive}
+
+Since the choice of parameters in the \acrshort{sapgcr} kernel seems non-trivial, we propose a adaptive variant of this algorithm. The parameters $n_{cy}$, $n_{mr}$ where chosen automatically in every iteration anew, the block size was chosen to be the largest possible. The adaptive choice was done as follows: If - after a Schwarz-cycle - the norm of the residual is not lower than the residual norm before the cycle, then the preconditioning phase is exited. Thus, at least one Schwarz-cycle is performed. A similar, but slightly more complicated strategy is applied to determine the number of MR-steps. There are \num{3} exit conditions for the MR-solver:
+
+\begin{enumerate}[label={\arabic*)}]
+  \item If - after at least \num{4} MR-steps - the norm of the residual on the block is larger than $\alpha = 0.9$\footnote{Ironically, the choice for the value of $\alpha \in (0, 1]$ is again non-trivial. Small values cause less preconditioning whereas values close to \num{1} will end up in more or even the maximal amount of MR-steps. But since we want to optimise for ill-conditioned systems and the penalty for well-conditioned systems is not too hard, it is advisable to choose $\alpha$ large, such as $\alpha = 0.9$} times the previous residual norm, the MR-solver exits and the application continues processing the next block.
+  \item If the norm of the blocked residual became larger than the previous residual norm, exit immediately, even if only one MR-step is executed.
+  \item If the norm of the blocked residual is smaller than the tolerance\footnote{This is the tolerance calculated in the GCR solver divided by the number of blocks, $tol = res*\norm{\eta}/n_b$, where \code{res} is the desired relative residual given as configuration option (see table \ref{tab:sap_gcr_settings}), $\eta = \vec{b}$ is the source vector and $n_b$ is the number of blocks.}, also exit immediately.
+\end{enumerate}
+
+So, every block is treated differently in every cycle. A maximum of \num{20} Schwarz-cycles and \num{20} MR-steps on each block would be performed if the above exit conditions will never kick in. The third exit condition above makes sure to not overshoot the mark if the algorithm performs a lot of Schwarz-cycles and MR-steps. Namely, if the problem is already solved while in the preconditioning phase. This can happen if the operator is very well-conditioned or in the very last GCR-step before converging to the desired relative residual. Therefore the adaptive version tries to find the optimal configuration for every iteration of the \acrshort{gcr}-solver, for every Schwarz-cycle and for every block separately. By empirical observation of the results, the adaptive variant usually performs nearly maximal amounts of preconditioning in the first few GCR-steps, then rapidly decreases after some steps to a much less amounts and finally saturating to the minimal amount that stays until convergence.
+
+The results on how this adaptive variant competes with static configurations can be seen in figures \ref{fig:sap_gcr_start} - \ref{fig:sap_gcr_end}. The adaptive runs are indicated with configuration $adap.$ with two different values of $\alpha$. Although the adaptive variant of the algorithm is not the fastest among all configurations, the plots show that it is certainly the most versatile one. It is though to be chosen if the condition of the operator is not known beforehand and might even change drastically within a long running simulation.
+
+\end{proposal}
 
 In openQxD, every rank has its own local lattice to process. The solver algorithms are implemented in a parallel manner, such that the solver is called on all ranks simultaneously. The simulation problem was chosen to be such that the task of one rank was compared on one single core of the CPU and on one single GPU (with all its parallelizability). It is therefore not surprising that most of the time, the GPU solved the problem much faster than the CPU. Keeping this in mind, it is natural to associate a larger local lattice to the available GPUs in the system (maybe 4-8 times larger, depending on the available memory) and let them participate to the solution of the full problem just as they were additional ranks (compare proposal \ref{pp:gpu_implementation1}).
 
@@ -2336,7 +2575,7 @@ The low modes of the Dirac operator condensate TODO.
 
 Small quark masses corresponding to real physics are believed to be the cause for the spontaneously breaking of chiral symmetry in lattice QCD \cite{banks1980}. Numerical lattice QCD has the problem that with large lattice volumes and small quark masses simulation techniques become inefficient in the \df{chiral regime} (where chiral symmetry is spontaneously broken), because the Dirac operators gets more and more ill-conditioned. Thus, the presence of low eigenvalues is a source of difficulty \cite{giusti2003}. According to the Bank-Casher relation \cite{banks1980}, this is because the number of eigenvalues of $D$ below a fixed value grows with $O(V)$, where $V$ is the total 4D lattice volume. On the other hand, the computational effort scales even worse with $O(V^2)$ \cite{luscher2007}. This behaviour goes under the name of \df{$V^2$-problem}.
 
-A solving algorithm that has a flat scaling in with respect to the quark masses can therefore lead to large speedups specially in that regime. By deflating the Dirac operator, it is possible to separate eigenmodes with very small eigenvalues from the others. Thus the space needs to be split in low and high modes without actually calculating the modes, else the problem would be solved already.
+A solving algorithm that has a flat scaling with respect to the quark masses can therefore lead to large speedups specially in that regime. By deflating the Dirac operator, it is possible to separate eigenmodes with very small eigenvalues from the others. Thus the space needs to be split in low and high modes without actually calculating the modes, else the problem would be solved already.
 
 \subsection{Deflation}
 
@@ -2344,7 +2583,7 @@ A solving algorithm that has a flat scaling in with respect to the quark masses 
 
 \label{thm:deflation}
 
-Let $A$ be a linear, invertible operator acting on a vector space $\Lambda$, $\vec{b} \in \Lambda$ a arbitrary vector and $P_L$ a projector\footnote{$P_L$ does not have to be orthogonal or Hermitian.} acting on $\Lambda$. Also, define the linear operator $P_R$ such that $P_L A = A P_R$\footnote{Such a linear operator $P_R$ always exists - just set $P_R \coloneqq A^{-1} P_L A$, since $A$ is invertible.}. Consider 
+Let $A$ be a linear, invertible operator acting on a vector space $\Lambda$, $\vec{b} \in \Lambda$ an arbitrary vector and $P_L$ a projector\footnote{$P_L$ does not have to be orthogonal or Hermitian.} acting on $\Lambda$. Also, define the linear operator $P_R$ such that $P_L A = A P_R$\footnote{Such a linear operator $P_R$ always exists - just set $P_R \coloneqq A^{-1} P_L A$, since $A$ is invertible.}. Consider 
 
 \begin{align}
     \vec{x}^{\star} \coloneqq P_R \vec{x}^{\star}_1 + (1-P_R) \vec{x}^{\star}_2, \label{eq:def_projection}
@@ -2362,7 +2601,7 @@ respectively. Then
 
 \begin{enumerate}[label={\arabic*)}]
   \item $P_R$ is a projector,
-  \item $\vec{x}^{\star}$ is the solution to $A\vec{x} = \vec{b}$.
+  \item $\vec{x}^{\star}$ is the unique solution to $A\vec{x} = \vec{b}$.
 \end{enumerate}
 
 \end{theorem}
@@ -2387,27 +2626,51 @@ By direct calculation,
     &= \vec{b}.
 \end{align*}
 
+Since $A$ is invertible $\vec{x}^{\star}$ is unique, although $\vec{x}^{\star}_1$ and $\vec{x}^{\star}_2$ may not be unique, their projections are.
+
 \end{proof}
 
 \begin{remark}
-Therefore, if we find clever projectors $P_L$ and $P_R$ without involving $A^{-1}$, we can solve $A\vec{x} = \vec{b}$ by solving the \num{2} smaller systems of equations and then projecting the solutions using $P_R$.
+If we find clever subspaces in which the projectors $P_L$ and $P_R$ project without involving $A^{-1}$, we can solve $A\vec{x} = \vec{b}$ by solving the \num{2} smaller systems of equations and then projecting the solutions using $P_R$.
 \end{remark}
 
 \begin{remark}
-Notice that $P_L A$ as well as $(1-P_L)A$ are not invertible, therefore there are infinitely many solutions $\vec{x}^{\star}_1$ and $\vec{x}^{\star}_2$\footnotemark. Nonetheless the solution vector $\vec{x}^{\star}$ is still unique after the projection in equation \eqref{eq:def_projection}, because $P_R$ is a projector.
+Notice that $P_L A$ as well as $(1-P_L)A$ are not invertible. There are infinitely many solutions $\vec{x}^{\star}_1$ and $\vec{x}^{\star}_2$\footnotemark. Nonetheless the solution vector $\vec{x}^{\star}$ is still unique after the projection in equation \eqref{eq:def_projection}, because $P_R$ removes all ambiguity from the vector.
 \end{remark}
 
 \footnotetext{Let $P$ be a linear projector (not the identity-operator) and $A$ an invertible linear operator. The system of interest is $PA\vec{x} = P\vec{b}$. There exists at least one solution to this, namely the unique solution to $A\vec{x} = \vec{b}$. Since $PA$ is not invertible, the only two possibilities are zero or infinite solutions and it can't be zero solutions.}
 
 \begin{remark}
-Comparing deflation to left preconditioning, the difference is that in deflation $P_L$ is a projector and $P_L A$ has condition number infinite whereas in case of preconditioning $P_L $ is invertible (a good approximation of $A^{-1}$) and the condition number of $P_L A$ is expected to be smaller than of $A$.
+Comparing deflation to left preconditioning, the difference is that in deflation $P_L$ is a projector and $P_L A$ has condition number infinite whereas in case of preconditioning $P_L $ is invertible (a good approximation of $A^{-1}$) and the condition number of $P_L A$ is expected to be smaller than the one of $A$.
+\end{remark}
+
+\begin{remark}
+If $A$ is positive definite, $P_L A \vec{x} = P_L \vec{b}$ is positive semidefinite, has infinite solutions and condition number infinite. Fortunately such a system can be solved as long as the right-hand side is consistent, meaning that there exists a $\vec{x}$ solving $A \vec{x} = \vec{b}$ \cite{kaasschieter1988}.
+\end{remark}
+
+Therefore it makes sense to define the relevant quantity.
+
+\begin{definition}[Effective condition number]
+
+The \df{effective condition number} of a matrix $A$ is the ratio between the largest and smallest eigenvalue with positive magnitude
+
+\begin{align*}
+  \kappa_{eff}(A) &\coloneqq \frac{\abs{\lambda_{max}}}{\abs{\lambda_{pmin}}} \\
+  \abs{\lambda_{max}} &= \max \abs{\sigma(A)} \\
+  \abs{\lambda_{pmin}} &= \min \{ \abs{\lambda} \, \bigm\lvert \, \lambda \in \sigma(A), \abs{\lambda} > 0 \}.
+\end{align*}
+
+\end{definition}
+
+\begin{remark}
+The condition number and the effective condition number are equal if the matrix $A$ is invertible.
 \end{remark}
 
 \begin{corollary}
 
 \label{cor:deflation}
 
-Let $A$ and $\vec{b}$ be as in theorem \ref{thm:deflation}. Furthermore let $\{ \vec{\omega}_i \}_{i=1}^N$ be a orthonormal basis of a linear subspace $\Omega \subset \Lambda$, called the \df{deflation subspace} and let the restriction of $A$ to $\Omega$, $\widetilde{A} \coloneqq \restr{A}{\Omega}$ called the \df{little operator}, be invertible. Define the action of $P_L$ on an arbitrary vector $\vec{x} \in \Lambda$ as
+Let $A$, $\Lambda$ and $\vec{b}$ be as in theorem \ref{thm:deflation}. Furthermore let $\{ \vec{\omega}_i \}_{i=1}^N$ be a orthonormal basis of a linear subspace $\Omega \subset \Lambda$, called the \df{deflation subspace} and let the restriction of $A$ to $\Omega$, $\widetilde{A} \coloneqq \restr{A}{\Omega}$ called the \df{little operator}, be invertible. Define $P_L$ by its action on an arbitrary vector $\vec{x} \in \Lambda$ as
 
 \begin{align*}
     P_L \vec{x} &\coloneqq \vec{x} - \sum_{i,j=1}^N A \vec{\omega}_i (\widetilde{A}^{-1})_{ij} \langle \vec{\omega}_j, \vec{x} \rangle
@@ -2420,7 +2683,7 @@ and let $\vec{x}^{\star}_1$ be one of the (infinite) solutions to the \df{deflat
     \vec{x}^{\star} \coloneqq P_R \vec{x}^{\star}_1 + \sum_{i,j=1}^N \vec{\omega}_i (\widetilde{A}^{-1})_{ij} \langle \vec{\omega}_j, \vec{b} \rangle, \label{eq:defl_soln}
 \end{align}
 
-with $P_R$ satisfying $P_L A = A P_R$. Then $\vec{x}^{\star}$ is the unique solution to $A \vec{x} = \vec{b}$.
+with $P_R$ satisfying $P_L A = A P_R$. Then $\vec{x}^{\star}$ is the unique solution to the linear system of equations $A \vec{x} = \vec{b}$.
 
 \end{corollary}
 
@@ -2446,7 +2709,7 @@ Now lets show that the second term in equation \eqref{eq:defl_soln} is equal to 
     &= \sum_{i,j=1}^N \vec{\omega}_i (\widetilde{A}^{-1})_{ij} \langle \vec{\omega}_j, \vec{b} \rangle 
 \end{align*}
 
-which corresponds to the second term of $\vec{x}^{\star}$ in equation \eqref{eq:defl_soln}. Therefore by application of theorem \ref{thm:deflation}, $\vec{x}^{\star}$ is the unique solution to $A\vec{x} = \vec{b}$.
+which corresponds to the second term of $\vec{x}^{\star}$ in equation \eqref{eq:defl_soln}, therefore $\vec{x}^{\star} \coloneqq P_R \vec{x}^{\star}_1 + (1-P_R) \vec{x}^{\star}_2$. By application of theorem \ref{thm:deflation}, $\vec{x}^{\star}$ is the unique solution to $A\vec{x} = \vec{b}$.
 
 \end{proof}
 
@@ -2460,7 +2723,7 @@ From $P_L$ in corollary \ref{cor:deflation}, the action of $P_R$ on a arbitrary 
 \end{remark}
 
 \begin{remark}
-An application of $P_L$ to an arbitrary vector $\vec{x}$ involves solving the \df{little equation} $\widetilde{A} \vec{\beta} = \vec{\alpha}$ on $\Omega$ for a given $\vec{\alpha} \in \Omega$. To see this, lets look at the $k$-th component of $P_L \vec{x}$
+An application of $P_L$ to an arbitrary vector $\vec{x}$ involves solving the \df{little system} $\widetilde{A} \vec{\beta} = \vec{\alpha}$ on $\Omega$ for a given $\vec{\alpha} \in \Omega$. To see this, lets look at the $k$-th component of $P_L \vec{x}$
 
 \begin{align*}
     (P_L\vec{x})_k &\coloneqq x_k - \sum_{i,j=1}^N (A\vec{\omega}_i)_k (\widetilde{A}^{-1})_{ij} \langle \vec{\omega}_j, \vec{x} \rangle.
@@ -2475,13 +2738,24 @@ Define the vector
         \langle \vec{\omega}_2, \vec{x} \rangle \\
         \vdots \\
         \langle \vec{\omega}_N, \vec{x} \rangle
+    \end{pmatrix} = \begin{pmatrix}
+        (\vec{\omega}_1)_1 & \hdots & (\vec{\omega}_1)_N \\
+        (\vec{\omega}_2)_1 & \hdots & (\vec{\omega}_2)_N \\
+        \vdots & \ddots & \vdots \\
+        (\vec{\omega}_N)_1 & \hdots & (\vec{\omega}_N)_N
+    \end{pmatrix} \begin{pmatrix}
+        x_1 \\
+        x_2 \\
+        \vdots \\
+        x_N
     \end{pmatrix}.
 \end{align*}
 
 Then
 
 \begin{align*}
-    (P_L\vec{x})_k &= x_k - \sum_{i=1}^N (A\vec{\omega}_i)_k ( \textcolor{cyellow}{\widetilde{A}^{-1} \vec{\alpha}_{\vec{x}}} )_i.
+    (P_L\vec{x})_k &= x_k - \sum_{i=1}^N (A\vec{\omega}_i)_k ( \textcolor{cyellow}{\widetilde{A}^{-1} \vec{\alpha}_{\vec{x}}} )_i \\
+    &= x_k - \sum_{i=1}^N (A\vec{\omega}_i)_k \textcolor{cyellow}{\vec{\beta}}_i.
 \end{align*}
 
 By similar analysis, an application of $P_R$ has the same cost with one additional application of $A$. For an efficient implementation of $P_L$ and $P_R$, the $2N$ vectors $\{A\vec{\omega}_i\}_{i=1}^N$ and $\{\vec{\omega}_i\}_{i=1}^N$ have to be kept in system memory.
@@ -2500,7 +2774,7 @@ Assuming that the condition number of $A$ is high and the \df{spectrum} of $A$, 
     \max\limits_{\lambda \in \sigma_l(A)} \abs{\lambda} &\ll \min\limits_{\lambda \in \sigma_h(A)} \abs{\lambda}. \label{eq:separable}
 \end{align}
 
-The subscripts stand for "low" and "high", corresponding to the low and high modes of the operator $A$. So, the property in equation \eqref{eq:separable} states that the bulk of the low and high eigenvalues are somehow clustered in two regions. Consider the linear sub-spaces $\Omega_l, \Omega_h \subset \Lambda$ such that the low and high eigenvectors corresponding to the low and high eigenvalues of $A$ are contained in $\Omega_l$ and $\Omega_h$ respectively. Then the condition number of $A$ restricted to the low (high) modes is much smaller than the condition number of $A$. Therefore, if we are able to find a orthonormal basis $\{\vec{\omega}_i\}_{i=0}^N$ of the subspace $\Omega_l$ containing the bulk of the low eigenmodes of $A$, we can apply deflation from corollary \ref{cor:deflation} to solve the little equation that has a significantly smaller condition number than $A$. Then solve the deflated system and using this solution construct a solution of the full system.
+The subscripts stand for "low" and "high", corresponding to the low and high modes of the operator $A$. So, the property in equation \eqref{eq:separable} states that the bulk of the low eigenvalues are somehow clustered\footnote{The high eigenmodes may not be clustered, but still separated from the low ones.}. Consider the linear sub-spaces $\Omega_l, \Omega_h \subset \Lambda$ such that the low and high eigenvectors corresponding to the low and high eigenvalues of $A$ are contained in $\Omega_l$ and $\Omega_h$ respectively. Then the condition number of $A$ restricted to the low modes is much smaller than the condition number of $A$. Therefore, if we are able to find a orthonormal basis $\{\vec{\omega}_i\}_{i=0}^N$ of the subspace $\Omega_l$ containing the bulk of the low eigenmodes of $A$, we can apply deflation from corollary \ref{cor:deflation} to solve the little equation that has a significantly smaller condition number than $A$. Then find one of the infinite solutions to the deflated system and construct a solution of the full system.
 
 % TODO: why is it easy to solve the deflated system?
 % TODO: define condition number \kappa(A) = ... somewhere.
@@ -2510,12 +2784,12 @@ The subscripts stand for "low" and "high", corresponding to the low and high mod
 \begin{lemma}
 \label{lem:condition_number}
 
-Let $A$, $\{\vec{\omega}_i\}_{i=1}^N$, $\Omega$, $P_L$, $P_R$ be as in corollary \ref{cor:deflation} and assume that the spectrum of $A$ is separable \eqref{eq:separable}. Define the deflation subspace to be the subspace corresponding to the low eigenmodes, $\Omega \coloneqq \Omega_l$. Then $\kappa(\hat{A}) \ll \kappa(A)$
+Let $A$, $\{\vec{\omega}_i\}_{i=1}^N \in \Omega$, $P_L$, $P_R$ be as in corollary \ref{cor:deflation} and assume that the spectrum of $A$ is separable \eqref{eq:separable}. Define the deflation subspace to be the subspace corresponding to the low eigenmodes, $\Omega \coloneqq \Omega_l$. Then $\kappa_{eff}(\hat{A}) \ll \kappa(A)$ and $\kappa(\tilde{A}) \ll \kappa(A)$.
 \end{lemma}
 
 \begin{proof}
 
-Lets define the orthogonal projector $P^{\perp}$ to $\Omega^{\perp}$, the orthogonal complement of the deflation subspace of $\Omega$,
+Lets define the orthogonal projector $P^{\perp}$ to $\Omega^{\perp}$, the orthogonal complement of the deflation subspace $\Omega$,
 
 \begin{align*}
     P^{\perp} \vec{x} \coloneqq \vec{x} - \sum_{i=1}^N \langle \vec{\omega}_i, \vec{x} \rangle \vec{\omega}_i.
@@ -2536,7 +2810,7 @@ The deflated operator $\hat{A} \coloneqq P_L A$ acts on the orthogonal complemen
 Define the \df{minimal and maximal eigenvalue} of $A$,
 
 \begin{align*}
-    \lambda_{min}(A) &\coloneqq \min\limits_{\lambda \in \sigma(A)} \abs{\lambda}
+    \lambda_{pmin}(A) &\coloneqq \min\limits_{\lambda \in \sigma(A), \abs{\lambda} > 0} \abs{\lambda}
     & &\text{and} &
     \lambda_{max}(A) &\coloneqq \max\limits_{\lambda \in \sigma(A)} \abs{\lambda}.
 \end{align*}
@@ -2544,15 +2818,15 @@ Define the \df{minimal and maximal eigenvalue} of $A$,
 The condition number of $\hat{A}$ can now be upper bounded,
 
 \begin{align*}
-    \kappa({\hat{A}}) = \frac{\abs{\lambda_{max}(\hat{A})}}{\abs{\lambda_{min}(\hat{A})}} \ll \frac{\abs{\lambda_{max}(A)}}{\abs{\lambda_{min}(\hat{A})}} \le \frac{\abs{\lambda_{max}(A)}}{\abs{\lambda_{min}(A)}} = \kappa({A}),
+    \kappa_{eff}({\hat{A}}) = \frac{\abs{\lambda_{max}(\hat{A})}}{\abs{\lambda_{pmin}(\hat{A})}} \ll \frac{\abs{\lambda_{max}(A)}}{\abs{\lambda_{pmin}(\hat{A})}} \le \frac{\abs{\lambda_{max}(A)}}{\abs{\lambda_{min}(A)}} = \kappa({A}),
 \end{align*}
 
-where property \eqref{eq:separable} as used in the first inequality.
+where property \eqref{eq:separable} was used in the first inequality. Similar for the condition number of the little operator $\kappa({\tilde{A}})$ where we have $\sigma(\tilde{A}) = \sigma(\restr{A}{\Omega}) = \sigma_l$ which directly implies $\kappa(\tilde{A}) \ll \kappa(A)$.
 
 \end{proof}
 
 \begin{remark}
-Lemma \ref{lem:condition_number} tells us that the deflated system is significantly better conditioned than the full system and is therefore solved in fewer iterations.
+Lemma \ref{lem:condition_number} tells us that the deflated and the little system are significantly better conditioned than the full system and both are therefore solved in fewer iterations\footnote{Additionally the little system is smaller in size than the full system while the sparsity stays comparable. Also the precision up to which this system has to be solved in an application of the projector is usually a fraction of the desired precision to the full solution.}. But this holds only if we are able to find the subspace corresponding to the low eigenmodes $\Omega_l$ and if the low eigenvalues of the matrix are somehow isolated from the bulk of the eigenvalues. Equation \eqref{eq:separable} gives us a condition on $A$ for a efficient deflation.
 \end{remark}
 
 \begin{lemma}
@@ -2576,28 +2850,63 @@ Let $\vec{x}$ be an arbitrary vector, and $k \in \{1, \dots, N\}$, then
 
 \subsection{Choosing the deflation subspace}
 
+Besides isolated low eigenmodes, the Dirac-operator should feature another property in order for deflation to be efficient. The computational cost to find an approximation of the low-mode deflation subspace should not be too high. It turns out that if the low eigenmodes of the Dirac-operator possess a certain property, only a few low eigenmodes are needed to construct a good approximation of the subspace of low eigenmodes $\Omega_l$. If the subspace of low eigenmodes is only approximated, the method is called \df{inexact deflation}.
+
+\begin{comment}
 \begin{definition}[Local coherence]
 
 \label{def:local_coherence}
 
-Let $\varepsilon > 0$, $M,N \in \mathbb{N}$ with $M \ll N$ and $\Lambda$ be the full lattice. Let $B \coloneqq \{\vec{\rho}_i\}_{i=1}^N$ and $C \coloneqq \{\vec{\omega}_j\}_{j=1}^M$ with $\vec{\rho}_i,\vec{\omega}_j \in \Lambda$ be two sets of fields. Furthermore define the projector $P_{\Gamma}$ to the subspace $\Gamma \coloneqq span(C)$ via its action onto an arbitrary vector $\vec{x} \in \Lambda$ as
+Let $\varepsilon > 0$, $M,N \in \mathbb{N}$ with $M \ll N$ and $\Lambda$ be the full lattice. Let $B \coloneqq \{\vec{\beta}_i\}_{i=1}^N$ and $C \coloneqq \{\vec{\gamma}_j\}_{j=1}^M$ with $\vec{\beta}_i,\vec{\gamma}_j \in \Lambda$ be two sets of fields. Furthermore define the projector $P_{\Gamma}$ to the subspace $\Gamma \coloneqq span(C)$ via its action onto an arbitrary vector $\vec{x} \in \Lambda$ as
 
 \begin{align*}
-    P_{\Gamma} \vec{x} \coloneqq \sum_{j=1}^M \langle \vec{\omega}_j, \vec{x} \rangle \vec{\omega}_j.
+    P_{\Gamma} \vec{x} \coloneqq \sum_{j=1}^M \langle \vec{\gamma}_j, \vec{x} \rangle \vec{\gamma}_j.
 \end{align*}
 
 The fields $B$ are \df{locally coherent} with the fields $C$ up to $\varepsilon$, if $\forall i \in \{1, \dots N\}$
 
 \begin{align*}
-    \norm{ (1-P_{\Gamma}) \vec{\rho}_i } \le \varepsilon.
+    \norm{ (1-P_{\Gamma}) \vec{\beta}_i } \le \varepsilon.
 \end{align*}
 
+\end{definition}
+\end{comment}
+
+\begin{definition}[Local coherence] % 2nd approach to a definition of local coherence
+
+\label{def:local_coherence}
+
+Let $1 \gg \varepsilon > 0$ and $\{\Omega_i\}_{i=1}^{n_b}$ be a decomposition of the full lattice $\Lambda$ into $n_b$ blocks (for example as in section \ref{sec:ddecomp} figure \ref{fig:ddecomp}) and let $P_i$ be the projector to block $\Omega_i$. Furthermore define the \df{bootstrap set} $B = \{\vec{\beta_j}\}_{j=1}^M$ as a set of normalized fields satisfying $\norm{(1-P_{exact}) \vec{\beta}_j }^2 \le \varepsilon$, where $P_{exact}$ is a projector to $\Omega_{exact}$, a subspace of dimension $\dim{(\Omega_{exact})} = N \gg M = \dim{(\spn{B})}$. Define the projected fields $\vec{\omega}_{ij} \coloneqq P_i \vec{\beta}_j$, their subspace $\Omega_{inexact} = \spn{\{\vec{\omega_{ij}}\}_{i,j=1}^{n_b,M}}$ and the projector $P_{inexact}$ which projects to $\Omega_{inexact}$.
+
+The fields in $\Omega_{exact}$ are called \df{locally coherent} up to deficits $\varepsilon$, if there exists such a bootstrap set $B$, such that for all normalized $\vec{\psi} \in \Omega_{exact}$,
+
+\begin{align*}
+    \norm{(1-P_{inexact}) \vec{\psi}}^2 \le \varepsilon.
+\end{align*}
+
+The value of $\varepsilon$ is called the \df{deficit}.
 
 \end{definition}
 
 \begin{remark}
-Definition \ref{def:local_coherence} can be interpreted such that the fields in $B$ can be well approximated by the (much fewer) fields in $C$, since the approximation error is smaller or equal to $\varepsilon$.
+In the definition above the \df{bootstrap fields} $\vec{\beta_j} \in B$ are, to a good approximation, linear combinations of fields in $\Omega_{exact}$, because - when projected to the complement of $\Omega_{exact}$ - their norm nearly vanishes. For the same reason, the \df{bootstrap subspace} $\spn{B}$ is, to a good extent, a subspace of $\Omega_{exact}$.
 \end{remark}
+
+\begin{remark}
+Definition \ref{def:local_coherence} can be interpreted such that the fields in $\Omega_{exact}$ can be well approximated by the (much fewer) bootstrap fields (by projecting them to the blocks), since the approximation error is smaller or equal to $\varepsilon$.
+\end{remark}
+
+\begin{remark}
+Definition \ref{def:local_coherence} can also (very informally) be stated as $\Omega_{exact}$ is approximately the span of the projected bootstrap fields.
+\end{remark}
+
+\begin{remark}
+It turns out that the low eigenmodes with subspace $\Omega_{exact} = \Omega_l$ of the Dirac-operator are locally coherent\footnote{This is not proven, but numerical experiments show a strong indication of local coherence \cite{luscher2007}.}.
+\end{remark}
+
+It remains to descibe how to obtain the $M$ bootstrap fields $\vec{\beta_j}$. Ideally they should be low eigenmodes of the Dirac-operator or linear combinations thereof. Usually one starts with randomly generated vectors and repeatedly apply the inverse power method to them. The resulting vectors may not be exact eigenvectors, but the components associated to the complement of the low modes quickly decrease after some inverse iteration steps. These vectors are then, up to some $\varepsilon > 0$, linear combinations of low eigenmodes and can thus be used as bootstrap fields to generate a subspace that approximates the low eigenmode subspace well. At this point the property of local coherence can be exploited and efficient deflation subpaces can be generated from these fields.
+
+To summaize the results, if the Dirac-operator has a spectrum that is separable in the sense of equation \eqref{eq:separable} and the low eigenmodes are locally coherent for a small $\varepsilon$, then inexact deflation can be applied in order to solve the ill-conditioned Dirac equation and the procedure is more efficient than without deflation, because the deflated system is better conditioned (lemma \ref{lem:condition_number}). Also, generating the inexact deflation subspaces can be done using only a few low eigenmodes.
 
 \begin{comment}
 The larger the condition number the worse the problem to solve with iterative methods. But now we have 2 systems with condition numbers of infinity! Why is this better than one system with condition number < infinity? the smaller systems restricted to the projections space have condition numbers lower than the full system, IF the deflation space was chosen "wisely".
@@ -2657,6 +2966,7 @@ little dirac operator can also be preconditioned using eo-preconditioning if the
 * Iterating this method, end up in a upper triagonal matrix -> gauss elimination
 
 \end{comment}
+
 
 
 \section{Multi-shift Conjugate Gradient algorithm}
@@ -2816,7 +3126,7 @@ There are multiple possibilities how to implement GPU-utilisation into the curre
 
 \begin{proposal}{GPU Implementation Variant 1}{gpu_implementation1} % ref with pp:gpu_implementation1
 
-Keeping the results in mind (figures \ref{fig:sap_gcr0} - \ref{fig:sap_gcr3}) that the pure GPU implementation of the \code{SAP\_GCR} was by far the fastest, it makes sense to associate a local lattice to each GPU - so to treat a GPU as an additional rank with its own local lattice. Each GPU would then act as another rank and the full lattice can be extended by as many local lattices as there are available GPUs. Some nodes might have GPUs, some not. Each GPU has a \df{bystander process} running on the CPU. Process contexts associated to a GPU (CPU) are from now on called \df{GPU ranks} (\df{CPU ranks}). The bystander process will not need a lot of CPU load, since it only hosts control and informational variables and is not involved in any calculations. The communication from a GPU rank to another rank (CPU or GPU) in the system can be done either via the bystander process or via direct injection into the network bypassing the CPU and the bystander process. The former case will not need a change of the MPI communication code among ranks. Since the communication will only take negligible computational effort on the bystander process, it will not \textit{steal} much from the CPU ranks running on the same node. Let me give an example: Let' s assume the application runs on one single node with \num{8} cores and \num{4} GPUs attached to it. This would involve \num{8} CPU ranks (separate processes) and \num{4} GPU ranks with in total \num{4} (separate) bystander processes. Technically the machine is over-subscripted and the operating system needs to schedule the processes. But since the bystander processes will be in sleeping state most of the time, this will not (or only negligibly) degrade the performance of the \num{8} CPU ranks.
+Keeping the results in mind (figures \ref{fig:sap_gcr_start} - \ref{fig:sap_gcr_end}) that the pure GPU implementation of the \code{SAP\_GCR} was by far the fastest, it makes sense to associate a local lattice to each GPU - so to treat a GPU as an additional rank with its own local lattice. Each GPU would then act as another rank and the full lattice can be extended by as many local lattices as there are available GPUs. Some nodes might have GPUs, some not. Each GPU has a \df{bystander process} running on the CPU. Process contexts associated to a GPU (CPU) are from now on called \df{GPU ranks} (\df{CPU ranks}). The bystander process will not need a lot of CPU load, since it only hosts control and informational variables and is not involved in any calculations. The communication from a GPU rank to another rank (CPU or GPU) in the system can be done either via the bystander process or via direct injection into the network bypassing the CPU and the bystander process. The former case will not need a change of the MPI communication code among ranks. Since the communication will only take negligible computational effort on the bystander process, it will not \textit{steal} much from the CPU ranks running on the same node. Let me give an example: Let' s assume the application runs on one single node with \num{8} cores and \num{4} GPUs attached to it. This would involve \num{8} CPU ranks (separate processes) and \num{4} GPU ranks with in total \num{4} (separate) bystander processes. Technically the machine is over-subscripted and the operating system needs to schedule the processes. But since the bystander processes will be in sleeping state most of the time, this will not (or only negligibly) degrade the performance of the \num{8} CPU ranks.
 
 \begin{itemize}
     \item Advantage: The application can run on hybrid machines in the sense that some nodes can have GPUs attached to them and others don't.
@@ -2840,7 +3150,7 @@ Since the GPUs are fast on the solver algorithms, a pure GPU implementation of a
 
 \begin{proposal}{GPU Implementation Variant 3}{gpu_implementation3} % ref with pp:gpu_implementation3
 
-If the problem is split among CPU ranks and GPU ranks, one will always have the waiting problem in the sense that either the CPU or the GPU ranks will have to wait for the others to complete (see proposal \ref{pp:gpu_implementation1}). In order for the GPU to speed up the process, every rank should receive the same amount of help from the GPUs. Then every rank solves the same problem faster. This is possible if all nodes participating in the calculation share the same specifications, the same number GPUs (not zero) and the same amount of memory. Let's assume this is given. Starting with a hybrid implementation as in proposal \ref{pp:sap_mr_gpu}, only the blocked problems are solved on the GPU and the internal color boundary operator as well as the full Dirac-operator are performed on the CPU as usual (see figures \ref{fig:sap_gcr0} - \ref{fig:sap_gcr3}, diamonds; \textcolor{cbrown}{$\diamond$}, \textcolor{cred}{$\diamond$}, \textcolor{cblue}{$\diamond$}). This means that \textit{all} blocked problems of all ranks on a single node are solved (or rather \code{nmr} MR-steps are performed) on the GPUs of that node. During that time the CPUs are stale. To solve this problem, we can use the fact that all blocks of the same color are independent of each other. So, not all blocks need to be transferred to the GPU - some of them can still reside and be processed in the current rank on the CPU. The work here should be divided such that both - CPU and GPU - need approximately the same amount of time for the processing of their blocks. The question on \textit{how} to divide the blocks still remains. It is evident that the GPU might be able to process more blocks than the CPU rank in the same time, but this highly depends on its occupation. A robust solution might implement the division of blocks in an adaptive manner.
+If the problem is split among CPU ranks and GPU ranks, one will always have the waiting problem in the sense that either the CPU or the GPU ranks will have to wait for the others to complete (see proposal \ref{pp:gpu_implementation1}). In order for the GPU to speed up the process, every rank should receive the same amount of help from the GPUs. Then every rank solves the same problem faster. This is possible if all nodes participating in the calculation share the same specifications, the same number GPUs (not zero) and the same amount of memory. Let's assume this is given. Starting with a hybrid implementation as in proposal \ref{pp:sap_mr_gpu}, only the blocked problems are solved on the GPU and the internal color boundary operator as well as the full Dirac-operator are performed on the CPU as usual (see figures \ref{fig:sap_gcr_start} - \ref{fig:sap_gcr_end}, diamonds; \textcolor{cbrown}{$\diamond$}, \textcolor{cred}{$\diamond$}, \textcolor{cblue}{$\diamond$}). This means that \textit{all} blocked problems of all ranks on a single node are solved (or rather \code{nmr} MR-steps are performed) on the GPUs of that node. During that time the CPUs are stale. To solve this problem, we can use the fact that all blocks of the same color are independent of each other. So, not all blocks need to be transferred to the GPU - some of them can still reside and be processed in the current rank on the CPU. The work here should be divided such that both - CPU and GPU - need approximately the same amount of time for the processing of their blocks. The question on \textit{how} to divide the blocks still remains. It is evident that the GPU might be able to process more blocks than the CPU rank in the same time, but this highly depends on its occupation. A robust solution might implement the division of blocks in an adaptive manner.
 
 \begin{itemize}
     \item Advantage: This proposal can be a good starting point from where to go further.
