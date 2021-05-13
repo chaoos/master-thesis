@@ -2436,7 +2436,7 @@ In the current version of openQxD \cite{openqxd}, the outer \acrshort{gcr} solve
 
 \end{proposal}
 
-\subsection{Simulating \code{SAP\_GCR}}
+\subsection{Simulating \acrshort*{sapgcr}}
 
 \label{sec:sap_gcr_results}
 
@@ -2826,7 +2826,7 @@ where property \eqref{eq:separable} was used in the first inequality. Similar fo
 \end{proof}
 
 \begin{remark}
-Lemma \ref{lem:condition_number} tells us that the deflated and the little system are significantly better conditioned than the full system and both are therefore solved in fewer iterations\footnote{Additionally the little system is smaller in size than the full system while the sparsity stays comparable. Also the precision up to which this system has to be solved in an application of the projector is usually a fraction of the desired precision to the full solution.}. But this holds only if we are able to find the subspace corresponding to the low eigenmodes $\Omega_l$ and if the low eigenvalues of the matrix are somehow isolated from the bulk of the eigenvalues. Equation \eqref{eq:separable} gives us a condition on $A$ for a efficient deflation.
+Lemma \ref{lem:condition_number} tells us that the deflated and the little system are significantly better conditioned than the full system and both are therefore solved in fewer iterations\footnote{Additionally the little system is much smaller in size than the full system, but the system will not stays - it might even become dense. Also the precision up to which this system has to be solved in an application of the projector is usually a fraction of the desired precision to the full solution.}. But this holds only if we are able to find the subspace corresponding to the low eigenmodes $\Omega_l$ and if the low eigenvalues of the matrix are somehow isolated from the bulk of the eigenvalues. Equation \eqref{eq:separable} gives us a condition on $A$ for a efficient deflation.
 \end{remark}
 
 \begin{lemma}
@@ -2967,7 +2967,50 @@ little dirac operator can also be preconditioned using eo-preconditioning if the
 
 \end{comment}
 
+\subsection{Simulating \acrshort*{dflsapgcr}}
 
+The \acrshort{dflsapgcr}-kernel was as well implemented in Python by extending the already existing \acrshort{sapgcr} code. Only the preconditioning phase has changed. The deflated variant of the algorithm takes the same arguments as the regular one, see table \ref{tab:sap_gcr_settings}. In addition to these settings, the deflated algorithm needs configuration options for the deflation subspace and the settings concerning the solver for the little equation, see table \ref{tab:dfl_sap_gcr_settings}.
+
+\begin{table}[H]
+\centering
+    \begin{tabular}{ |p{1.5cm}|p{6cm}|p{4.5cm}|  }
+        \hline
+        setting & meaning & comment \\
+        \hline\hline
+        \code{Ns}  & number of bootstrap fields & randomly generated \\
+        \hline
+        \code{bs}  & size of the deflation blocks & not to be confused with the block size for SAP \\
+        \hline
+        \code{res}  & desired relative residual & for the little equation \\
+        \hline
+        \code{nmx}  & maximal number of GCR steps & for the little equation \\
+        \hline
+    \end{tabular}
+    \caption{Settings for \code{DFL\_SAP\_GCR} and their meanings.}
+    \label{tab:dfl_sap_gcr_settings}
+\end{table}
+
+The following plot series should show the interplay between deflation and Schwarz-preconditioning in terms of runtime. Figures \ref{fig:dfl_sap_gcr_start} - \ref{fig:dfl_sap_gcr_end} contain the measurements. The relative residual for the full system was chosen to the $10^{-9}$, the block size for the Schwarz-preconditioning is $4^4$, the whole algorithm was executed on the CPU and the number of Krylov vectors until a restart was chosen to be $n_{kv} = 7$. The plots show the dimension of the deflation subspace aganst the amount of Schwarz-preconditioning in terms of $(n_{cy},n_{mr})$. The colors denote the runtime and the numbers within the blocks display the number of outer GCR-steps needed until convergence. The time needed for the generation of the deflation subspaces is not included in the time measurements. For each time measurement, the average of \num{10} runs was taken. As in section \ref{sec:sap_gcr_results}, the configuration $(n_{cy},n_{mr}) = (0,0)$ denotes the absence of any Schwarz-preconditioning. Analogously if the dimension of the deflation subspace $\dim \Omega = N_s n_b = 0$ vanishes, it means no deflation is applied to the problem.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1.0\textwidth]{plots/dfl_sap_gcr_conf6.0-00l8x8-3000_0.15649}
+    \caption{Time measurements for the \code{DFL\_SAP\_GCR} kernel on different matrices and configurations. The measurements where conducted on an Intel(R) 6130 @ 2.10GHz with 1.5 TB memory and an NVIDIA V100 (via PCIe) GPU with 16 GB memory.}
+    \label{fig:dfl_sap_gcr0}
+    \label{fig:dfl_sap_gcr_start}
+    \label{fig:dfl_sap_gcr_conf6.0-00l8x8-3000_0.15649}
+    \label{fig:dfl_sap_gcr_end}
+\end{figure}
+
+\subsubsection{Discussion of figures \ref{fig:dfl_sap_gcr_start} - \ref{fig:dfl_sap_gcr_end}}
+
+TODO
+
+\subsubsection{Conclusion}
+
+The runtime seems to be convex in the dimension of the deflation subspace. This suggests that the actual subspace of low eigenmodes lies approximately at the minimum of that convex curve. As a justification imagine that subspace of low eigenmodes has dimension $d$, but the algorithm produced a subspace of dimension $d_1 \gg d$. This implies that the generated deflation subspace musz contain high eigenmodes as well, making the little system more and more ill-conditioned. This results in longer runtimes, because the little equation has to be solved in every (outer) GCR-step. On the other hand, let's assume the algorithm generated a deflation subspace of dimension $d_2 \ll d$. Since only a few low eigenmodes could be split off, the deflated equation is still in bad condition. Also, although the little equation seems to be in good condition and very small in its dimension, thus solved fast, it contributes nearly nothing to the full solution. Again, this results in a longer runtime. Certainly, the perfect size for the deflation subspace is the size of the subspace of the (exact) low eigenmodes or a bit larger. Of importance is that the bulk of the low eigenmodes is contained in it.
+
+TODO
 
 \section{Multi-shift Conjugate Gradient algorithm}
 
