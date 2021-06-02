@@ -128,6 +128,17 @@
 \newtheorem{prop}[theorem]{Proposition}
 \newtheorem{definition}{Definition}[section]
 \newtheorem{example}{Example}[section]
+\newtheoremstyle{convention}% name of the style to be used
+  {\topsep}% measure of space to leave above the theorem. E.g.: 3pt
+  {\topsep}% measure of space to leave below the theorem. E.g.: 3pt
+  {}% name of font to use in the body of the theorem
+  {0pt}% measure of space to indent
+  {\bfseries}% name of head font
+  {.}% punctuation between head and body
+  { }% space after theorem head; " " = normal interword space
+  {\thmnote{#3}}
+\theoremstyle{convention} % boldface title, roman body. 
+\newtheorem*{convention}{} % * creates a theorem environment that is not numbered and not labeled
 \theoremstyle{remark} % italicized title, roman body. 
 \newtheorem*{remark}{Remark} % * creates a theorem environment that is not numbered 
 % use with:
@@ -160,9 +171,10 @@
 % defines the \def{} command
 \def\df#1{\textbf{\textit{#1}}}
 
-\title{Master Thesis \\ Performance Modelling and Analysis of the openQxD Lattice QCD Application}
+\title{Master Thesis \\~\\ Performance Modelling and Analysis of the openQxD Lattice QCD Application}
 \author{Roman Gruber}
-\date{ETH Zürich, TODO:date, TODO: supervisor(s)}
+%\author{author1\\[10mm]{\small Supervisors: supervisor1 \\ \hspace{18mm} supervisor2}}
+\date{ETH Zürich, \today \\~\\ Supervisor: \\ Prof. Thomas C. Schulthess \\~\\ Co-Supervisors: \\ Prof. Marina Krstic Marinkovic \\ Dr. Raffaele Solcà \\ Dr. Anton Kozhevnikov}  
 
 \numberwithin{equation}{section}
 
@@ -176,18 +188,32 @@
 \maketitle
 
 \begin{abstract}
-TODO
+
+The open-source software openQxD is used to perform lattice QCD+QED calculations using C*-boundary conditions and $O(a)$-improved Wilson-fermions. The focus of this thesis lies on the optimization of solver kernels provided with the software package intending to give guidance for porting fractions of the code to GPU-accelerated supercomputing platforms. We present an analysis of the current sparse solver implementations, purpose suitable extensions to the existing algorithms and possible CPU/GPU-hybrid implementations of them.  Various application-specific proposals for optimizations are suggested as well. The most important kernel in every lattice QFT application - the Dirac-operator - is investigated for a potential implementation using threads which can serve as a starting point for an implementation on the GPU. Taking into account memory-boundedness of this kernel, we present different numerical representations of the Dirac-operator with higher arthemtic intensities in operations and less memory in storage.
+
 \end{abstract}
 
 \doclicenseThis
 
-\noindent\textcolor{gray}{\hrulefill}
+%\noindent\textcolor{gray}{\hrulefill}
+\newpage
 
 \tableofcontents
 
-\noindent\textcolor{gray}{\hrulefill}
+%\noindent\textcolor{gray}{\hrulefill}
+\newpage
 
 \section{Introduction}
+
+Quantum field theory is one of the most successfull theories in terms of agreement of theoretical predictions and experimental evidence. Being able to accurately predict observables such as decay constants using computational resources opens the possibility to probe and understand the standard model, emulate experiments or even discover new physics. Translating the formalism of QFT into a discretized finite system such as a computer involves many technical challenges and comes at a high cost, mainly consisting of extremely large demands on computational power and memory. The main computational cost of lattice QFT calculations originates from solving the discretized Dirac equation, which is a large sparse system of linear equations. The most used and compute-intensive kernel is certainly the application of the Dirac-operator to a spinor field.
+
+Supercomputing systems tend to include more and more units designed to be specialized on distinct computational tasks. The general purpose device gets less attention, whereas the specialized hardware device becomes more important. A very prominent example of such a device is the GPU that was originally designed to rapidly create and alter images, thus the name: graphical processing unit. Inherently such a process is highly parallel, where at the same time precision of the result is less important, because if the output image contains one pixel that is not perfect, the overall error is barely noticed. The scientific world started to misuse these devices to execute parallel algorithms on it. Specially the rise of machine learning in the last \num{10} years kickstarted a trend, where GPU vendors started to develop general purpose GPU accelerators specially designed for the need of these new scientific calculations\footnote{The emergence of cryptocurrencies such as Bitcoin that make use of the blockchain also contributed their parts to that trend.}.
+
+On the other side (and because of the rise of GPUs) modern supercomputers tend towards exascale computing, where the peak operations per second is greater than $10^{18}$. To reach such a peak performance is challenging and highly depends on the problem as well as the involved datatypes. Since lattice QFT calculations are bound by memory bandwidth and not by compute performance, one has to think about how to reduce memory traffic in order to increase performance. The parallelizability of GPUs thus opened the door to exascale computing, but made it harder to achieve its peak performance for memory bound problems, because on GPUs the memory bound region is even higher than on regular CPUs.
+
+The scope of this work is an analysis of the different solver algorithms used in the lattice QFT application openQxD as well as the implementation of the Dirac-operator. The goal was to get an idea and understand on how to utilize the GPU and by this increase the overall application performance. The following document is by no means complete or exhaustive. I tried to highlight different aspects of the solvers in order to find potential for improvement. Where this is mainly guided and limited by my own understanding of said solvers and how they apply on the considered computing architectures.
+
+The analysis in this document is mostly performed using Python-imlementations of the examined kernels. This switch of programming language and philosophy enabled to run the kernels with simulated datatypes that are usually non-accessible within the native application without large implementation effort. The goal rethink the current pure-MPI variant and purpose a hybrid code that exploits both, the CPU and the GPU. 
 
 \begin{comment}
 From quda paper:
@@ -217,7 +243,7 @@ describing an interaction or decay process, correlation functions
 are calculated which encode the creation, interaction,
 and annihilation, of the state in question. These correlation
 functions, however, receive contaminating contributions from
-themany other stateswith the quantumnumbers of the state of
+the many other states with the quantumnumbers of the state of
 interest. In order to reliably extract the desired piece, the
 contributions fromall of these unwanted higher-energy states
 must be suppressed. Typically, this is achieved via an
@@ -228,9 +254,17 @@ exponential growth in the statistical noise of the Monte Carlo
 sampling used in the computation (and thus computational
 cost)
 
+solving large sparse linear systems, which arose as finite-difference discretizations of differential equations.
+
+Often in a simulation, one needs to calc A^-1 x, A sparse, but we have only A. So solve Ay = x to some accuracy such that r=Ay-b, |r| is small (residual). Then y = A^-1 x --> y is the approximated result of A^-1 x. But this has to be done everytime fom anew for every new vector x. It's an "operator" that in its application, involves an iterative solving algorithm to produce the desired result of A^-1 x.
+
+A very large part (~90%) of the application deals with inverting the Dirac operator A=D via different solvers (CGNE, MSCG, SAP_GCR, DFL_SAP_GCR).
+
 \end{comment}
 
 TODO
+
+\begin{comment}
 
 \begin{proposal}{Example proposal}{one}
 
@@ -240,33 +274,79 @@ Reference here with pp:one.
 
 In \acrshort{QCD} blabla see proposal \ref{pp:one}. \textcolor{corange}{orange}, \textcolor{cyellow}{yellow}, \textcolor{cblue}{blue}, \textcolor{cbrown}{brown}, \textcolor{cpink}{pink}, \textcolor{cred}{red}, \textcolor{cgreen}{green}, \textcolor{cpurple}{purple}, \textcolor{cturquois}{turquois}, \textcolor{clightblue}{lightblue}, \textcolor{clightgreen}{lightgreen}, \textcolor{clightpink}{lightpink},  \textcolor{cdarkblue}{darkblue}, \colorbox{clightblue}{lightblue}, \colorbox{clightpink}{lightpink}, \colorbox{clightgreen}{lightgreen}, \textcolor{linkcolor}{linkcolor}
 
-\begin{comment}
-
-solving large sparse linear systems, which arose as finite-difference discretizations of differential equations.
-
-Often in a simulation, one needs to calc A^-1 x, A sparse, but we have only A. So solve Ay = x to some accuracy such that r=Ay-b, |r| is small (residual). Then y = A^-1 x --> y is the approximated result of A^-1 x. But this has to be done everytime fom anew for every new vector x. It's an "operator" that in its application, involves an iterative solving algorithm to produce the desired result of A^-1 x.
-
-A very large part (~90%) of the application deals with inverting the Dirac operator A=D via different solvers (CGNE, MSCG, SAP_GCR, DFL_SAP_GCR).
-
 \end{comment}
-
-\begin{pycode}
-from sympy import *
-x=symbols('x')
-result = latex(integrate("(1+x)**(1/2)",x))
-\end{pycode}
- 
-The result of integrating $\int \sqrt{ 1+x } \, dx$ is given by $\py{result}$
-
-\begin{pycode}
-print("Python says ``Hello!''")
-\end{pycode}
 
 \section{Conventions}
 
-TODO
+\begin{convention}[Units]
+We shall work with natural units $\hbar = c = 1$.
+\end{convention}
 
-minkovski metric, euclidean metric, hbar=c=1, natural units, spinor indices $\alpha, \beta$, lorentz indices $\mu, \nu$, color indices $a,b,c$, dagger vs star vs bar, $dx^D = dx^0 ... dx^{D-1}$ or $dx^D = dx^1 ... dx^{D}$, scalar product and norm, ...
+\begin{convention}[Minkowski Space]
+We use four-vectors with Greek indices, $\mu, \nu, \dots = 0, 1, 2, 3$:
+\begin{itemize}
+  \item contravariant position vector $x^{\mu} \coloneqq (x^0, x^1, x^2, x^3) = (t, \vec{x})$.
+  \item covariant position vector $\eta_{\mu \nu} x^{\nu} = x_{\mu} \coloneqq (x_0, x_1, x_2, x_3) = (t, -\vec{x})$.
+  \item where $\vec{x} \coloneqq (x^1, x^2, x^3)$. For the spatial part usually Latin indices are used $i,j,k,l = 1, 2, 3$.
+\end{itemize}
+
+The Minkowski metric $\eta$ has signature $(+---)$. The scalar product between two four-vectors
+
+\begin{align*}
+  \langle x, y \rangle = x^{\mu} y_{\mu} \coloneqq \sum_{\mu=0}^D x^{\mu} y_{\mu}.
+\end{align*}
+
+\end{convention}
+
+\begin{convention}[Euclidean Space]
+We use four-vectors with Greek indices, $\mu, \nu, \dots = 1, 2, 3, 4$:
+\begin{itemize}
+  \item position vector $x^{\mu} \coloneqq (x^1, x^2, x^3, x^4) = (\vec{x}, \tau)$.
+  \item position vector $x_{\mu} \coloneqq (x_1, x_2, x_3, x_4) = (\vec{x}, \tau)$.
+\end{itemize}
+
+The Euclidean metric $\eta$ has signature $(++++)$, and we have $x_{\mu} = x^{\mu}$.
+
+\end{convention}
+
+\begin{convention}[Spinor indices]
+Spinor indices are denoted with Greek letters starting from $\alpha, \beta, \dots$.
+\end{convention}
+
+\begin{convention}[Lorentz indices]
+Lorentz indices are denoted with Greek letters starting from $\mu, \nu, \rho, \sigma, \dots$.
+\end{convention}
+
+\begin{convention}[Color indices]
+Color indices are denoted with Latin letters starting from $a, b, c, \dots$.
+\end{convention}
+
+\begin{convention}[Norm]
+The norm is defined to be the one induced by the scalar product, $\norm{x} \coloneqq \sqrt{\langle x, x \rangle}$.
+\end{convention}
+
+\begin{convention}[Vectors]
+Vectors may be written as Latin letters with an arrow $\vec{v}, \vec{w}, \dots$ or Greek letters without an arrow $\psi, \phi, \dots$. The meaning should be clear from context.
+\end{convention}
+
+In general we might distinguish between the symbols ${(\cdot})^{\dagger}$, ${(\cdot})^{\star}$ and $\overline{(\cdot)}$.
+
+\begin{convention}[Dirac-adjoint]
+  The overbar shall only be used for the Dirac-adjoint $\overline{\psi} \coloneqq \psi i \gamma^0$.
+\end{convention}
+
+\begin{convention}[Operators]
+  Let $A$ be an operator, $A^{\dagger} \coloneqq (A^{\star})^T$ is the Hermitian adjoint, where $T$ denotes the transpose and the asterisk means conjugation of a complex number.
+\end{convention}
+
+\begin{convention}[Vectors]
+  Let $\vec{v} \in \mathbb{C}^n$ be a vector, $\vec{v}^{\dagger} \coloneqq (\vec{v}^{\star})^T = (v^{\star}_1 \dots v^{\star}_n)$, where $v_i$ are the components of the vector, such that the scalar product can be written as a matrix-matrix product, $\vec{v}^{\dagger} \vec{w}$.
+\end{convention}
+
+\begin{comment}
+dagger vs star vs bar
+$dx^D = dx^0 ... dx^{D-1}$ or $dx^D = dx^1 ... dx^{D}$,...
+\end{comment}
 
 \section{Non-Abelian gauge theories}
 
@@ -284,7 +364,7 @@ Let's consider a set of $N$ complex independent Dirac spinors
     \end{pmatrix},
 \end{align*}
 
-where every $\psi_a(x)$, $a \in \{1, \dots N\}$, has $4$ components accessed via spinor index $\alpha \in \{1, \dots 4\}$. We have a set of complex Grassmann-valued fields $\psi_{a}^{\alpha}(x)$, $a$ is called the \df{color index}, $\alpha$ is called the \df{spinor index}. It makes sense to demand the theory to be invariant under $SU(N)$-transformations, because basic quantum mechanics tells us that these phases are unobservable. Such a field theory that is invariant under the gauge group $SU(N)$ has to introduce (massless) vectorial fields $A_{\mu}(x)$, called the \df{gauge fields}. From special relativity, we also demand the theory to be Lorentz-invariant. The goal is to construct a Lagrangian for fermionic fields that satisfies these symmetries.
+where every $\psi_a(x)$, $a \in \{1, \dots N\}$, has $4$ components accessed via spinor index $\alpha \in \{1, \dots 4\}$. We have a set of complex Grassmann-valued fields $\psi_{a}^{\alpha}(x)$, $a$ is called the \df{color index}, $\alpha$ is called the \df{spinor index}. It makes sense to demand the theory to be invariant under $SU(N)$-transformations, because basic quantum mechanics tells us that phases are unobservable. Such a field theory that is invariant under the gauge group $SU(N)$ has to introduce (massless) vectorial fields $A_{\mu}(x)$, called the \df{gauge fields}. From special relativity, we also demand the theory to be Lorentz-invariant. The goal is to construct a Lagrangian for fermionic fields that satisfies these symmetries.
 
 Let's introduce the local\footnote{The phase depends on the spacetime coordinate $x$.} gauge transformation under which we want the theory to be invariant
 
@@ -513,7 +593,7 @@ where we used the totally anti-symmetric \df{structure constants} of the Lie-alg
 
 \end{comment}
 
-The expression in the square bracket of the last line is what we define as the \df{Yang-Mills field strength tensor}\footnote{When replacing $n_1$ and $n_2$ with unit vectors in arbitrary direction $\mu$ and $\nu$ respectively, we can set $F_{12}^a = F_{\mu \nu}^a$.}
+The expression in the square brackets of the last line is what we define as the \df{Yang-Mills field strength tensor}\footnote{When replacing $n_1$ and $n_2$ with unit vectors in arbitrary direction $\mu$ and $\nu$ respectively, we can set $F_{12}^a = F_{\mu \nu}^a$.}
 
 \begin{align}
     F_{\mu \nu}^a = \partial_{\mu} A_{\nu}^a(x) - \partial_{\nu} A_{\mu}^a + g f^{abc} A_{\mu}^b(x) A_{\nu}^c(x). \label{eq:ymtensor}
@@ -737,7 +817,7 @@ The observable can be any combination of time-ordered products of gauge- and fer
     Z = \int \mathcal{D}\psi \mathcal{D} \bar{\psi} \mathcal{D} A e^{iS[\psi, \bar{\psi}, A]}.
 \end{align*}
 
-The expectation value \eqref{eq:expectation_value} has an unconventional limit that has to be taken from the expression\footnote{Only physicists come up with the idea of taking a limit that contains an infinitesimal $\epsilon$ multiplied by infinity. Calling it unconventional barely does justice. Suprisingly this expression is mathematically legal, because $\epsilon$ is held constant while taking the limit. Nonetheless it hurts the eye.}. The limit has a slight tilt in the complex plane in order to suppress terms of the form $e^{-i \Delta E_n T}$, where $E_n = E_n - E$ denotes the energy difference of the state with quantum number $n$ to the state considered in the observable. Only the term with the least suppressed weight and the lowest $\Delta E_m$ for some $E_m \approx E$ survives the limit. Using that particular limit, exactly the state considered in the observable is projected out.
+The expectation value \eqref{eq:expectation_value} has an unconventional limit that has to be taken from the expression\footnote{Only physicists come up with the idea of taking a limit that contains an infinitesimal $\epsilon$ multiplied by infinity. Calling it unconventional barely does justice. Suprisingly this expression is mathematically legal, because $\epsilon$ - although small - is held constant while taking the limit. Nonetheless it hurts the eye.}. The limit has a slight tilt in the complex plane in order to suppress terms of the form $e^{-i \Delta E_n T}$, where $E_n = E_n - E$ denotes the energy difference of the state with quantum number $n$ to the state considered in the observable. Only the term with the least suppressed weight and the lowest $\Delta E_m$ for some $E_m \approx E$ survives the limit. Using that particular limit, exactly the state considered in the observable is projected out.
 
 Since the fermion fields take Grassmannian values, they can be integrated out analytically in the partition function using proposition \ref{prop:grassmann_integral} resulting in
 
@@ -750,11 +830,17 @@ where $D$ is the \df{Dirac-operator} in continuum theory, $D = i\gamma^{\mu} D_{
 \begin{comment}
 TODO:
 non-abelian, hadronic physics, importance, renormalization problems, running coupling, pert theory in high enery phsyics, not in low energy regime
+
+Beisert script QFT1:
+Many points of view; one is that it is our own fault: QFT is somewhat idealised; it
+assumes infinitely extended fields (IR) with infinite spatial resolution (UV); there
+is no wonder that the theory produces infinities.
+
 \end{comment}
 
 \section{Lattice Gauge Theories}
 
-Non-Abelian gauge theories with a certain number of fundamental fermionic particles can have the property of asymptotic freedom, meaning that the strength of the interaction becomes asymptotically weak as the distance between elementary particles decreases and the energy scale increases. Perturbatively such theories can only be treated in the high energy scale, where the running coupling constant is small to allow perturbative expansion of the problem. Consequently at low energies, the interaction is strong leading to confinement. Lattice gauge theory is a non-perturbative approach to deal with aforementioned theories in the low energy regime by discretising the problem on a finite spacetime lattice. The finiteness of the lattice volume results in a momentum cutoff at $1/a$ curing IR-divergencies, where $a$ is the \df{lattice spacing} (also called the \df{lattice constant}). Also, the finiteness of the lattice spacing on the other hand results in a cutoff at $a$ curing UV-divergencies. Lattice discretisation of a field theory therefore acts as a regularisation scheme.
+Non-Abelian gauge theories with a certain number of fundamental fermionic particles can have the property of asymptotic freedom, meaning that the strength of the interaction becomes asymptotically weak as the distance between elementary particles decreases and the energy scale increases. Perturbatively such theories can only be treated in the high energy scale, where the running coupling constant is small to allow perturbative expansion of the problem. Consequently at low energies, the interaction is strong leading to confinement. Lattice gauge theory is a non-perturbative approach to deal with aforementioned theories in the low energy regime by discretising the problem on a finite spacetime lattice. The finiteness of the lattice volume results in a momentum cutoff $\sim 1/a$ curing IR-divergencies, where $a$ is the \df{lattice spacing} (also called the \df{lattice constant}). Also, the finiteness of the lattice spacing on the other hand results in a cutoff $\sim a$ curing UV-divergencies. Lattice discretisation of a field theory therefore acts as a regularisation scheme.
 
 \subsection{Lattice Discretisation}
 
@@ -762,7 +848,7 @@ To discretise the theory, from now on we work in $D=4$ dimensional Euclidean spa
 
 \begin{definition}[4D lattice]
 
-Let $L_0, L_1, L_2, L_3 \in \mathbb{N}$ be natural numbers, define the \df{full lattice volume} in terms of the lattice spacing as $V \coloneqq L_0 \cdot L_1 \cdot L_2 \cdot L_3$ and the \df{full 4D lattice} of volume $V$ as
+Let $L_0, L_1, L_2, L_3 \in \mathbb{N}$ be natural numbers, define the \df{full lattice volume} as $V \coloneqq L_0 \cdot L_1 \cdot L_2 \cdot L_3 = \abs{\Lambda}$ and the \df{full 4D lattice} of volume $V$ as
 
 \begin{align*}
     \Lambda \coloneqq \{ n = (n_0, n_1, n_2, n_3) \mid n_i \in \{0, 1, \dots, L_i - 1 \}, i \in \{0,1,2,3\} \}.
@@ -770,7 +856,7 @@ Let $L_0, L_1, L_2, L_3 \in \mathbb{N}$ be natural numbers, define the \df{full 
 
 \end{definition}
 
-We define the \df{lattice spacing} $a > 0$ (also called \df{lattice constant}), which is a real number of mass dimension 1\footnote{We use particle physics units $c = \hbar = 1$ in which length and time have the same unit. It is therefore legal to use the same $a$ as lattice spacing in all $4$ spacetime dimensions.}. This spans the (finite) 4D spacetime lattice, where each point $n$ on the lattice corresponds to a physical point $x = an$ in spacetime.
+The points on the lattice are evenly spaced by the \df{lattice spacing} $a > 0$ (also called \df{lattice constant}), which is a real number of mass dimension 1\footnote{We use particle physics units $c = \hbar = 1$ in which length and time have the same unit. It is therefore legal to use the same $a$ as lattice spacing in all $4$ spacetime dimensions.}. This spans the (finite) 4D spacetime lattice, where each point $n$\footnote{$n$ represents a point in the lattice and is a four-vector containing only non-negative integers.} on the lattice corresponds to a physical point $x = an$ in spacetime. The real continuum physics are put in a finite box of volume $V$. In order to extract a result valid in the continuum from such calculation one has to repeat the lattice calculation for multiple lattice spacings $a$. The final result is then extrapolated to $a \to 0$.
 
 We start by discretising the gauge-part of the theory. Here our effort in deriving the gauge-part using the plaquette will bear fruit. Note the gauge-part of the Lagrangian (the subscript $E$ for "Euclidean" is dropped from now on)
 
@@ -786,7 +872,7 @@ In the second step, the sum over $\mu$ and $\nu$ was explicitly written. Notice 
     &= \delta_{\mu \nu} \cdot id -ig \epsilon^2 F_{\mu \nu}^a T^a + i O(\epsilon^3) + \frac{1}{2!}(-ig \epsilon^2)^2 \textcolor{cyellow}{F_{\mu \nu}^a F_{\mu \nu}^b T^a T^b } + \delta_{\mu \nu} O(\epsilon^6).
 \end{align*}
 
-This is the plaquette in subspace $(\hat{\mu}, \hat{\nu})$. In the last line, the exponential was written in terms of its series representation, where it has to be noted that there is no sum over the Lorentz-indices $\mu,\nu$ in the expression above. Also when tracking down the $O(\epsilon^3)$-term, it turns out to be imaginary. The \textcolor{cyellow}{yellow} term is actually the same that is traced and summed over in the Lagrangian. Solving the equation for the yellow part and taking the trace of the real-part on both sides (the trace over the yellow part itself is real),
+This is the plaquette in subspace $(\hat{\mu}, \hat{\nu})$. In the last line, the exponential was written in terms of its series representation, where it has to be noted that there is \textit{no} sum over the Lorentz-indices $\mu,\nu$ in the expression above, although indices are repeated. Also when tracking down the $O(\epsilon^3)$-term, it turns out to be imaginary. The \textcolor{cyellow}{yellow} term is actually the same that is traced and summed over in the Lagrangian. Solving the equation for the yellow part and taking the trace of the real-part on both sides (the trace over the yellow part itself is real),
 
 \begin{align*}
     tr( F_{\mu \nu}^a F_{\mu \nu}^b T^a T^b) = \frac{2}{g^2 \epsilon^4} Re \; tr\left[ \delta_{\mu \nu} \cdot id - \hat{U}_{\mu \nu}(\epsilon,x) \right] + \delta_{\mu \nu} O(\epsilon^{2}).
@@ -799,9 +885,9 @@ This is the plaquette in subspace $(\hat{\mu}, \hat{\nu})$. In the last line, th
     &= \frac{1}{g^2 \epsilon^4} \sum_{\mu, \nu} Re \; tr\left[ \delta_{\mu \nu} \cdot id - \hat{U}_{\mu \nu}(\epsilon,x) \right] + O(\epsilon^{2}).
 \end{align*}
 
-This is still the continuum Lagrangian, but written in terms of plaquettes of size $\epsilon$ instead of the field strength tensor and omitting terms of order $\epsilon^2$. The term above is also purely real by construction, thus $e^{-S_G}$ can be interpreted as probability density.
+This is still the continuum Lagrangian, but written in terms of plaquettes of size $\epsilon > 0$ instead of the field strength tensor and omitting terms of order $\epsilon^2$. The term above is also purely real by construction, thus $e^{-S_G}$ can be interpreted as probability density.
 
-Here we discretize the involved $SU(N)$-valued compensator fields $U(x,x+\epsilon \hat{\mu})$. At this point we can just replace $\epsilon$ with the lattice spacing $a$ and only keep the fields in discrete spacetime points $an$ for $n \in \Lambda$. All fundamental fields and objects are therefore replaced with their discretized counterparts,
+Here we discretize the involved $SU(N)$-valued compensator fields $U(x,x+\epsilon \hat{\mu})$. At this point we can just replace $\epsilon$ with the lattice spacing $a$ and only keep the fields in discrete spacetime points $an$ for $n \in \Lambda$. All fundamental fields and objects are therefore replaced with their discretized counterparts (the right-hand side defines the discretized quantity),
 
 \begin{align*}
     U(x,x + \epsilon \hat{\mu}) = U(an,an + a\hat{\mu}) &\longrightarrow U_{\mu}(n), \\
@@ -817,7 +903,7 @@ Integrals and derivatives are replaced as well,
     \partial_{\mu} f(x) &\longrightarrow \frac{1}{2a} \left( f(n+\hat{\mu}) - f(n-\hat{\mu}) \right).
 \end{align*}
 
-The derivative was discretized by using the fact that if the function $f(x)$ is smooth, then the right-hand and the left hand derivatives are equal and thus $\partial_{\mu} = \frac{1}{2}(\partial_{+\mu} + \partial_{-\mu})$. Recalling the definition of the directional derivative along $n$, equation \eqref{eq:dir_derivative}, we define the \df{left-hand or forward derivative} in direction $n=+\hat{\mu}$ and the \df{right-hand or backward derivative} in direction $n=-\hat{\mu}$ respectively
+Notice that the integral measure becomes $a^D$, which seems intuitive and naturally. The derivative was discretized by using the fact that if the function $f(x)$ is smooth, then the right-hand and the left hand derivatives are equal and thus $\partial_{\mu} = \frac{1}{2}(\partial_{+\mu} + \partial_{-\mu})$. Recalling the definition of the directional derivative along $n$, equation \eqref{eq:dir_derivative}, we define the \df{left-hand or forward derivative} in direction $n=+\hat{\mu}$ and the \df{right-hand or backward derivative} in direction $n=-\hat{\mu}$ respectively
 
 \begin{align*}
     n^{\mu} \partial_{\mu} \psi(x) &\stackrel{n = +\hat{\mu}}{=} \lim_{\epsilon \to 0^{+}} \frac{ \psi(x + \epsilon \hat{\mu}) - \psi(x) }{\epsilon} &\eqqcolon \partial_{+\mu} \psi(x), \\
@@ -838,7 +924,7 @@ with
     D_{-\mu} f(x) = \lim_{\epsilon \to 0^{+}} \frac{ f(x) - U(x,x - \epsilon \hat{\mu}) f(x - \epsilon \hat{\mu}) }{\epsilon} &\longrightarrow \frac{1}{a} \left[ f(n) - U_{-\mu}(n) f(n - \hat{\mu}) \right].
 \end{align*}
 
-The $\pm$ in $D_{\pm \mu}$, analogue to the directional derivatives, denotes left-hand or right-hand gauge covariant derivatives in direction $\mu$. One usually uses the same lattice spacing $a$ in all spatial and time directions ($\hbar = 1$). Of importance is only that the value of $a$ is chosen small, because it determines to what length and time scale the system can be resolved. The limit $a \to 0$ is called the \df {naive continuum limit}.
+The $\pm$ in $D_{\pm \mu}$, analogue to the directional derivatives, denotes left-hand or right-hand gauge covariant derivatives in direction $\mu$. One usually uses the same lattice spacing $a$ in all spatial and time directions ($\hbar = 1$). Of importance is only that the value of $a$ is small, because it determines to what length and time scale the system can be resolved. The limit $a \to 0$ is called the \df {naive continuum limit}.
 
 The lattice is structured as in figure \ref{fig:link_variable}.
 
@@ -846,7 +932,7 @@ The lattice is structured as in figure \ref{fig:link_variable}.
   \centering
   %\includestandalone[]{schemes/link_variable}
   \subimport{schemes/}{link_variable}
-  \caption{TODO.}
+  \caption{Cutout of a lattice. The point in the middle is denoted by the integer four-vector \textcolor{cblue}{$n$}, the value of the fermion-field at that point is $\psi(x)$, with $x=na$. In this 2D slice, the field at that point is connected to its neigbhoring lattice points \textcolor{cblue}{$n \pm \hat{\mu}$} and \textcolor{cblue}{$n \pm \hat{\nu}$} via the link variables \textcolor{cred}{$U_{\pm\mu}(n)$} and \textcolor{cgreen}{$U_{\pm\nu}(n)$} (coming from the discretized derivative). The link variables can be thought of as lying in-between the lattice points.}
   \label{fig:link_variable}
 \end{figure}
 
@@ -856,7 +942,7 @@ Since the compensator fields $U_{\mu}(n)$ (their discretized variants are usuall
     U_{\mu}(n) = U_{-\mu}(n + \hat{\mu})^{\dagger}, \label{eq:U_relation}
 \end{align}
 
-because the connection between lattice site $n$ and $n + \mu$ is equal in both directions\footnote{This follows directly from equation \eqref{eq:realu}}. The spinor fields $\psi(n)_{\alpha,a}$ residing on the lattice points carry color- ($a$) and spinor indices ($\alpha$). Therfore for each lattice site, we have \num{12} complex numbers from the fermion fields and \num{4} $SU(3)$ matrices coming from the link variables.
+because the connection between lattice site $n$ and $n + \mu$ is equal in both directions\footnote{This follows directly from the continuum version, equation \eqref{eq:realu}, and also holds in the lattice description.}. The spinor fields $\psi(n)_{\alpha,a}$ residing on the lattice points carry color- ($a$) and spinor indices ($\alpha$). Therfore for each lattice site, we have \num{12} complex numbers from the fermion fields and \num{4} $SU(3)$ matrices coming from the link variables.
 
 The full discretized Yang-Mills action is
 
@@ -871,13 +957,17 @@ with
     \mathcal{S}_F &= a^4 \sum_{n \in \Lambda} \bar{\psi}(n) \underbrace{\left[ \sum_{\mu} \frac{\gamma^{\mu}}{2} (D_{+\mu} + D_{-\mu}) + m \right]}_{\coloneqq D} \psi(n).
 \end{align*}
 
-The expression in the square brackets sandwiched by the fermion fields is the (naive) \df{lattice Dirac-operator}. One of the problems with that term is that it brings so called \df{doublers} into the theory, artifacts from the lattice discretisation. Doublers are unphysical poles in the fermion propagagor $D^{-1}$ and thus correspond to particles that do not exist in the continuum theory that has only one pole. In 4 dimensional spacetime, the action above incorporates \num{15} unphysical doublers\footnote{For general D-dimensional spacetime the theory would contain $2^D -1$ doublers. Of the total $2^D$ poles only one is physical.}. Wilson found a solution to this problem \cite{wilson1974}, namely he added term proportional to $a$ to the action which vanishes in the continuum limit. With $0 \ne r \in \mathbb{R}$, the \df{Wilson-Dirac-operator} then is
+The expression in the square brackets sandwiched by the fermion fields is the (naive) \df{lattice Dirac-operator}. One of the problems with that term is that it brings so called \df{doublers} into the theory, artifacts from the lattice discretisation. Doublers are unphysical poles in the fermion propagagor $D^{-1}$ and thus correspond to particles that do not exist in the continuum theory that has only one pole. In 4 dimensional spacetime, the action above incorporates \num{15} unphysical doublers\footnotemark. Wilson found a solution to this problem \cite{wilson1974}, namely he added term proportional to $a$ to the action which vanishes in the continuum limit. With $0 \ne r \in \mathbb{R}$, the \df{Wilson-Dirac-operator} then is
+
+\footnotetext{For general D-dimensional spacetime the theory would contain $2^D -1$ doublers\footnotemark. Of the total $2^D$ poles only one is physical.}
+\footnotetext{We appologize for the slight overflow of notation; $D$ denotes the spacetime dimension as well as the Dirac-operator. We assume that the meaing is clear from context\footnotemark.}
+\footnotetext{Also appologies for the nested footnote.}
 
 \begin{align}
     D_W = \sum_{\mu} \frac{\gamma^{\mu}}{2} (D_{+\mu} + D_{-\mu}) + m - \frac{a r}{2} \sum_{\mu} D_{-\mu} D_{+\mu}. \label{eq:dwop}
 \end{align}
 
-This improvement eliminates the doubler states by making their mass proportional to $r/a$, such that they decouple in the continuum limit, but unfortunately it breaks chiral symmetry. There are several other extensions of the action to deal with doublers and chiral symmetry breaking, for example the Sheikholeslami-Wohlert-term \cite{sheikholeslami1985}, the Lüscher-Weisz action \cite{luscher1985}, staggered fermions \cite{kogut1975} or domain wall fermions \cite{shamir1993}. Unfortunately no improvement led to a lattice theory with correct continuum limit maintaining chiral symmetry, while simulaneously introducing no doublers. It is even proven that such a lattice discretisation does not exist \cite{nielsen1981}. However, equation \eqref{eq:dwop} shows that there is a lot of flexibility in defining a lattice discretisation that has the correct continuum limit. Any term proportional to a power of $a$ can be added to the action. Certainly this increases the computational cost. Evidently continuous rotational, translational and Lorentz-symmetry is broken as well by the lattice description.
+This improvement eliminates the doubler states by making their mass proportional to $r/a$, such that they decouple in the continuum limit, but unfortunately it breaks chiral symmetry. There are several other extensions of the action to deal with doublers and chiral symmetry breaking, for example the Sheikholeslami-Wohlert-term \cite{sheikholeslami1985}, the Lüscher-Weisz action \cite{luscher1985}, staggered fermions \cite{kogut1975} or domain wall fermions \cite{shamir1993}. Unfortunately no improvement led to a lattice theory with correct continuum limit maintaining chiral symmetry, while simulaneously introducing no doublers. It is even proven that such a lattice discretisation does not exist \cite{nielsen1981}. However, equation \eqref{eq:dwop} shows that there is a lot of flexibility in defining a lattice discretisation that has the correct continuum limit. Any term proportional to a power of $a$ can safely be added to the action. Certainly this increases the computational cost. Evidently continuous rotational, translational and Lorentz-symmetry is broken as well by any lattice description.
 
 \subsection{Hopping expansion}
 
@@ -919,7 +1009,7 @@ However, the next step is to translate expectation values \eqref{eq:expectation_
     \langle \mathcal{O}[\psi, \bar{\psi}, A] \rangle \coloneqq \lim_{\tau \to \infty} \frac{ \int \mathcal{D} \psi \mathcal{D} \bar{\psi} \mathcal{D} A \mathcal{O}[\psi, \bar{\psi}, A] e^{-S[\psi,\bar{\psi},A]} }{ \int \mathcal{D} A \det(D) e^{-S_G[A]} }.
 \end{align*}
 
-The strange limit from the Minkovskian expectation value \eqref{eq:expectation_value} has vanished, because of the Wick-rotation of the time-variable. If we put the determinant inside the exponential, we can redefine the (effective) Euclidean action as\footnote{Using the well known identity $\det(e^A) = e^{tr(A)}$.}
+The strange limit from the Minkowskian expectation value \eqref{eq:expectation_value} has vanished, because of the Wick-rotation of the time-variable. If we put the determinant inside the exponential, we can redefine the (effective) Euclidean action as\footnote{Using the well known identity $\det(e^A) = e^{tr(A)}$.}
 
 \begin{align}
     S[A] = S_G[A] + tr(\log D), \label{eq:eucl_action}
@@ -943,13 +1033,13 @@ where $D_{\alpha \beta}^{-1}(x,y)$ is the fermion propagator from $x$ to $y$. Th
     \langle \mathcal{O}[U] \rangle = \lim_{\tau \to \infty} \frac{1}{Z} \int \mathcal{D} U e^{-S[U]} \mathcal{O}[U] \longrightarrow \sum_U P(U) \mathcal{O}[U].
 \end{align*}
 
-The probability density in the last line is set to $P(U) \coloneqq Z^{-1} e^{-S[U]}$. Despite that this expression is better, it is still not realistic to evaluate explicitly, because if the lattice is large, we still have too many fields $U$ to loop over within the sum\footnote{On a $L^4$ lattice, the quatitiy $U$ consists of $2 \cdot 8 \cdot L^4$ real numbers (if a representation with $8$ real number was used for the $SU(3)$ matrices). Even if we restrict every continuous component of $U$ to only $100$ discrete possibilities, we end up in $100^{16 L^4}$ possible configurations.}. The sum is weighted according to the probability density $P(U)$. Instead of randomly choosing $N$ gauge-field configurations to approximate the sum\footnote{Which would be a perfectly fine technique, but introduces a large spread of values, thus a large variance. Also if $P(U)$ is peaked in a certain small region, a plain sampling could fail to have even one point inside that region.}, we could try to avoid field configurations with small weights $P(U)$, by focusing on configurations that minimize the action. By this, we can approximate the sum using much fewer terms - terms that anyway dominate the sum. The expectation value then takes the form of an arithemtic mean of these considered field configurations, a sample mean
+The probability density in the last line is set to $P(U) \coloneqq Z^{-1} e^{-S[U]}$. Although this expression seems better, it is still not realistic to evaluate explicitly, because if the lattice is large, we still have too many fields $U$ to loop over within the sum\footnote{On a $L^4$ lattice, the quatitiy $U$ consists of $2 \cdot 8 \cdot L^4$ real numbers (if a representation with $8$ real number was used for the $SU(3)$ matrices). Even if we restrict every continuous component of $U$ to only $100$ discrete possibilities, we end up in $100^{16 L^4}$ possible configurations.}. The sum is weighted according to the probability density $P(U)$. Instead of randomly choosing $N$ gauge-field configurations to approximate the sum\footnote{Which would be a perfectly fine technique, but introduces a large spread of values, thus a large variance. Also if $P(U)$ is peaked in a certain small region, a plain sampling could fail to have even one point inside the relevant region.}, we could try to avoid field configurations with small weights $P(U)$, by focusing on configurations that minimize the action. By this, we can approximate the sum using much fewer terms - terms that anyway dominate the sum. The expectation value then takes the form of an arithemtic mean of these considered field configurations - a sample mean
 
 \begin{align}
     \langle \mathcal{O}[U] \rangle \approx \frac{1}{N} \sum_{i=1}^N \mathcal{O}[U_i], \label{eq:sample_mean}
 \end{align}
 
-where $U_i$ denotes the $i$-th field configuration and $N$ is the total number of configurations considered. Clearly, the $U_i$ in the expression above are sampled according to the probability density $P(U)$. The error is $O(N^{-\frac{1}{2}})$. A large part of active and past research in lattice gauge theories consists of finding clever trickery to calculate that sum and restricting it to only the best field configurations $U_i$. An approximation called \acrfull{qqcd} just sets $\det(D) = const.$, making $tr(\log D) = 0$, leading to a theory similar to \acrshort{qed}, because the determinant cancels just as in the Abelian case. Another approach is to use the hopping expansion to calculate the determinant
+where $U_i$ denotes the $i$-th field configuration and $N$ is the total number of configurations considered. Clearly, the $U_i$ in the expression above are sampled according to the probability density $P(U)$. This is called \df{importance sampling}. The statistical error is $O(N^{-\frac{1}{2}})$. A large part of active and past research in lattice gauge theories consists of finding clever trickery to calculate that sum and restricting it to only the best field configurations $U_i$. An approximation called \acrfull{qqcd} just sets $\det(D) = const.$, making $tr(\log D) = 0$, leading to a theory similar to \acrshort{qed}, because the determinant cancels just as in the Abelian case. Another approach is to use the hopping expansion to calculate the determinant
 
 \begin{align*}
     \det(D) = C \det(id - \kappa H) = C \exp\big(tr \log(id - \kappa H)\big) = C \exp(- \sum_{n=1}^{\infty} \frac{\kappa^n}{n} tr(H^n)).
@@ -966,20 +1056,20 @@ from https://en.wikipedia.org/wiki/Staggered_fermion: A particular way to resolv
 TODO: as a renormalization scheme, observables, ...
 boundary conditions, specially SF type, 
 
-By introducing the finite lattice the the measure of the functional integral Dpsi (which in principle are infinite regular integrals) has been translated into many \footnote{To be precise, it's 12 times N^4 complex integrals; or 24*N^4 real integral} regular complex integral measures dpsi_{alpha,a}(n). The gauge field measure DA analogously translated into 4*N^4 SU(N) group valued measures DU_{\mu}(n) - integrations over the group. However the fields are reduced to a countable number of regular numbers.
+By introducing the finite lattice the measure of the functional integral Dpsi (which in principle are infinite regular integrals) has been translated into many \footnote{To be precise, it's 12 times N^4 complex integrals; or 24*N^4 real integral} regular complex integral measures dpsi_{alpha,a}(n). The gauge field measure DA analogously translated into 4*N^4 SU(N) group valued measures DU_{\mu}(n) - integrations over the group. However the fields are reduced to a countable number of regular numbers.
 
 from: Digitizing Gauge Fields: Lattice Monte Carlo Results for Future Quantum Computers
 The Haar measure has the property that
  integral dU TrU = 0 (8)
 where U is an SU(N) matrix. The integral
 Eq. (8) can be thought of as the expectation
-value of a Wilson loop in a theory where e��S = 1.
+value of a Wilson loop in a theory where e^S = 1.
 
 \end{comment}
 
 \subsection{Pseudofermions}
 
-One way to introduce physical fermions into the lattice description of our theory is to note that the determinant in the expectation value \eqref{eq:expectation_value} can also be written in terms of fermion fields that behave statistically as bosonic fields (they commute), so called \df{pseudofermions}. Using propositions \ref{prop:gauss_integral} and \ref{prop:grassmann_integral} we can write
+One way to introduce physical fermions into the lattice description of our theory is to note that the determinant in the expectation value \eqref{eq:expectation_value} can also be written in terms of fermion fields (having spinor and color indices) that behave statistically as bosonic fields (they commute), so called \df{pseudofermions}. Using propositions \ref{prop:gauss_integral} and \ref{prop:grassmann_integral} we can write
 
 \begin{align*}
   \int \mathcal{D}\psi \mathcal{D} \bar{\psi} e^{ - \bar{\psi} D \psi } = \pi^{-V} \int \mathcal{D}\phi \mathcal{D} \phi^{\star} e^{ - \phi^{\star} D^{-1} \phi }.
@@ -1903,6 +1993,8 @@ So when one of the above conditions are met, the algorithm performs a \df{reset 
 
 Some operations such as norms and scalar products are memory-bandwidth-bound, which means the on-chip memory bandwidth determines how much time is spent computing the output. Storing input data in a format with lower bit-length reduces the amount of data to be transferred, thus improving the speed of calculation.
 
+\subsubsection{Setup}
+
 The complete conjugate gradient kernel was simulated in different datatypes, floats as well as posits. In order to produce the plots, the Dirac matrix \code{Dop\_dble()} and the source vector $\code{eta}$ were extracted in \gls{binary64} format from the original code running a simulation of a $4^4$ lattice, \acrfull{sf} boundary conditions (\code{type 1}), no C* boundary conditions (\code{cstar 0}) and $1$ rank. The first \num{2000} trajectories were considered of thermalisation. The matrix was extracted in trajectory \num{2001}. A python script mimicking the exact behaviour of the \code{cgne()} kernel from the source code\footnotemark, was implemented to cope with arbitrary datatypes. The simulated datatypes were \gls{binary64}, \gls{binary32}, \gls{tensorfloat32}, \gls{binary16}, \gls{bfloat16}, \gls{posit32}, \gls{posit16}, and \gls{posit8}. The Dirac matrix had approximately \num{2}\% non-zero value. The results are plotted in figures \ref{fig:cgne:naive}, \ref{fig:cgne:quire}, \ref{fig:cgne:col64} and \ref{fig:cgne:res12}.
 
 \footnotetext{See line 429ff in \code{modules/linsolv/cgne.c} in \cite{openqxd}.}
@@ -2556,6 +2648,8 @@ In the current version of openQxD \cite{openqxd}, the outer \acrshort{gcr} solve
 
 \label{sec:sap_gcr_results}
 
+\subsubsection{Setup}
+
 The complete \acrshort{sapgcr} kernel was implemented using Python in the exact same way as the \code{fgcr()} function from the source code \footnote{See line 212ff in \code{modules/linsolv/fgcr.c} in \cite{openqxd}.}. The Dirac operator \code{Dop\_dble()} was extracted in the same way as for the \code{cgne()} kernel previously (see section \ref{sec:simulating_cgne}) using the same configuration. The python implementation contains a floating point datatype for the reduction variables separately (\code{rdtype}). It also accepts a "large" datatype (\code{ldtype}) by which the restart steps are calculated in and a "small" datatype (\code{sdtype}) in which the regular and the \acrshort{mr} steps are performed in. The result is obtained in terms of the "large" datatype. There are various configuration settings to choose from (see table \ref{tab:sap_gcr_settings}).
 
 \begin{table}[H]
@@ -3053,7 +3147,7 @@ If the deflation subspace $\Omega$ approximates the bulk of the low eigenmodes i
 
 deflation
 
-Ddenotes the lattice Dirac operator at a value of the bare quark mass close to the critical mass (the inverse of D is put in quotes in this formula in order to make it clear that an approximation to the inverse is being applied). As a result the componentsof the fields along the high modes of the Dirac operator are suppressed and the fields willtherefore have a strong overlap with the subspace spanned bythe low modes of the operator.The local coherence of the latter then guarantees that the associated domain-decomposeddeflation subspace is highly effective
+D denotes the lattice Dirac operator at a value of the bare quark mass close to the critical mass (the inverse of D is put in quotes in this formula in order to make it clear that an approximation to the inverse is being applied). As a result the componentsof the fields along the high modes of the Dirac operator are suppressed and the fields willtherefore have a strong overlap with the subspace spanned bythe low modes of the operator.The local coherence of the latter then guarantees that the associated domain-decomposeddeflation subspace is highly effective
 
 
 local coherence: Loosely speaking, a set of quark fields is referred to as locally coherent if the fields are locally well approximated by a relatively small number of fields
@@ -3086,6 +3180,10 @@ little dirac operator can also be preconditioned using eo-preconditioning if the
 \end{comment}
 
 \subsection{Simulating \acrshort*{dflsapgcr}}
+
+\label{sec:dfl_sap_gcr_results}
+
+\subsubsection{Setup}
 
 The \acrshort{dflsapgcr}-kernel was as well implemented in Python by extending the already existing \acrshort{sapgcr} code. Only the preconditioning phase has changed. The deflated variant of the algorithm takes the same arguments as the regular one, see table \ref{tab:sap_gcr_settings}. In addition to these settings, the deflated algorithm needs configuration options for the deflation subspace and the settings concerning the solver for the little equation, see table \ref{tab:dfl_sap_gcr_settings}.
 
@@ -3144,6 +3242,7 @@ Expectingly, the plots exhibit a bowl-shape, where the minimum gives the perfect
 
 TODO
 
+\begin{comment}
 \section{Multi-shift Conjugate Gradient algorithm}
 
 TODO
@@ -3153,6 +3252,7 @@ TODO
 TODO: \acrlong{mscg} in mixed precision. Currently only in binary64.
 
 \end{proposal}
+\end{comment}
 
 \section{Dirac operator}
 
@@ -3174,11 +3274,40 @@ The Dirac-operator \eqref{eq:dwop} in openQxD is implmented in terms of the vari
 
 \label{sec:threads}
 
-Modern processors today tend to have multiple cores. In order to benefit from that, two major programming models programmers are faced with are \acrshort{openmp} \cite{openmp45} and \acrshort{MPI} \cite{mpi}. Where MPI favors the scalability of large clusters with distributed memory, OpenMP favors speed of shared memory systems. Comparing the two solutions gives motivation to look at OpenMP more closely and consider using OpenMP for intra-node traffic. The goal is certainly a hybrid solution that keeps the scalbility of MPI, but exploits the speedup in shared memory systems using OpenMP, since on a single node, OpenMP seems to outperform MPI in most cases \cite{chan2011}.
+Modern processors today tend to have multiple cores. In order to benefit from that, two major programming models programmers are faced with are \acrshort{openmp} \cite{openmp45} and \acrshort{MPI} \cite{mpi}. Where MPI favors the scalability of large clusters with distributed memory, OpenMP favors speed of shared memory systems and \acrfull{numa}. Comparing the two solutions gives motivation to look at OpenMP more closely, specially considering OpenMP for intra-node traffic or traffic within a NUMA-domain. The goal is certainly a hybrid solution that keeps the scalbility of MPI, but exploits the speedup in shared memory systems using OpenMP, since OpenMP seems to outperform MPI in most cases on a single node \cite{chan2011}.
+
+\subsubsection{Terminology}
+
+It makes sense to agree on the terminology before analyzing and discussing the results.
+
+\begin{itemize}
+    \item \textbf{Node}: Physical hardware device holding one or more sockets with processors attached to, NUMA-nodes, main memory and network access for communication with other nodes.
+    \item \textbf{CPU, Processor}: Hardware device that is attached on a socket. It consists of one or more physical cores on the same chip.
+    \item \textbf{Physical core}: Hardware unit capable of independently performing all functions of a processor. A single physical core may correspond to one or more logical cores.
+    \item \textbf{Logical core}: Logical cores are the abilities of a single physical core to execute two or more threads or processes simultaneously. How many threads or processes can be executed concurrently is given by the number of logical (or virtual) cores. Each logical core has its own set of independent instructions, program counter and stack. Logical cores associated to the same physical core usually share their L1 and L2 cache. Logical cores are associated to a NUMA-node.
+    \item \textbf{Thread}: Sequence of programmed instructions. Multiple threads can execute concurrently and share resources such as memory and caches. Communication among threads on the same node happens via shared memory.
+    \item \textbf{Process, Rank}: As opposed to threads, processes or ranks do not share resources such as memory. Communication among different ranks (not necessarily on the same node) happens usually via inter-process communication methods such as MPI.
+    \item \textbf{NUMA-architecture}: A collection of NUMA-nodes linked by a point-to-point network.
+    \item \textbf{NUMA-node, NUMA-domain, NUMA-region}: Contains one ore more processors and local memory. Local memory is accessible to the other NUMA-nodes, but access is usually slower than to their own local memory. Not to be confused with the physical node.
+\end{itemize}
 
 \subsubsection{Setup}
 
-The Dirac operator in single-precision was implemented as a variant utilizing threads according to the standard OpenMP in openQCD version 1.6 \cite{openqcd}. The performance of the operator was compared to the native implementation without threads. The runs were conducted on two different nodes having two vastly different processors, see tables \ref{tab:dop_omp_amd} and \ref{tab:dop_omp_intel}. On each node, \num{3} different lattice sizes were considered; $64^4$, $32^4$ and $16^4$. For each lattice size, there were many configurations $(n_r,n_{th})$ that were analyzed, $n_r$ being the number of ranks and $n_{th}$ the number of threads. Every configuration was executed \num{10} times, the average is printed in the table.
+The Dirac operator in single-precision was implemented as a variant utilizing threads according to the OpenMP standard in openQCD version 1.6 \cite{openqcd}. The performance of the operator was compared to the native implementation without threads. The runs were conducted on two different nodes having two vastly different processors, see tables \ref{tab:dop_omp_amd} and \ref{tab:dop_omp_intel}. On each node, \num{3} different lattice sizes were considered; $64^4$, $32^4$ and $16^4$. For each lattice size, there were many configurations $(n_r,n_{th})$ that were analyzed, $n_r$ being the number of ranks and $n_{th}$ the number of threads. The configurations were chosen such that the machine was utilized half, fully or oversubscripted. Every configuration was executed \num{10} times, the average is printed in the table. The opneMP environment variables were set to
+
+\begin{lstlisting}[
+    language=sh,
+    numbers=none,
+    label=lst:omp_env,
+    caption={Environment variables for openMP.}
+]
+// each place corresponds to a core, threads are bound to cores
+OMP_PLACES=cores
+// block cyclic scheduling, where each thread gets floor(iteration / threads)
+// contiguous iterations. In multiple for loops, all with the same schedule
+// policy, the same threads get the same loop-slices
+OMP_SCHEDULE=static
+\end{lstlisting}
 
 \subsubsection{Discussion}
 
@@ -3232,20 +3361,19 @@ The Dirac operator in single-precision was implemented as a variant utilizing th
         omp & 1 & 512 & $2.35 \pm 0.01$ & $171 \pm 3$ & $53.4 \pm 5.3$ \\
         \hline
     \end{tabular}
-    \caption{\num{10} consecutive invocations of the single precision Dirac-operator \code{Dw()} on random fields in openQCD version 1.6. The table shows runs with different rank/thread configurations $(n_r, n_{th})$ on differnt lattice sizes. The lattice size refers to the total lattice size on the node. The node consisted of \num{2} NUMA nodes, \num{2} sockets with each an AMD EPYC 7742 processor @ 2.25GHz with \num{64} physical cores per socket and \num{2} threads per core; in total \num{256} logical CPUs, with 512GB of memory. The cache sizes of one processor are L1 data: 2MB, L1 instruction: 2MB, L2: 32MB, L3: 256MB. L1 data: 2MB ($64 \times 32$KB), L1 instruction: 2MB ($64 \times 32$KB), L2: 32MB ($64 \times 512$KB), L3: 256MB ($16 \times 16$MB).}
+    \caption{\num{10} consecutive invocations of the single precision Dirac-operator \code{Dw()} on random fields in openQCD version 1.6. The table shows runs with different rank/thread configurations $(n_r, n_{th})$ on differnt lattice sizes. The lattice size refers to the total lattice size on the node. The node consisted of \num{2} NUMA nodes, \num{2} sockets with each an AMD EPYC 7742 processor @ 2.25GHz with \num{64} physical cores per socket and \num{2} threads per core; in total \num{256} logical cores, with 512GB of memory. The cache sizes of one processor are L1 data: 2MB, L1 instruction: 2MB, L2: 32MB, L3: 256MB. L1 data: 2MB ($64 \times 32$KB), L1 instruction: 2MB ($64 \times 32$KB), L2: 32MB ($64 \times 512$KB), L3: 256MB ($16 \times 16$MB).}
     \label{tab:dop_omp_amd}
 \end{table}
 
-In table \ref{tab:dop_omp_amd} the number of physical and logical CPUs was a power of two, therefore in both cases - native and with threads - all logical CPUs in the node could be utilized. In general, the best runtimes were achieved with the native operator. The only exception for the $16^4$ lattice was the run with \num{64} ranks and \num{2} threads per rank. With that lattice size the whole gauge-field configuration fits into L2 cache of one processor (see table \ref{tab:lattice_sizes}), making consecutive runs very fast. Specially for the threaded variant, it can be seen that with double the amounts of threads the problem is not solved in half the time. This suggests that the overhead for dealing with threads is not negligible, and the threaded variant is in need of improvement. It should be seen as a first working step towards hyper-threading. On the other hand, also the native implementation lacks an ideal strong scaling by looking that the first two rows. Generally the runs with only \num{128} ranks are faster than the runs utilizing every of the \num{256} logical cores. This holds for all considered lattice sizes. Let's concentrate on the most interesting lattice size $64^4$. The threaded variant brings no benefit compared to the native one, but there are configurations that are comparable in runtime, namely the ones with $(n_r, n_{th})=(64,4)$ as well as $(32,8)$. Both utilize all logical cores of the node. Improving the threaded implementation can therefore lead to a speedup increase (see conclusion). Generally the less ranks, the worse the performance becomes. This can be explained by false sharing among the threads and ignorance concerning NUMA-effects when omplementing the the threaded variant.
+In table \ref{tab:dop_omp_amd} the number of physical and logical cores was a power of two, therefore in both cases - native and with threads - all logical cores on the node could be utilized. In general, the best runtimes were achieved with the native operator. The only exception for the $16^4$ lattice was the run with \num{64} ranks and \num{2} threads per rank. With that lattice size the whole gauge-field configuration fits into L2 cache of one processor (see table \ref{tab:lattice_sizes}), making consecutive runs very fast. Specially for the threaded variant, it can be seen that with double the amounts of threads the problem is not solved in half the time. This suggests that the overhead for dealing with threads is not negligible, and the threaded variant is in need of improvement. It should be seen as a first working step towards hyper-threading. On the other hand, also the native implementation lacks an ideal strong scaling by looking at the first two rows. Generally the runs with only \num{128} ranks are faster than the runs utilizing every of the \num{256} logical cores. This holds for all considered lattice sizes. Let's concentrate on the most interesting lattice size $64^4$. The threaded variant brings no benefit compared to the native one, but there are configurations that are comparable in runtime, namely the ones with $(n_r, n_{th})=(64,4)$ as well as $(32,8)$. Both utilize all logical cores of the node. Improving the threaded implementation can therefore lead to a speedup increase (see conclusion). Generally the less ranks, the worse the performance becomes. This can be explained by false sharing among the threads and ignorance concerning NUMA-effects when implementing the threaded operator.
 
-Table \ref{tab:dop_omp_intel} shows a differnt picture. Most notable in the analysis is the fact that the total number of physical and logical cores was \textit{not} a power of two on this node. This makes it difficult to utilize all resources of the node using the native implementation. This fact is reflected by the results. The threaded variant has substantial performance increases compared to the best native pure-MPI implementation. Specially the configurations with ranks and threads being $(n_r, n_{th})=(16,7)$, $(8,14)$ and $(4,14)$ perform best. The reason for this lies in the complicated association of cores to NUMA-domains. The node uses \num{4} NUMA-domains, where the logical cores are associated to NUMA-domains in a non-trival manner (see listings \ref{lst:lscpu}). \num{14} logical cores share an L3 cache. This explains why the mentioned configurations with \num{14} threads perform well. The jobs were disposed in a way that the \num{14} threads are bound to physical cores\footnote{With the OpenMP environment variable \code{OMP\_PLACES=cores}.} with the same L3 cache.
+Table \ref{tab:dop_omp_intel} shows a differnt picture. Most notable in the analysis is the fact that the total number of physical and logical cores was \textit{not} a power of two on this node. This makes it difficult to utilize all resources using the native implementation. This fact is reflected by the results. The threaded variant has substantial performance increases compared to the best native pure-MPI implementation using \num{64} ranks. Specially the configurations with ranks and threads being $(n_r, n_{th})=(16,7)$, $(8,14)$ and $(4,14)$ perform best. The reason for this lies in the complicated association of cores to NUMA-domains. The node has \num{4} NUMA-domains, where the logical cores are associated to NUMA-domains in a non-trival manner (see listings \ref{lst:lscpu}). \num{14} logical cores share an L3 cache. This explains why the mentioned configurations with \num{14} threads perform well. The jobs were disposed in a way that the \num{14} threads are bound to physical cores\footnote{With the OpenMP environment variable \code{OMP\_PLACES=cores}.} with the same L3 cache, thus cores in the same NUMA-domain. The job $(16,7)$ that performed best was also disposed such that each of the \num{4} NUMA-domains contained a group of \num{4} consecutive ranks with \num{7} threads each. All \num{112} logical cores were utilized.
 
-\begin{figure} % wrap into a figure such that the whole snippet is on the same page
 \begin{lstlisting}[
     language=C,
     numbers=none,
     label=lst:lscpu,
-    caption={Output of \code{lscpu -e}. Notice the association of logical cores (first column) to NUMA-domains (second column). The fourth column denotes the physical core. Each NUMA-domain has \num{14} logical cores, where core \num{0} and \num{56} belong to physical core \num{0} sharing their L1 and L2 cache on NUMA node \num{0}, logical cores \num{1} and \num{57} belong to physical core \num{1} on NUMA node \num{0} sharing L1 and L2 cache and so on. The L3 cache is shared on nodes \num{0}-\num{13}, \num{14}-\num{27}, and so on.}
+    caption={Output of \code{lscpu -e}. Notice the association of logical cores (first column) to NUMA-domains (second column). The fourth column denotes the physical core. Each NUMA-domain has \num{14} logical cores, where core \num{0} and \num{56} belong to physical core \num{0} sharing their L1 and L2 cache on NUMA node \num{0}, logical cores \num{1} and \num{57} belong to physical core \num{1} on NUMA node \num{0} sharing L1 and L2 cache and so on. The L3 cache is shared on nodes \num{0}-\num{13} and \num{56}-\num{69}, \num{14}-\num{27} and \num{70}-\num{83}, and so on. One NUMA-domain has thus \num{14} physical and \num{28} logical cores.}
 ]
 $ lscpu -e
 CPU NODE SOCKET CORE L1d:L1i:L2:L3 ONLINE
@@ -3290,48 +3418,46 @@ CPU NODE SOCKET CORE L1d:L1i:L2:L3 ONLINE
 110 3    3      54   54:54:54:3    yes
 111 3    3      55   55:55:55:3    yes
 \end{lstlisting}
-\end{figure}
 
 \begin{table}
     \centering
-\begin{tabular}{ |p{1.5cm}||p{1cm}|p{1cm}|p{2cm}|p{2cm}|p{2cm}| }
-    \hline
-    & & & $64^4$ & $32^4$ & $16^4$ \\
-    operator & $n_r$ & $n_{th}$ & time [s] & time [ms] & time [ms] \\
-    \hline
-    native & 64 & N/A & $0.0 \pm 0$ & $280 \pm 0$ & $21.6 \pm 7.5$ \\
-    native & 32 & N/A & $0.0 \pm 0$ & $538 \pm 2$ & $30.3 \pm 0.1$ \\
-    native & 16 & N/A & $0.0 \pm 0$ & $450 \pm 3$ & $28.2 \pm 0.1$ \\
-    omp & 64 & 1 & $0.0 \pm 0$ & $298 \pm 0$ & $25.1 \pm 14.3$ \\
-    omp & 64 & 2 & $0.0 \pm 0$ & $304 \pm 14$ & $24.3 \pm 6.2$ \\
-    omp & 64 & 4 & $0.0 \pm 0$ & $300 \pm 0$ & $22.0 \pm 5.0$ \\
-    omp & 64 & 8 & $0.0 \pm 0$ & $303 \pm 0$ & $24.9 \pm 4.0$ \\
-    omp & 32 & 1 & $0.0 \pm 0$ & $581 \pm 1$ & $33.7 \pm 0.1$ \\
-    omp & 32 & 2 & $0.0 \pm 0$ & $583 \pm 1$ & $34.2 \pm 0.2$ \\
-    omp & 32 & 4 & $0.0 \pm 0$ & $584 \pm 1$ & $35.4 \pm 0.1$ \\
-    omp & 32 & 7 & $0.0 \pm 0$ & $590 \pm 0$ & $37.1 \pm 0.1$ \\
-    omp & 16 & 2 & $0.0 \pm 0$ & $269 \pm 2$ & $18.8 \pm 0.1$ \\
-    omp & 16 & 4 & $0.0 \pm 0$ & $290 \pm 0$ & $18.3 \pm 0.1$ \\
-    omp & 16 & 7 & $0.0 \pm 0$ & $190 \pm 1$ & $14.1 \pm 0.1$ \\
-    omp & 16 & 14 & $0.0 \pm 0$ & $259 \pm 1$ & $20.8 \pm 0.1$ \\
-    omp & 8 & 4 & $0.0 \pm 0$ & $299 \pm 2$ & $21.9 \pm 0.0$ \\
-    omp & 8 & 8 & $0.0 \pm 0$ & $318 \pm 0$ & $21.7 \pm 0.1$ \\
-    omp & 8 & 14 & $0.0 \pm 0$ & $217 \pm 9$ & $17.7 \pm 0.5$ \\
-    omp & 8 & 28 & $0.0 \pm 0$ & $217 \pm 0$ & $20.6 \pm 0.1$ \\
-    omp & 4 & 7 & $0.0 \pm 0$ & $353 \pm 1$ & $25.2 \pm 0.1$ \\
-    omp & 4 & 14 & $0.0 \pm 0$ & $225 \pm 8$ & $18.0 \pm 0.1$ \\
-    omp & 4 & 28 & $0.0 \pm 0$ & $238 \pm 1$ & $20.0 \pm 0.2$ \\
-    omp & 4 & 56 & $0.0 \pm 0$ & $244 \pm 1$ & $25.3 \pm 0.1$ \\
-    omp & 2 & 28 & $0.0 \pm 0$ & $320 \pm 0$ & $21.8 \pm 0.1$ \\
-    omp & 2 & 56 & $0.0 \pm 0$ & $326 \pm 1$ & $23.7 \pm 0.1$ \\
-    omp & 2 & 112 & $0.0 \pm 0$ & $340 \pm 2$ & $33.7 \pm 1.2$ \\
-    omp & 1 & 56 & $0.0 \pm 0$ & $301 \pm 1$ & $17.3 \pm 0.1$ \\
-    omp & 1 & 112 & $0.0 \pm 0$ & $314 \pm 1$ & $18.6 \pm 0.2$ \\
-    omp & 1 & 224 & $0.0 \pm 0$ & $338 \pm 2$ & $36.3 \pm 0.2$ \\
-    \hline
-\end{tabular}
-
-    \caption{\num{10} consecutive invocations of the single precision Dirac-operator \code{Dw()} on random fields in openQCD version 1.6. The table shows runs with different rank/thread configurations $(n_r, n_{th})$ on differnt lattice sizes. The lattice size refers to the total lattice size on the node. The node consisted of \num{4} NUMA nodes, \num{4} sockets with each an Intel(R) E7-4830 v4 @ 2.00GHz with \num{14} physical cores per socket and \num{2} threads per core; in total \num{112} logical CPUs, with 2TB of memory. The cache sizes of one processor are L1 data: 448KB ($14 \times 32$KB), L1 instruction: 448KB ($14 \times 32$KB), L2: 3.5MB ($14 \times 256$KB), L3: 35MB ($1 \times 35$MB).}
+    \begin{tabular}{ |p{1.5cm}||p{1cm}|p{1cm}|p{2cm}|p{2cm}|p{2cm}| }
+        \hline
+        & & & $64^4$ & $32^4$ & $16^4$ \\
+        operator & $n_r$ & $n_{th}$ & time [s] & time [ms] & time [ms] \\
+        \hline
+        native & 16 & N/A & $7.33 \pm 0.05$ & $450 \pm 3$ & $28.2 \pm 0.1$ \\
+        native & 32 & N/A & $8.64 \pm 0.01$ & $538 \pm 2$ & $30.3 \pm 0.1$ \\
+        native & 64 & N/A & $4.41 \pm 0.01$ & $280 \pm 0$ & $21.6 \pm 7.5$ \\
+        omp & 1 & 112 & $4.98 \pm 0.01$ & $314 \pm 1$ & $18.6 \pm 0.2$ \\
+        omp & 1 & 224 & $5.13 \pm 0.01$ & $338 \pm 2$ & $36.3 \pm 0.2$ \\
+        omp & 1 & 56 & $5.50 \pm 0.01$ & $301 \pm 1$ & $17.3 \pm 0.1$ \\
+        omp & 16 & 14 & $4.04 \pm 0.00$ & $259 \pm 1$ & $20.8 \pm 0.1$ \\
+        omp & 16 & 2 & $4.29 \pm 0.02$ & $269 \pm 2$ & $18.8 \pm 0.1$ \\
+        omp & 16 & 4 & $4.62 \pm 0.02$ & $290 \pm 0$ & $18.3 \pm 0.1$ \\
+        omp & 16 & 7 & $2.84 \pm 0.01$ & $190 \pm 1$ & $14.1 \pm 0.1$ \\
+        omp & 2 & 112 & $4.73 \pm 0.01$ & $340 \pm 2$ & $33.7 \pm 1.2$ \\
+        omp & 2 & 28 & $4.87 \pm 0.01$ & $320 \pm 0$ & $21.8 \pm 0.1$ \\
+        omp & 2 & 56 & $4.75 \pm 0.01$ & $326 \pm 1$ & $23.7 \pm 0.1$ \\
+        omp & 32 & 1 & $9.33 \pm 0.03$ & $581 \pm 1$ & $33.7 \pm 0.1$ \\
+        omp & 32 & 2 & $9.34 \pm 0.02$ & $583 \pm 1$ & $34.2 \pm 0.2$ \\
+        omp & 32 & 4 & $9.36 \pm 0.01$ & $584 \pm 1$ & $35.4 \pm 0.1$ \\
+        omp & 32 & 7 & $9.39 \pm 0.01$ & $590 \pm 0$ & $37.1 \pm 0.1$ \\
+        omp & 4 & 14 & $3.09 \pm 0.02$ & $225 \pm 8$ & $18.0 \pm 0.1$ \\
+        omp & 4 & 28 & $3.34 \pm 0.09$ & $238 \pm 1$ & $20.0 \pm 0.2$ \\
+        omp & 4 & 56 & $3.32 \pm 0.01$ & $244 \pm 1$ & $25.3 \pm 0.1$ \\
+        omp & 4 & 7 & $5.29 \pm 0.03$ & $353 \pm 1$ & $25.2 \pm 0.1$ \\
+        omp & 64 & 1 & $4.72 \pm 0.00$ & $298 \pm 0$ & $25.1 \pm 14.3$ \\
+        omp & 64 & 2 & $4.74 \pm 0.01$ & $304 \pm 14$ & $24.3 \pm 6.2$ \\
+        omp & 64 & 4 & $4.75 \pm 0.00$ & $300 \pm 0$ & $22.0 \pm 5.0$ \\
+        omp & 64 & 8 & $4.77 \pm 0.00$ & $303 \pm 0$ & $24.9 \pm 4.0$ \\
+        omp & 8 & 14 & $3.08 \pm 0.01$ & $217 \pm 9$ & $17.7 \pm 0.5$ \\
+        omp & 8 & 28 & $3.10 \pm 0.01$ & $217 \pm 0$ & $20.6 \pm 0.1$ \\
+        omp & 8 & 4 & $4.55 \pm 0.04$ & $299 \pm 2$ & $21.9 \pm 0.0$ \\
+        omp & 8 & 8 & $4.81 \pm 0.01$ & $318 \pm 0$ & $21.7 \pm 0.1$ \\
+        \hline
+    \end{tabular}
+    \caption{\num{10} consecutive invocations of the single precision Dirac-operator \code{Dw()} on random fields in openQCD version 1.6. The table shows runs with different rank/thread configurations $(n_r, n_{th})$ on differnt lattice sizes. The lattice size refers to the total lattice size on the node. The node consisted of \num{4} NUMA nodes, \num{4} sockets with each an Intel(R) E7-4830 v4 @ 2.00GHz with \num{14} physical cores per socket and \num{2} threads per core; in total \num{112} logical cores, with 2TB of memory. The cache sizes of one processor are L1 data: 448KB ($14 \times 32$KB), L1 instruction: 448KB ($14 \times 32$KB), L2: 3.5MB ($14 \times 256$KB), L3: 35MB ($1 \times 35$MB).}
     \label{tab:dop_omp_intel}
 \end{table}
 
@@ -3352,17 +3478,19 @@ CPU NODE SOCKET CORE L1d:L1i:L2:L3 ONLINE
 
 \subsubsection{Conclusion}
 
-The threaded variant is usefull on machines where the number of logical or physical cores is not a power of two, or can somehow not be fully utilized by the pure-MPI implementation. Since in openQCD (and openQxD) the number of ranks in one direction can only be $2,4,6,\dots$ and the lattice size in one direction can only be $4,6,8,\dots$, these numbers are pretty limited for a given lattice size and a processor where the number of CPUs is not a power of two. Utilizing the whole node is not always possible\footnote{For example the node in table \ref{tab:dop_omp_intel}, where only a maximum of \num{64} from a total of \num{112} logical cores could be utilized.}. In such a case, the threaded operator can utilize the whole node, because the number of threads per rank is arbitrary.
+The threaded variant is usefull on machines where the number of logical or physical cores is not a power of two, or can somehow not be fully utilized by the pure-MPI implementation. Since in openQCD (and openQxD) the number of ranks in one direction can only be $2,4,6,\dots$ and the lattice size in one direction can only be $4,6,8,\dots$, these numbers are pretty limited for a given lattice size and a processor where the number of CPUs is not a power of two. Utilizing the whole node is not always possible\footnote{For example the node in table \ref{tab:dop_omp_intel}, where only a maximum of \num{64} from a total of \num{112} logical cores could be utilized.}. On the other hand, the threaded operator can utilize the whole node, because the number of threads per rank is arbitrary.
 
-When implementing threads, it is important to write code aware of NUMA effects. In the above implementation there are certainly performance degradations due to NUMA effects and false sharing. It was tried to honour the first-touch policy as often as possible, by initializing the involved arrays with a parallel for loop, just as they are accessed later in the main loop\footnote{See line 1295ff in \code{modules/dirac/Dw.c} in \cite{openqcd_threads}} of the Dirac-operator. Although a certain amount of false sharing was not preventable without significantly changing the original main loop.
+When implementing threads, it is important to write code aware of NUMA effects. In the above implementation there are certainly performance degradations due to NUMA effects and false sharing. It was tried to honour the first-touch policy as often as possible, by initializing the involved arrays with a parallel for loop, just as they are accessed later in the main for loop\footnote{See line 1295ff in \code{modules/dirac/Dw.c} in \cite{openqcd_threads}} within the Dirac-operator. Although a certain amount of false sharing was not preventable without significantly changing the original code.
 
-Another peculiarity of the above implementation was that in \code{deo()} the \num{8} directions of the gauge-fields had to be separately locked for every lattice point, because the output vector was written to in these code segments leading to race conditions without locking. The initialization and de-initialization of \code{VOLUME/2} locks involes a non-negligible overhead in every invocation of the Dirac-operator.
+Another peculiarity of the above implementation was that in \code{deo()} the \num{8} directions of the gauge-fields had to be separately locked for every lattice point, because the output vector was written in these code segments leading to race conditions without locking. The initialization and de-initialization of the \code{VOLUME/2} locks involes a non-negligible overhead in every invocation of the Dirac-operator.
 
 \begin{proposal}{The Dirac-operator with threads}{dop_threads}
 
 The analysis in section \ref{sec:threads} shows that a version of the Dirac-operator employing threads can improve performance as well.
 
 For future refinements of the threaded implementation one can concentrate on false sharing of the current implementation. For example in the main loop, instead of consecutively looping over the elements that are being read, loop over the elements that are being written (the output spinor) in a way that only a (consecutive) slice of the output spinor is written in each iteration. Each thread then has its own constant equally-sized slice to write to, without having race conditions with other threads. This would not need any expensive locking anymore. Also, this implies to use \code{schedule(static)} and the same boundaries in all parallel for loops, such that a thread always gets the same loop slice within different for loops. The current test-implementation obeys that. A certain amount of false sharing is not preventable without changing the loop as described above. In the parts of the code where the output spinor \code{r} is written consecutively (\code{r+i} or \code{r+VOLUME/2+i}) only true sharing appears, because \code{r} was initialized in the exact same way (first touch policy). But within \code{deo()}, \code{r} is written on arbitrary offsets, leading to false sharing.
+
+In the main parallel for loop not all threads have the same amount of workload as implemented currently. This is due to the if-statement inside the loop. Using \code{schedule(dynamic)} here instead is not recommended, because we want the same threads to get the same data-slices as in previous parallel for loops to reduce data movement due to cache coherency.
 
 \end{proposal}
 
@@ -3382,6 +3510,16 @@ future:
 \end{comment}
 
 \subsection{Dirac-operator representations}
+
+It makes sense to look at different representations of the gauge-fields $U_{\mu}(n)$, since on GPUs sparse linear algebra is even more memory-bound than on CPUs. While collecting the data on GPUs in sections \ref{sec:sap_gcr_results} and \ref{sec:dfl_sap_gcr_results} the GPU load was never higher than \num{20}-\num{30}\%. If we achieve higher arithmetic intensities in the calculations and less memory traffic in application kernels such as the Dirac-operator, we can achieve a \num{2}-\num{4} times faster GPU-implementation than the reference implementation in Python that was used in the analysis. This gives motivation to the following proposal and definition.
+
+\begin{definition}[Arithmetic Intensity]
+  The \df{arithmetic intensity} of a piece of code is the ratio of the work $W$ and the memory traffic $Q$
+  \begin{align*}
+    I = \frac{W}{Q}.
+  \end{align*}
+  The work $W$ needs to be given in terms of \acrfull{FLOPs} and the memory traffic $Q$ in term of bytes. The unit of arithmetic intensity $I$ is then FLOPS per byte and depends on the datatype of the involved quantities.
+\end{definition}
 
 \begin{proposal}{Representation of the Dirac-operator}{dop_reps}
 For the implementation of the Dirac-operator on the GPU, the software library QUDA \cite{clark2010} is a good sample. To improve the performance of their Dirac-operator, the authors of QUDA used a representation of the SU(3)-fields with \num{8} real numbers, a gauge transformation to make almost all of the gauge fields in temporal direction to the identity-matrix and a change of basis in the $\gamma$-matrices, such that one of the four matrices has a very simple form. The most interesting one is probably the SU(3)-representation with only \num{8} real numbers. In openQxD \footnote{See line 43 in \code{include/su3.h} in \cite{openqxd}.} the struct \code{su3\_dble} representing a SU(3)-gauge-field consists of \num{18} double precision numbers. The C-macro for a matrix-matrix multiplication of 2 such \code{su3\_dble} \footnote{See line 490ff in \code{include/su3.h} in \cite{openqxd}.} consists of $18 \cdot 12$ FLOPs, $2 \cdot 18$ loads and $18$ stores. Using \gls{binary64}, the arithmetic intensity is $I = 0.5$ FLOPs per byte, making the problem memory-bound.
@@ -3564,9 +3702,22 @@ TODO
 
 \begin{comment}
 
-* MSCG in mixed precision (currently it's only in double)
+* openMP offloading to the GPU -> easy way to implement Dop on GPU
+* explore threaded variant more
+* use performance profiler tools and look for false sharing, etc...
+* tests with different representations of the gauge fields
+* reimplementation of Dop on the GPU
 
 \end{comment}
+
+\section{Acknowledgements}
+
+At this point let me thank the supervisor Prof. Thomas Schulthess for giving me the opportunity to deep dive into this fascinating topic and also the co-supervisors Prof. Marina Markinkovic, Dr. Raffaele Solcà and Dr. Anton Kozhevnikov for treating me as a part of their groups and answering my (mostly stupid) questions with patience. They gave me great support and assistance.
+
+One of the hardest part of my thesis although as organizing a meeting date suitable for all participants, which was comparable to a complicated numerical problem with many boundary conditions, that ironically and very accurately resembles numerical lattice QFT calculations. When finally a meeting date was fixed it tended to be as stable as the Bitcoin stock market price.
+
+This section would not be complete if I don't thank the energy drink manufacturing industry. Without them it would certainly not have been possible to write all of this in \num{6} months\footnote{I'll probably owe them my first heart attack as well.}.
+
 
 \newpage
 
