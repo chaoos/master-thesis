@@ -168,8 +168,9 @@
 %TODO: openqxd/openq*d???
 %TODO: RC*, C*, ...
 %TODO:  behavior, behaviour
-% TODO: I or we
+%TODO: I or we
 %TODO: abelian -> Abelian
+%TODO: openqxd part: reduce flame
 
 % defines the \code{} command
 \def\code#1{\texttt{#1}}
@@ -239,7 +240,7 @@ In section \ref{sec:dfl_sap_gcr} deflation of the original system of linear equa
 
 The final section \ref{sec:dop} looks into the current implementation of the Dirac-operator in openQxD and gives proposals to increase its arithmetic intensity and decrease memory-traffic by introducing compressed representations of the gauge-fields. Finally a reference implementation of the Dirac-kernel using threads is discussed and compared to the native implementation in terms of run-time.
 
-A summary and possible continuations of this work are given in sections \ref{sec:summary} and \ref{sec:future}, respectively.
+A summary and possible continuations of this work are given in sections \ref{sec:summary} and \ref{sec:outlook}, respectively.
 
 \begin{comment}
 From quda paper:
@@ -853,13 +854,7 @@ where $D$ is the \df{Dirac-operator} in continuum theory, $D = i\gamma^{\mu} D_{
 
 \begin{comment}
 TODO:
-non-abelian, hadronic physics, importance, renormalization problems, running coupling, pert theory in high energy physics, not in low energy regime
-
-Beisert script QFT1:
-Many points of view; one is that it is our own fault: QFT is somewhat idealised; it
-assumes infinitely extended fields (IR) with infinite spatial resolution (UV); there
-is no wonder that the theory produces infinities.
-
+non-abelian, hadronic physics, importance, renormalization problems, running coupling
 \end{comment}
 
 \section{Lattice Gauge Theories}
@@ -1072,11 +1067,6 @@ where $U_i$ denotes the $i$-th field configuration and $N$ is the total number o
 \end{align*}
 
 The sum in the exponential will then be aborted after some powers.
-
-\begin{comment}
-another approach to remove doublers
-from https://en.wikipedia.org/wiki/Staggered_fermion: A particular way to resolve this problem, first proposed by Leonard Susskind and John Kogut ( Kogut-Susskind fermion), is the staggered fermion approach where a new nonlocal action is constructed where the Dirac operator is treated as a square root.
-\end{comment}
 
 \begin{comment}
 TODO: as a renormalization scheme, observables, ...
@@ -2237,18 +2227,9 @@ Collective data type: number range $>$ precision
 
 \label{sec:sap_gcr}
 
-The next solver appearing in openQxD is called \acrshort{sapgcr}. It makes use of a multiplicative \acrfull{sap} as preconditioner for a flexible \acrfull{gcr} run.
-
-TODO: motivation: parallel processing, chiral regime (spontaneous breaking of chiral symmetry), simulation containing sea-quarks limited to small lattices and large quark masses.
+In order to study spontaneous chiral symmetry breaking we need large lattices and small masses. Conjugate gradient and related algorithms become inefficient on such lattices, maing the lattice Dirac-operator ill-conditioned. The solver presented in the follwing is called \acrshort{sapgcr}. It makes use of a multiplicative \acrfull{sap} as preconditioner for a flexible \acrfull{gcr} solver. Parallelizing the algorithm is straight forward, because it consists of decomposing the large problem into many smaller independent ones.
 
 \subsection{Even-Odd Preconditioning}
-
-\begin{comment}
-
-* Note that it works only because D(ee) is diagonal in space for Wilson (and Wilson-twisted) fermions.
-* it does not allow “multisolvers” i.e. codes which solve different quark masses in one stroke (mscg).
-
-\end{comment}
 
 Preconditioning in general, when employed in lattice QCD, is expected to have significant impact on the number of iterations of a solver. One way of preconditioning $D \psi = \eta$ on a lattice is
 
@@ -2259,7 +2240,7 @@ Preconditioning in general, when employed in lattice QCD, is expected to have si
 with $\psi = R^{-1} \psi^{\prime}$ and $L$, $R$ chosen wisely such that $LDR$ is well conditioned. If $L = \mathbb{I}$, it is called \df{right preconditioning}, if $R=\mathbb{I}$ it is called \df{left preconditioning}. If the Dirac-matrix involves only nearest-neighbour interactions it is possible to split the lattice into even and odd sites\footnotemark
 \footnotetext{It is therefore very similar to a domain decomposition method, see later.}
 \footnotemark.
-\footnotetext{Even lattice points are the ones where the sum of the global Cartesian coordinates $(x_0 + x_1 + x_2 + x_3)$ in units of the lattice spacing $a$ is even.}
+\footnotetext{Even lattice points are the ones where the sum of the global Cartesian coordinates $(n_0 + n_1 + n_2 + n_3)$ in units of the lattice spacing $a$ is even, notice $x_{\mu} = a n_{\mu}$, where ${\mu} = 0, 1, \dots, D$.}
 If the sites are ordered such that the even sites come first\footnotemark,
 \footnotetext{This is indeed the case in openQxD (see \code{main/README.global}) in \cite{openqxd}.}
 
@@ -2329,6 +2310,14 @@ because $\psi_o$ follows from the solution $\psi_e$ via
 \begin{align*}
     \psi_o = D_{oo}^{-1} (\eta_o - D_{oe} \psi_e).
 \end{align*}
+
+\begin{remark}
+Note that it works only because $D_{ee}$ is diagonal in space for Wilson (and Wilson-twisted) fermions.
+\end{remark}
+
+\begin{remark}
+This preconditioning method does not allow multisovlers\footnote{Algorithms which solve for multiple masses in one shot, for example \acrshort{mscg}.}.
+\end{remark}
 
 \subsection{Schwarz Alternating Procedure}
 
@@ -2817,8 +2806,6 @@ In openQxD, every rank has its own local lattice to process. The solver algorith
 
 \label{sec:dfl_sap_gcr}
 
-The low modes of the Dirac-operator condensate TODO.
-
 Small quark masses corresponding to real physics are believed to be the cause for the spontaneously breaking of chiral symmetry in lattice QCD \cite{banks1980}. Numerical lattice QCD has the problem that with large lattice volumes and small quark masses simulation techniques become inefficient in the \df{chiral regime} (where chiral symmetry is spontaneously broken), because the Dirac-operators gets more and more ill-conditioned. Thus, the presence of low eigenvalues is a source of difficulty \cite{giusti2003}. According to the Bank-Casher relation \cite{banks1980}, this is because the number of eigenvalues of $D$ below a fixed value grows with $O(V)$, where $V$ is the total 4D lattice volume. On the other hand, the computational effort scales even worse with $O(V^2)$ \cite{luscher2007}. This behaviour goes under the name of \df{$V^2$-problem}.
 
 A solving algorithm that has a flat scaling with respect to the quark masses can therefore lead to large speedups specially in that regime. By deflating the Dirac-operator, it is possible to separate eigenmodes with very small eigenvalues from the others. Thus the space needs to be split in low and high modes without actually calculating the modes, else the problem would be solved already.
@@ -3022,8 +3009,7 @@ Assuming that the condition number of $A$ is high and the \df{spectrum} of $A$, 
 
 The subscripts stand for "low" and "high", corresponding to the low and high modes of the operator $A$. So, the property in equation \eqref{eq:separable} states that the bulk of the low eigenvalues are somehow clustered\footnote{The high eigenmodes may not be clustered, but still separated from the low ones.}. Consider the linear sub-spaces $\Omega_l, \Omega_h \subset \Lambda$ such that the low and high eigenvectors corresponding to the low and high eigenvalues of $A$ are contained in $\Omega_l$ and $\Omega_h$ respectively. Then the condition number of $A$ restricted to the low modes is much smaller than the condition number of $A$. Therefore, if we are able to find an orthonormal basis $\{\vec{\omega}_i\}_{i=0}^N$ of the subspace $\Omega_l$ containing the bulk of the low eigenmodes of $A$, we can apply deflation from corollary \ref{cor:deflation} to solve the little equation that has a significantly smaller condition number than $A$. Then find one of the infinite solutions to the deflated system and construct a solution of the full system.
 
-% TODO: why is it easy to solve the deflated system?
-% TODO: define condition number \kappa(A) = ... somewhere.
+% TODO: why is it easy to solve the deflated system? condition number is better
 
 \end{remark}
 
@@ -3302,36 +3288,36 @@ By ”Inversion” we mean inverting partially this matrix id est solving a set 
 Dψ=η (2.8)
 where D and η are given and ψ is unknown. D is a 12N×12N complex matrix and η and ψ are 12N complex vectors. The solution is often called ”quark-propagator”. 
 
-The gauge fields are SU(3) matrices. Inspecting their representations, they can be represented using 18, 12, 10 or 8 real numbers. The 8-representation involves 6 number between [-1,1] and 2 between [-pi,pi]. This is in all number ranges of all floating point types! In QUDA, they use 16-bit (or 8-bit) signed integers and cudaReadModeNormalizedFloat to convert to a binary32 in the range [-1,1].
+The gauge fields are SU(3) matrices. Inspecting their representations, they can be represented using 18, 12, 10 or 8 real numbers. The 8-representation involves 6 numbers between [-1,1] and 2 between [-pi,pi]. This is in all number ranges of all floating point types! In QUDA, they use 16-bit (or 8-bit) signed integers and cudaReadModeNormalizedFloat to convert to a binary32 in the range [-1,1].
 
 \end{comment}
 
-The Dirac-operator \eqref{eq:dwop} in openQxD is implemented in terms of the various gauge-fields $U_{\mu}(n)$, only these are stored in memory. In every HMC-trajectory the fields are updated, and the operator changes.
+The lattice Dirac-operator \eqref{eq:dwop} in openQxD is implemented in terms of the various gauge-fields $U_{\mu}(n)$, only these are stored in memory\footnote{To be precise openQxD also implements the Sheikholeslami-Wohlert-term \cite{sheikholeslami1985} which needs to store a set of fields as well and the boundary $O(a)$-improvement term that only depends on two constants $c_F, c^{\prime}_F$, depending on the chosen boundary conditions.}. In every HMC-trajectory the fields are updated, and the operator changes.
 
 \subsection{Threaded Dirac-operator}
 
 \label{sec:threads}
 
-Modern processors today tend to have multiple cores. In order to benefit from that, two major programming models programmers are faced with are \acrshort{openmp} \cite{openmp45} and \acrshort{MPI} \cite{mpi}. Where MPI favors the scalability of large clusters with distributed memory, OpenMP favors speed of shared memory systems and \acrfull{numa}. Comparing the two solutions gives motivation to look at OpenMP more closely, specially considering OpenMP for intra-node traffic or traffic within a NUMA-domain. The goal is certainly a hybrid solution that keeps the scalability of MPI, but exploits the speedup in shared memory systems using OpenMP, since OpenMP seems to outperform MPI in most cases on a single node \cite{chan2011}.
+Modern processors today tend to have multiple cores. In order to benefit from that, two major programming models programmers are faced with are \acrshort{openmp} \cite{openmp45} and \acrshort{MPI} \cite{mpi}. Where MPI favors the scalability of large clusters with distributed memory, OpenMP favors speed of shared memory systems and the advantages of \acrfull{numa}. Comparing the two solutions gives motivation to look at OpenMP more closely, specially considering OpenMP for intra-node traffic or traffic within a NUMA-domain. The goal is certainly a hybrid solution that keeps the scalability of MPI, but exploits NUMA-systems using OpenMP, since OpenMP seems to outperform MPI in most cases on a single node \cite{chan2011}.
 
 \subsubsection{Terminology}
 
 It makes sense to agree on terminology before analyzing and discussing the results.
 
 \begin{itemize}
-    \item \textbf{Node}: Physical hardware device connected to the network of the supercomputer. Each node runs its instance of the operating system.
-    \item \textbf{Processor}: Hardware device that is attached on a socket. It consists of one or more physical cores on the same chip.
-    \item \textbf{CPU, Physical core}: Hardware unit capable of independently performing basic arithmetic, logic, controlling, and (I/O) operations. A single physical core may correspond to one or more logical cores. Multiple physical cores may share L2 and L3 caches.
-    \item \textbf{Logical core}: Logical cores are the abilities of a single physical core to execute two or more threads or processes simultaneously. How many threads or processes can be executed concurrently is given by the number of logical (or virtual) cores. Logical cores associated to the same physical core share their caches. Logical cores are associated to a NUMA-node.
-    \item \textbf{Thread}: Sequence of programmed instructions. Multiple threads can execute concurrently and share resources such as memory. Communication among threads on the same node happens via shared memory.
-    \item \textbf{Process, Rank}: As opposed to threads, processes or ranks do not share resources such as memory. Different instances of processes need to setup a communication channel to be able to communicate (using communication libraries such as MPI)
-    \item \textbf{NUMA-architecture}: A collection of NUMA-nodes linked by a point-to-point network. All cores, memory and devices are divided in NUMA-domains.
-    \item \textbf{NUMA-node, NUMA-domain, NUMA-region}: A group of cores and/or memory and/or devices with \acrfull{uma}. Local memory is accessible to the other NUMA-nodes, but latency is usually higher than to their own local memory. Memory-bandwith on the other hand can even be higher to other NUMA-nodes than to the one associated to. Not to be confused with the physical node.
+    \item \df{Node}: Physical hardware device connected to the network of the supercomputer. Each node runs its instance of the operating system.
+    \item \df{multicore CPU}: Hardware device that is attached to a socket. It consists of one or more physical cores on the same chip.
+    \item \df{CPU, Processor, Physical core}: Hardware unit capable of independently performing basic arithmetic, logic, controlling, and (I/O) operations. A single physical core may correspond to one or more logical cores. Multiple physical cores may share L2 and L3 caches. Physical cores are associated to NUMA-nodes.
+    \item \df{Logical core}: Logical cores are the abilities of a single physical core to execute two or more threads or processes concurrently. Logical cores associated to the same physical core share their caches.
+    \item \df{Process, Rank}: As opposed to threads, processes or ranks do not share resources such as memory. Different instances of processes need to setup a communication channel to be able to communicate (using communication libraries such as MPI). 
+    \item \df{Thread}: Sequence of programmed instructions. Multiple threads can execute concurrently and share resources such as memory. A process has always at least one thread (the master thread). A thread is spawned by another thread. Communication among threads on the same node happens via shared memory.
+    \item \df{NUMA-architecture}: A collection of NUMA-nodes linked by a point-to-point network. All cores, memory and devices are divided in NUMA-domains.
+    \item \df{NUMA-node, NUMA-domain, NUMA-region}: A group of cores and/or memory and/or devices with \acrfull{uma}. Local memory is accessible to the other NUMA-nodes, but latency is usually higher than to their own local memory. Memory-bandwith on the other hand can even be higher to other NUMA-nodes than to the one associated to. Not to be confused with the physical node.
 \end{itemize}
 
 \subsubsection{Setup}
 
-The Dirac-operator in single-precision was implemented as a variant utilizing threads according to the OpenMP standard in openQCD version 1.6 \cite{openqcd}. The performance of the operator was compared to the native implementation without threads. The runs were conducted on two different nodes having two vastly different processors, see tables \ref{tab:dop_omp_amd} and \ref{tab:dop_omp_intel}. On each node, \num{3} different lattice sizes were considered; $64^4$, $32^4$ and $16^4$. For each lattice size, there were many configurations $(n_r,n_{th})$ that were analyzed, $n_r$ being the number of ranks and $n_{th}$ the number of threads. The configurations were chosen such that the machine was utilized half, fully or oversubscripted. Every configuration was executed \num{10} times, the average is printed in the table. The openMP environment variables were set to
+The Dirac-operator in single-precision was implemented as a variant utilizing threads according to the OpenMP standard in openQCD version 1.6 \cite{openqcd}. The performance of the operator was compared to the native implementation without threads. The runs were conducted on two different nodes having two vastly different processors, see tables \ref{tab:dop_omp_amd} and \ref{tab:dop_omp_intel}. On each node, \num{3} different lattice sizes were considered; $64^4$, $32^4$ and $16^4$. For each lattice size, were many configurations $(n_r,n_{th})$ were analyzed, $n_r$ being the number of ranks and $n_{th}$ the number of threads. The configurations were chosen such that the machine was utilized half, fully or oversubscripted. Every configuration was executed \num{10} times, its average is quoted in the table. Used OpenMP environment variables were:
 
 \begin{lstlisting}[
     language=sh,
@@ -3339,13 +3325,18 @@ The Dirac-operator in single-precision was implemented as a variant utilizing th
     label=lst:omp_env,
     caption={Environment variables for openMP.}
 ]
-// each place corresponds to a core, threads are bound to cores
+# each place corresponds to a core, threads are bound to cores
 OMP_PLACES=cores
-// block cyclic scheduling, where each thread gets floor(iteration / threads)
-// contiguous iterations. In multiple for loops, all with the same schedule
-// policy, the same threads get the same loop-slices
+# block cyclic scheduling, where each thread gets floor(iteration/threads)
+# contiguous iterations. In multiple parallel for-loops, all with the same
+# scheduling policy and the same limits, the same threads get the same loop-slices
 OMP_SCHEDULE=static
+# assignment of threads to places goes successively through the available places
+# as close to the master thread as possible
+OMP_PROC_BIND=close
 \end{lstlisting}
+
+The runs were disposed using the mentioned environment variables and Slurms CPU-bind option to pin processes (and its threads) to NUMA-domains. Threads of the same rank were closely bound to cores within the same NUMA-regions whereas ranks were spread among NUMA-regions.
 
 \subsubsection{Discussion}
 
@@ -3533,7 +3524,7 @@ Another peculiarity of the above implementation was that in \code{deo()} the \nu
 
 The analysis in section \ref{sec:threads} shows that a version of the Dirac-operator employing threads can improve performance as well.
 
-For future refinements of the threaded implementation one can concentrate on false sharing of the current implementation. For example in the main loop, instead of consecutively looping over the elements that are being read, loop over the elements that are being written (the output spinor) in a way that only a (consecutive) slice of the output spinor is written in each iteration. Each thread then has its own constant equally-sized slice to write to, without having race conditions with other threads. This would not need any expensive locking anymore. Also, this implies to use \code{schedule(static)} and the same boundaries in all parallel for loops, such that a thread always gets the same loop slice within different for loops. The current test-implementation obeys that. A certain amount of false sharing is not preventable without changing the loop as described above. In the parts of the code where the output spinor \code{r} is written consecutively (\code{r+i} or \code{r+VOLUME/2+i}) only true sharing appears, because \code{r} was initialized in the exact same way (first touch policy). But within \code{deo()}, \code{r} is written on arbitrary offsets, leading to false sharing.
+For future refinements of the threaded implementation one can concentrate on false sharing of the current implementation. For example in the main loop, instead of consecutively looping over the elements that are being read, loop over the elements that are being written (the output spinor) in a way that only a (consecutive) slice of the output spinor is written in each iteration. Each thread then has its own constant equally-sized slice to write to, without having race conditions with other threads. This would not need any expensive locking anymore. It implies to use \code{schedule(static)} and the same boundaries in all parallel for loops, such that a thread always gets the same loop slice within different for loops. The current test-implementation obeys that. A certain amount of false sharing is not preventable without changing the loop as described above. In the parts of the code where the output spinor \code{r} is written consecutively (\code{r+i} or \code{r+VOLUME/2+i}) only true sharing appears, because \code{r} was initialized in the exact same way (first touch policy). But within \code{deo()}, \code{r} is written on arbitrary offsets, leading to false sharing.
 
 In the main parallel for loop not all threads have the same amount of workload as implemented currently. This is due to the if-statement inside the loop. Using \code{schedule(dynamic)} here instead is not recommended, because we want the same threads to get the same data-slices as in previous parallel for loops to reduce data movement due to cache coherency.
 
@@ -3715,7 +3706,7 @@ All mentioned variants so far include the waiting problem; either the CPU or the
 
 \begin{proposal}{GPU Implementation Variant 4}{gpu_implementation4} % ref with pp:gpu_implementation4
 
-It makes sense to partition the workload into chunks. The size of a chunk should be suitable for both processing devices. The chunks are published in a queue and assosiated to idle workers running on the CPU or on the GPU. Data locality should be considered when distributing the work. Stale workers signal their idling and are associated new work. The queue is managed by one process per node. A node can also have no GPU accelerator. The participating worker processes/threads are then only of type CPU. When all workers on a node become idle, they may steal chunks from other nodes untill all nodes are done and the application hits an MPI-barrier. At this point data still resides in various locations in memory, tracked by the management process. In the next iteration of the same or a different kernel, data locality can be exploited from anew when associating chunks to workers.
+It makes sense to partition the workload into chunks. The size of a chunk should be suitable for all involved  processing devices. The chunks are published in a queue and assosiated to idle workers running on the CPU or on the GPU. Data locality should be considered when distributing the work. Stale workers signal their idling and are associated new work. The queue is managed by one process per node or per NUMA-domain. A node can also have no GPU-accelerator. The participating worker processes/threads are then only of type CPU. When all workers on a node become idle, they may steal chunks from other nodes untill all nodes are done and the application hits an MPI-barrier. At this point data still resides in various locations in memory, tracked by the management process(es). In the next iteration of the same or a different kernel, data locality can be exploited from anew when associating chunks to workers.
 
 \end{proposal}
 
@@ -3749,26 +3740,43 @@ During a simulation, a lot of linear systems of equation of the type $A \vec{x} 
 
 \label{sec:summary}
 
+\begin{comment}
+* Summarize cg
+* summ. sap_gcr
+* summ. dfl_sap_gcr
+* summ. theraded Dop
+\end{comment}
+
 TODO
 
-\section{Future}
+\section{Outlook}
 
-\label{sec:future}
+\label{sec:outlook}
 
-TODO
+Future research from here on can go in many different directions. Immediate next steps would be to explore the Dirac-operator further. The Python-implementation could be extended to represent the operator not in terms of a \acrshort{csr}-matrix, but instead in terms of different representations for $SU(3)$-matrices (see proposal \ref{pp:dop_reps}). To implement such a representation in openQxD directly is straight-forward. Run-time measurements such as the ones in section \ref{sec:sap_gcr_results} can then be repeated and studied. It is expected to speed up the results on the GPU, because the kernels involve less memory traffic and are arithetically more intense. It is also of interest how these representations perform on the CPU.
+
+Pursuing proposal \ref{pp:alpha} further might not be fruitful. It is included in this document only for the sake of completeness.
+
+On the other hand, the OpenMP implementation in section \ref{sec:threads} can act as a starting point to employ threads and as such exploit architectures involing NUMA. Since \code{Dw()} is already implemented with threads, it is straightforward to reimplement \code{Dwee()}, \code{Dwoo()}, \code{Dweo()}, \code{Dwoe()} and \code{Dwhat()} with threads as well since all possible arising problems are already solved in the reference implementation of \code{Dw()}. Only the block variants \code{Dwee\_blk()}, ... have to be considered seprartely, because although they have exactly the same structure in the loops, they have a completely different (and even variable) range. A straight parallelisation with OpenMP might work, but there will be false sharing, because the threads will recieve different loop-slices than in previous loops. One has to think about association of threads to blocks.
+
+It is worth to investigate the threaded implementation suggested in proposal \ref{pp:dop_threads}, where we want to loop over the output spinor consecutively instead of looping over quatities that are being read in order to avoid false sharing. Such a technique introduces a reimplementation of the Dirac-operator \code{Dw()}.
+
+The OpenMP variant can also be used to further implement offloading OpenMP directives to the accelerator \cite{omp_offloading}. This would be a simple way to implement a GPU-variant of the operator within affordable time and effort, which could act as a baseline for more sophisticated future GPU-realisations. As a certain advantage of this direction, the code will stay backward compatible, since the pragmas will just be ignored by the compiler when no compiler flags are set.
+
+The GPU implementation variant in proposal \ref{pp:gpu_implementation4} only scratches the surface on heterogeneous computing that enable utilizing both CPUs and GPUs at the same time. There is a lot of potential in investigating such an implementation further. It is by far the most sophisticated one, but because of time reasons we had to formulate it very vaguely. It certainly needs a lot of testing and numerical measurements. This is a active research field and investigating this direction alone could fill a thesis.
 
 \begin{comment}
 
-* openMP offloading to the GPU -> easy way to implement Dop on GPU
-* explore threaded variant more
+** openMP offloading to the GPU -> easy way to implement Dop on GPU
+** explore threaded variant more
 * use performance profiler tools and look for false sharing, etc...
-* tests with different representations of the gauge fields
+** tests with different representations of the gauge fields
 * reimplementation of Dop on the GPU
 * multiple right hand sides
-* Python implementation of the Dirac-operator used a CSR matrix as its representation. Some of the tests could be repeated with the operator implemented as in openQxD, as a function of link variables.
-* Since Dw() is implemented with threads, it is straightforward to reimplement Dwee(), Dwoo(), Dweo(), Dwoe, Dwhat() with threads as well since all possible arising problems are already solved in the reference implementation of Dw(). Only the block variants Dwee_blk(), ... have to be considered seprartely, because although they have exactly the same structure in the loops, they have a completely different (as even variable) range. A straight parallelisation with openMP might work, but there will be false sharing
-* to pursue the "approximation the amounts alpha_i" might not be fruitful, the proposal is included only for the sake of completeness.
-* GPU implementation variant pp:gpu_implementation4 only scratches the surface on heterogeneous computing that enable utilizing both CPUs and GPUs to improve performance. There is a lot of potential in investigating such an implementation further. By far the most sophisticated one, but because of time reasons formulated very vaguely. needs a lot of testing and experimenting
+** Python implementation of the Dirac-operator used a CSR matrix as its representation. Some of the tests could be repeated with the operator implemented as in openQxD, as a function of link variables.
+** Since Dw() is implemented with threads, it is straightforward to reimplement Dwee(), Dwoo(), Dweo(), Dwoe, Dwhat() with threads as well since all possible arising problems are already solved in the reference implementation of Dw(). Only the block variants Dwee_blk(), ... have to be considered seprartely, because although they have exactly the same structure in the loops, they have a completely different (as even variable) range. A straight parallelisation with openMP might work, but there will be false sharing involed, because in the for-loops the threads will recieve different loop-slices than in previous loops.
+** to pursue the "approximation the amounts alpha_i" might not be fruitful, the proposal is included only for the sake of completeness.
+** GPU implementation variant pp:gpu_implementation4 only scratches the surface on heterogeneous computing that enable utilizing both CPUs and GPUs to improve performance. There is a lot of potential in investigating such an implementation further. By far the most sophisticated one, but because of time reasons formulated very vaguely. needs a lot of testing and experimenting
 
 \end{comment}
 
