@@ -20,7 +20,7 @@
 \usepackage{enumitem} % customising enumeration ex: 1), 2), 3), ...
 \usepackage{cancel} % strike through equations
 \usepackage{import}
-\usepackage[group-separator={,}]{siunitx} % thousand separator in large numbers
+\usepackage[group-separator={,}]{siunitx} % thousand separator in large numbers, \num command
 \usepackage[nottoc,numbib]{tocbibind} % references in toc
 \usepackage[ruled,vlined,linesnumbered]{algorithm2e} % pseudo code listings
 \usepackage{tcolorbox} % for styled proposals
@@ -166,9 +166,12 @@
 }
 
 %TODO: I, my or we, our
-%TODO: rework abstract
+%TODO: rework abstract, probably not neccessary ...
 %TODO: color indices, einstein sum
-%TODO: cgne conclusion, say b16 and bf16 are sufficient, usw...
+%TODO: cgne conclusion, say b16 and bf16 are sufficient + elaborate a little bit, usw...
+%TODO: A invbar => A|_Omega invbar on Omega subspace?, Yannick sagt: A^tilde^-1 = A^-1 |_A(Omega).
+%TODO: gauge-field <-> gauge field, fermion-field <-> fermion field
+%TODO: evtl. formal definition of memory bound, compute bound, latency bound
 
 %done: to purpose -> to propose
 %done: openqxd part: reduce flame
@@ -204,7 +207,7 @@
 
 \begin{abstract}
 
-The open-source software openQ*D is used to perform lattice QCD+QED calculations using C* boundary conditions and $O(a)$-improved Wilson-fermions. The focus of this thesis lies on the optimization of solver kernels provided with the software package intending to give guidance for porting fractions of the code to GPU-accelerated supercomputing platforms. We present an analysis of the current sparse solver implementations, propose suitable extensions to the existing algorithms and possible CPU/GPU-hybrid implementations of them.  Various application-specific proposals for optimizations are suggested as well. The most important kernel in every lattice QFT application -- the Dirac-operator -- is investigated and a reference implementation using threads is shown which can serve as a starting point for an implementation on the GPU. Considering memory-boundedness of the problem, we present different numerical representations of the Dirac-operator with higher arithmetic intensities in their application and less memory-traffic suitable for the GPU.
+The open-source software openQ*D is used to perform lattice QCD+QED calculations using $O(a)$-improved Wilson-fermions and a variety of boundary conditions (including C*). The focus of this thesis lies on the optimization of solver kernels provided with the software package intending to give guidance for porting fractions of the code to GPU-accelerated supercomputing platforms. We present an analysis of the current sparse solver implementations, propose suitable extensions to the existing algorithms and possible CPU/GPU-hybrid implementations of them.  Various application-specific proposals for optimizations are suggested as well. The most important kernel in every lattice QFT application -- the Dirac-operator -- is investigated and a reference implementation using threads is shown which can serve as a starting point for an implementation on the GPU. Considering memory-boundedness of the problem, we present different numerical representations of the Dirac-operator with higher arithmetic intensities in their application and less memory-traffic suitable for the GPU.
 
 \end{abstract}
 
@@ -220,23 +223,23 @@ The open-source software openQ*D is used to perform lattice QCD+QED calculations
 
 \section{Introduction}
 
-Quantum field theory is one of the most successful theories in terms of agreement between theoretical predictions and experimental evidence. Being able to accurately predict observables such as decay constants using computational resources opens the possibility to probe and understand the Standard Model, emulate experiments or even discover new physics. In the regime of high energy, non-abelian theories such as \acrshort{QCD} can be treated perturbatively, because the coupling constant is small with large momentum transfers. In the low-energy regime on the other hand where perturbation theory becomes unfeasible, lattice QCD provides a non-perturbative tool to analyse the hadronic dynamics from first principles.
+Standard Model particle physics is one of the most successful theories in terms of agreement between theoretical predictions and experimental evidence. Being able to accurately predict observables such as decay constants using computational resources opens the possibility to probe and understand the Standard Model, emulate experiments or even discover new physics. In the regime of high energy, non-abelian theories such as \acrshort{QCD} can be treated perturbatively, because the coupling constant is small with large momentum transfers. In the low-energy regime on the other hand where perturbation theory becomes unfeasible, lattice QCD provides a non-perturbative tool to analyse the hadronic dynamics from first principles.
 
-Translating the formalism of QFT to a discretised finite system such as a computer system involves many technical challenges and comes at a high cost, mainly due to extremely large demands on compute capability and memory. The main computational cost of lattice QFT calculations originates from solving the discrete Dirac equation, which is a large sparse system of linear equations. The most used kernel is certainly the application of the Dirac-operator to a spinor field. Lattice simulations allow to calculate correlation functions of hadronic operators, predict the running coupling constant, quark masses, hadronic spectra or elements of the CKM matrix. Due to the statistical approach on the calculations, results include systematic errors coming from the lattice description as well as statistical errors.
+Translating the formalism of QFT to a discretised finite system such as a computer system involves many technical challenges and comes at a high cost, mainly due to extremely large demands on compute capability and memory. The main computational cost of lattice QFT calculations originates from solving the discrete Dirac equation, which is a large sparse system of linear equations. The most used kernel in dynamical QCD simulations is the application of the Dirac-operator to a spinor field. Lattice simulations allow to calculate correlation functions of hadronic operators, predict the running coupling constant, quark masses, hadronic spectra or elements of the CKM matrix. Due to the statistical approach in the calculations, results include systematic errors coming from the lattice description as well as statistical errors.
 
-(Super)computing systems tend to include more and more units called domain-specific accelerators \cite{cong2010} designed to be specialised on distinct computational tasks. The general-purpose compute-device such as the CPU gets less attention, whereas the specialised hardware device becomes more important \cite{pan2018}. A very prominent example of such a device is the GPU that was originally designed to rapidly render geometric 3D objects into 2D images, thus the name: graphics processing unit.\footnote{Other notable examples where dedicated devices are used include deep learning \cite{han2016}, bioinformatics \cite{turakhia2018}, image processing \cite{qadeer2013}, computer vision \cite{sun2018}, Bitcoin mining \cite{satoh2007} and many more.} Inherently such a process is highly parallel, where at the same time precision of the result is less important, because if the output image contains a pixel that has a different color, the overall error is barely noticed. The scientific world started to misuse these devices and executed parallel non-graphics algorithms on it \cite{brodtkorb2013}. Specially the rise of machine learning in the last \num{10}-\num{20} years kick-started a trend \cite{steinkraus2005}, because of which GPU vendors started to develop general-purpose GPU accelerators specially designed for the need of these new scientific calculations.\footnote{The emergence of cryptocurrencies, such as Bitcoin \cite{nakamoto2019}, making use of the blockchain are also partly responsible for that trend.} The GPU started to be used for general-purpose computation (GPGPU) \cite{luebke2004}. A consequence was the advent of HPC clusters based on the GPU as dominant architecture \cite{kindratenko2011}.
+(Super)computing systems tend to include more and more units called domain-specific accelerators \cite{cong2010} designed to be specialised on distinct computational tasks. The general-purpose compute-device such as the CPU gets less attention, whereas the specialised hardware device becomes more important \cite{pan2018}. A very prominent example of such a device is the GPU that was originally designed to rapidly render geometric 3D objects into 2D images, thus the name: graphics processing unit.\footnote{Other notable examples where dedicated devices are used include deep learning \cite{han2016}, bioinformatics \cite{turakhia2018}, image processing \cite{qadeer2013}, computer vision \cite{sun2018}, Bitcoin mining \cite{satoh2007} and many more.} Inherently such a process is highly parallel, where at the same time precision of the result is less important, because if the output image contains a pixel that has a different color, the overall error is barely noticed. The scientific world started to misuse these devices and executed parallel non-graphics algorithms on it \cite{brodtkorb2013}. Specially the rise of machine learning in the last \num{10}-\num{20} years kicked-off a trend \cite{steinkraus2005}, because of which GPU vendors started to develop general-purpose GPU accelerators specially designed for the need of these new scientific calculations.\footnote{The emergence of cryptocurrencies, such as Bitcoin \cite{nakamoto2019}, making use of the blockchain are also partly responsible for that trend.} The GPU has been used for general-purpose computation (GPGPU) \cite{luebke2004}. A consequence was the advent of HPC clusters based on the GPU as dominant architecture \cite{kindratenko2011}.
 
 On the other side (or because of the rise of GPUs) modern supercomputers tend towards exascale computing, where the peak operations per second is around $10^{18}$ \cite{top500}. To reach such a peak performance is challenging and highly depends on the problem as well as the involved data types. Since lattice QFT calculations are bound by memory bandwidth and not by compute performance, one must think about how to reduce memory traffic in order to increase performance. The parallelizability of GPUs thus opened the door to exascale computing but made it harder to achieve its peak performance for memory-bound problems, because on GPUs the memory-bound region is even larger than on regular CPUs \cite{davis2012}.
 
-The scope of this work is an analysis of the different solver algorithms used in the lattice QFT application openQ*D \cite{openqxd} as well as its implementation of the Dirac-operator. The goal was to get an idea and understand how to utilise the GPU  -- and by this -- increase the overall application performance. The following document is by no means complete or exhaustive. Different aspects of the solvers are highlighted to find potential for improvement. Where this is mainly guided and limited by my own understanding of said solvers and how they apply on the considered computing architectures.
+The scope of this work is an analysis of the different solver algorithms used in the lattice QFT application openQ*D \cite{openqxd} as well as the implementation of the Dirac-operator therein. The goal was to get an idea and understand how to utilise the GPU  -- and by this -- increase the overall application performance. The following document is by no means complete or exhaustive. Different aspects of the solvers are highlighted to find potential for improvement, where this is mainly guided and limited by my own understanding of said solvers and how they apply on the considered computing architectures.
 
 The analysis in this document is mostly performed using Python-implementations of the examined kernels. This switch of programming language and philosophy enabled to run the kernels with simulated data types that are usually non-accessible within the native application without large implementation effort. The goal was to rethink the current pure-MPI variant and propose a hybrid code that exploits both, the CPU and the GPU.
 
 Section \ref{sec:gauge_theories} is a short theoretical introduction in non-abelian gauge theories starting with symmetries coming from special relativity and basic quantum mechanics. The final result will be Euclidean continuum Yang-Mills-theory.
 
-Section \ref{sec:lattice_gauge_theories} directly picks up on the previous results and continues to derive discrete quantities from continuum theory by introducing the lattice discretisation which acts as a regulator for the inherent infinities appearing in the idealised continuum theory.\footnote{The continuum theory assumes infinitely extended fields (IR) with infinite spatial resolution (UV); as a result, the theory produces infinities. As direct implication, it is very intuitive that the finite lattice (IR) with finite spacing (UV) cures these two main sources of infinities.} The goal of this section is the introduction of the lattice Dirac-operator and its importance which motivates the main part of this work.
+Section \ref{sec:lattice_gauge_theories} directly picks up on the previous results and continues to derive discrete quantities from continuum theory by introducing the lattice discretisation which acts as a regulator for the inherent infinities appearing in the continuum theory.\footnote{The continuum theory assumes infinitely extended fields (IR) with infinite spatial resolution (UV); as a result, the theory produces infinities. As direct implication, it is very intuitive that the finite lattice (IR) with finite spacing (UV) cures these two main sources of infinities.} The goal of this section is the introduction of the lattice Dirac-operator and its importance which motivates the main part of this work.
 
-The main subject of this thesis is dedicated to is the software package openQ*D which is briefly presented with its main features in section \ref{sec:openqxd}.
+The main subject of this thesis is the software package openQ*D, which is briefly presented with its main features in section \ref{sec:openqxd}.
 
 Section \ref{sec:floats} consists of a theoretical discussion of discrete real number formats, their pros and cons as well as their current and potential future appearances in the source code of openQ*D.
 
@@ -852,7 +855,7 @@ The observable can be any combination of time-ordered products of gauge- and fer
     Z \coloneqq \int \mathcal{D}\psi \mathcal{D} \bar{\psi} \mathcal{D} A e^{iS[\psi, \bar{\psi}, A]}.
 \end{align*}
 
-The expectation value \eqref{eq:expectation_value} has an unconventional limit that has to be taken from the expression\footnote{Only physicists come up with the idea of taking a limit that contains an infinitesimal $\epsilon$ multiplied by infinity. Calling it unconventional barely does justice. Surprisingly, this expression is mathematically legal, because $\epsilon$ -- although small -- is held constant while taking the limit. Nonetheless it hurts the eye.}. The limit has a slight tilt in the complex plane in order to suppress terms of the form $e^{-i \Delta E_n T}$, where $\Delta E_n \coloneqq E_n - E$ denotes the energy difference of the state with quantum number $n$ to the state considered in the observable. Only the term with the least suppressed weight and the lowest $\Delta E_m$ for some $E_m \approx E$ survives the limit. Using that particular limit, exactly the state considered in the observable is projected out.
+The expectation value \eqref{eq:expectation_value} has an unconventional limit that has to be taken from the expression\footnote{Only physicists come up with the idea of taking a limit that contains an infinitesimal $\epsilon$ multiplied by an infinitly growing quantity. Calling it unconventional barely does justice. Surprisingly, this expression is mathematically legal, because $\epsilon$ -- although infinitesimal -- is held constant while taking the limit. Nonetheless it hurts the eye.}. The limit has a slight tilt in the complex plane in order to suppress terms of the form $e^{-i \Delta E_n t}$, where $\Delta E_n \coloneqq E_n - E$ denotes the energy difference of the state with quantum numbers $n$ ($n$ might be a multi-index) to the state considered in the observable. The term with the least suppressed weight and the lowest $\Delta E_m$ for some $E_m \approx E$ dominates the limit. Using that particular limit, exactly the state considered in the observable is projected out.
 
 Since the fermion fields take Grassmannian values, they can be integrated analytically in the partition function using proposition \ref{prop:grassmann_integral} resulting in
 
@@ -887,7 +890,7 @@ Let $L_0, L_1, L_2, L_3 \in \mathbb{N}$ be natural numbers, define the \df{full 
 
 \end{definition}
 
-The points on the lattice are evenly spaced by the \df{lattice spacing} $a > 0$ (or \df{lattice constant}), which is a real number of mass dimension 1\footnote{We use particle physics units $c = \hbar = 1$ in which length and time have the same unit. It is therefore legal to use the same $a$ as lattice spacing in all $4$ space-time dimensions.}. This spans the (finite) 4D space-time lattice, where each point $n$\footnote{$n$ stand for a point in the lattice and is a four-vector containing only non-negative integers.} on the lattice corresponds to a physical point $x = an$ in space-time. The real continuum physics are put in a finite box of volume $V$. To extract a result valid in the continuum from such calculation one has to repeat the lattice calculation for multiple lattice spacings $a$. The final result is then extrapolated to $a \to 0$.
+The points on the lattice are evenly spaced by the \df{lattice spacing} $a > 0$ (or \df{lattice constant}), which is a real number of mass dimension $-1$\footnote{We use particle physics units $c = \hbar = 1$ in which length and time have the same unit. It is therefore legal to use the same $a$ as lattice spacing in all $4$ space-time dimensions.}. This spans the (finite) 4D space-time lattice, where each point $n$\footnote{$n$ stand for a point in the lattice and is a four-vector containing only non-negative integers. Its components are dimensionless.} on the lattice corresponds to a physical point $x = an$ in space-time. The real continuum physics are put in a finite box of volume $V$. To extract a result valid in the continuum from such calculation one has to repeat the lattice calculation for multiple lattice spacings $a$. The final result is then extrapolated to $a \to 0$.
 
 We start by discretising the gauge-part of the theory. Here, our effort in deriving the gauge-part using the plaquette will bear fruit. Note the gauge-part of the Lagrangian (the subscript $E$ for "Euclidean" is dropped from now on)
 
@@ -918,7 +921,7 @@ This is the plaquette in subspace $(\hat{\mu}, \hat{\nu})$. In the last line, th
 
 This is the continuum Lagrangian, now written in terms of plaquettes of size $\epsilon > 0$ instead of the field strength tensor and omitting terms of order $\epsilon^2$. The term above is purely real by construction, thus $e^{-S_G}$ can be interpreted as probability density.
 
-Here we discretise the involved $SU(N)$-valued compensator fields $U(x,x+\epsilon \hat{\mu})$. At this point we can replace $\epsilon$ with the lattice spacing $a$\footnote{The discretized theory can somehow be interpreted as the theory where the smallest distance resolvable is given by the (constant and finite) lattice spacing $a$ and we ignore terms proportional to $a^2$, while in the continuum theory the resolution is given by the (variable, continuous and even infinitesimally small) $\epsilon$. The replacement of $\epsilon$ with $a$ comes naturally, since the theory before replacing only considered space-time points separated by a distance $\epsilon$.} and only keep the fields in discrete space-time points $an$ for $n \in \Lambda$. All fundamental fields and objects are therefore replaced by their discretised counterparts (the right-hand side defines the discretised quantity),
+Now we discretise the involved $SU(N)$-valued compensator fields $U(x,x+\epsilon \hat{\mu})$. At this point we can replace $\epsilon$ with the lattice spacing $a$\footnote{The discretized theory can somehow be interpreted as the theory where the smallest distance resolvable is given by the (constant and finite) lattice spacing $a$ and we ignore terms proportional to $a^2$, while in the continuum theory the resolution is given by the (variable, continuous and even infinitesimally small) $\epsilon$. The replacement of $\epsilon$ with $a$ comes naturally, since the theory before replacing only considered space-time points separated by a distance $\epsilon$, when neglecting $O(\epsilon^2)$-terms.} and only keep the fields in discrete space-time points $an$ for $n \in \Lambda$. All fundamental fields and objects are therefore replaced by their discretised counterparts (the right-hand side defines the discretised quantity),
 
 \begin{align*}
     U(x,x + \epsilon \hat{\mu}) = U(an,an + a\hat{\mu}) &\longrightarrow U_{\mu}(n), \\
@@ -931,7 +934,7 @@ Integrals and derivatives are replaced as well,
 
 \begin{align*}
     \int dx^D f(x) &\longrightarrow a^D \sum_{n \in \Lambda} f(n), \\
-    \partial_{\mu} f(x) &\longrightarrow \frac{1}{2a} \left( f(n+\hat{\mu}) - f(n-\hat{\mu}) \right).
+    \partial_{\mu} f(x) &\longrightarrow \frac{1}{2a} \left( f(n+\hat{\mu}) - f(n-\hat{\mu}) \right). \numberthis \label{eq:discrete_derivative}
 \end{align*}
 
 Notice that the integral measure becomes $a^D$, which seems intuitive and naturally. The derivative on the other hand was discretised by using the fact that if the function $f(x)$ is smooth, then the right-hand and the left-hand derivatives are equal and thus $\partial_{\mu} = \frac{1}{2}(\partial_{+\mu} + \partial_{-\mu})$. Recalling the definition of the directional derivative along $n$, see equation \eqref{eq:dir_derivative}, we define the \df{left-hand} or \df{forward derivative} in direction $n=+\hat{\mu}$ and the \df{right-hand} or \df{backward derivative} in direction $n=-\hat{\mu}$, respectively
@@ -942,7 +945,7 @@ Notice that the integral measure becomes $a^D$, which seems intuitive and natura
 \end{align*}
 
 
-This very much looks like central differences with lattice spacing $a/2$, but we only have nearest neighbour interactions, and the error is smaller than with forward or backward differences\footnote{Another -- maybe even more important -- reason for taking symmetric differences in the derivative is that then the resulting Dirac-operator obeys \df{$\gamma^5$-hermiticity}, $\gamma^5 D = (\gamma^5 D)^{\dagger}$. This property implies that the eigenvalues are either real or appear in complex conjugate pairs, making the determinant a real quantity.}. The same holds for the covariant derivative, which is then replaced by
+The replacement \eqref{eq:discrete_derivative} very much looks like central differences with lattice spacing $a/2$, but we only have nearest neighbour interactions, and the error is smaller than with forward or backward differences\footnote{Another -- maybe even more important -- reason for taking symmetric differences in the derivative is that then the resulting Dirac-operator obeys \df{$\gamma^5$-hermiticity}, $\gamma^5 D = (\gamma^5 D)^{\dagger}$. This property implies that the eigenvalues are either real or appear in complex conjugate pairs, making the determinant a real quantity.}. The same holds for the covariant derivative, which is then replaced by
 
 \begin{align*}
     D_{\mu} f(x) = \frac{1}{2} \left[ D_{+\mu} + D_{-\mu} \right] f(x) \longrightarrow \frac{1}{2a} \left[ U_{\mu}(n) f(n+\hat{\mu}) - U_{-\mu}(n) f(n-\hat{\mu}) \right],
@@ -988,15 +991,15 @@ with
     \mathcal{S}_F &= a^4 \sum_{n \in \Lambda} \bar{\psi}(n) \underbrace{\left[ \sum_{\mu} \frac{\gamma^{\mu}}{2} (D_{+\mu} + D_{-\mu}) + m \right]}_{\coloneqq D} \psi(n).
 \end{align*}
 
-The expression in the square brackets between the fermion fields is the (naive) \df{lattice Dirac-operator}. One of the problems with that term is that it brings so called \df{doublers} into the theory, artifacts from the lattice discretisation. Doublers are unphysical poles in the fermion propagator $D^{-1}$ and thus correspond to particles that do not exist in the continuum theory which has only one pole. In 4-dimensional space-time, the action above incorporates \num{15} unphysical doublers\footnotemark. Wilson found a solution to this problem \cite{wilson1974}, namely he added a term proportional to $a$ to the action which vanishes in the continuum limit. With $0 \ne r \in \mathbb{R}$, the \df{Wilson-Dirac-operator} then is
+The expression in the square brackets between the fermion fields is the (naive) \df{lattice Dirac-operator}. One of the problems with this term is that it brings so called \df{doublers} into the theory, artifacts from the lattice discretisation. Doublers are unphysical poles in the fermion propagator $D^{-1}$ and thus correspond to particles that do not exist in the continuum theory which has only one pole. In 4-dimensional space-time, the action above incorporates \num{15} unphysical doublers\footnotemark. Wilson found a solution to this problem \cite{wilson1974}, namely he added a term proportional to $a$ to the action which vanishes in the continuum limit. With $0 \ne r \in \mathbb{R}$, the \df{Wilson-Dirac-operator} then is
 
-\footnotetext{For general D-dimensional space-time the theory would contain $2^D -1$ doublers. Of the total $2^D$ poles only one is physical. Here, $D$ denotes the space-time dimension, while the Dirac-operator is also denoted as $D$. We assume that the meaning is clear from context.}
+\footnotetext{For general D-dimensional space-time the theory would contain $2^D -1$ doublers. Of the total $2^D$ poles only one is physical. Here there might be a slight overflow in notation, $D$ denotes the space-time dimension, while the Dirac-operator is also denoted as $D$. We assume that the meaning is clear from context.}
 
 \begin{align}
     D_W = \sum_{\mu} \frac{\gamma^{\mu}}{2} (D_{+\mu} + D_{-\mu}) + m - \frac{a r}{2} \sum_{\mu} D_{-\mu} D_{+\mu}. \label{eq:dwop}
 \end{align}
 
-This improvement eliminates the doubler states by making their mass proportional to $r/a$, such that they decouple in the continuum limit, but it breaks chiral symmetry. There are several other extensions of the action to deal with doublers and chiral symmetry breaking, for example the Sheikholeslami-Wohlert-term \cite{sheikholeslami1985}, the Lüscher-Weisz action \cite{luscher1985}, staggered fermions \cite{kogut1975} or domain wall fermions \cite{shamir1993}. Unfortunately, no improvement led to a lattice theory with correct continuum limit maintaining chiral symmetry, while simultaneously introducing no doublers. It has been proven that such a lattice discretisation does not exist \cite{nielsen1981}. However, equation \eqref{eq:dwop} shows that there is a lot of flexibility in defining a lattice discretisation that has the correct continuum limit. Any term proportional to a power of $a$ can be added to the action at the expense of increasing computational cost. Evidently continuous rotational, translational and Lorentz-symmetry is broken as well by any lattice description.
+This improvement eliminates the doubler states by making their mass proportional to $r/a$, such that they decouple in the continuum limit, but it breaks chiral symmetry. There are several other extensions of the action to deal with doublers and chiral symmetry breaking, for example the Sheikholeslami-Wohlert-term \cite{sheikholeslami1985}, the Lüscher-Weisz action \cite{luscher1985}, staggered fermions \cite{kogut1975} or domain wall fermions \cite{shamir1993}. Unfortunately, no improvement led to a lattice description with correct continuum limit maintaining chiral symmetry, while simultaneously introducing no doublers. It has even been proven that such a lattice discretisation does not exist \cite{nielsen1981}. However, equation \eqref{eq:dwop} shows that there is a lot of flexibility in defining a lattice discretisation that has the correct continuum limit. Any term proportional to a power of $a$ can be added to the action at the expense of increasing computational cost. Evidently continuous rotational, translational and Lorentz-symmetry is broken as well by any lattice description.
 
 \subsection{Hopping expansion}
 
@@ -1028,7 +1031,7 @@ The hopping expansion becomes useful when the mass $m$ is large. Conversely, the
     m a = \frac{1}{2 \kappa} - 4r = \frac{1}{2 \kappa} - \frac{1}{2 \kappa_c},
 \end{align*}
 
-where the critical value of $\kappa = \kappa_c = \frac{1}{8r}$ is defined to be where the mass approaches zero, usually $r=1$.
+where the critical value of $\kappa = \kappa_c \coloneqq \frac{1}{8r}$ is defined to be where the mass approaches zero, usually $r=1$.
 
 \subsection{Expectation values}
 
@@ -1053,10 +1056,10 @@ and write for observables including only gauge-fields
 For fermionic observables we obtain inverses of the Dirac-operator,
 
 \begin{align*}
-    \langle T[\psi^{\alpha}(x) \bar{\psi}^{\beta}(y)] \rangle = \lim_{\tau \to \infty} \frac{ \int \mathcal{D} A D_{\alpha \beta}^{-1}(x,y) e^{-S[A]} }{ \int \mathcal{D} A e^{-S[A]} },
+    \langle T[\psi^{\alpha}_a(x) \bar{\psi}^{\beta}_b(y)] \rangle = \lim_{\tau \to \infty} \frac{ \int \mathcal{D} A D^{-1}(x,y)^{\alpha \beta}_{a b} e^{-S[A]} }{ \int \mathcal{D} A e^{-S[A]} },
 \end{align*}
 
-where $D_{\alpha \beta}^{-1}(x,y)$ is the fermion propagator from $x$ to $y$. The Euclidean action \eqref{eq:eucl_action} is real and bounded from below for QCD at zero chemical potential \cite{gupta1998}. While evaluating the functional integral exactly is clearly not feasible, but since the term $e^{-S}$ in the Euclidean space-time can be seen as probability density, we can interpret the functional integral as expectation value in the statistical sense. Using the compensator fields $U$ instead of the connections $A_{\mu}^a$, a discretisation of this expression would look like
+where $D^{-1}(x,y)^{\alpha \beta}_{a b}$ is the fermion propagator from $(x,\alpha,a)$ to $(y,\beta,b)$. The Euclidean action \eqref{eq:eucl_action} is real and bounded from below for QCD at zero chemical potential \cite{gupta1998}. While evaluating the functional integral exactly is clearly not feasible, but since the term $e^{-S}$ in the Euclidean space-time can be seen as probability density, we can interpret the functional integral as expectation value in the statistical sense. Using the compensator fields $U$ instead of the connections $A_{\mu}^a$, a discretisation of this expression would look like
 
 \begin{align*}
     \langle \mathcal{O}[U] \rangle = \lim_{\tau \to \infty} \frac{1}{Z} \int \mathcal{D} U e^{-S[U]} \mathcal{O}[U] \longrightarrow \sum_U P(U) \mathcal{O}[U].
@@ -1093,7 +1096,7 @@ value of a Wilson loop in a theory where e^S = 1.
 
 \subsection{Pseudofermions}
 
-One way to introduce physical fermions into the lattice description of our theory is to rewrite the determinant in the expectation value \eqref{eq:expectation_value} in terms of fermion fields (having spinor indices) that behave statistically as bosonic fields (they commute), so called \df{pseudofermions}\footnote{There is some similarity to Faddeev–Popov ghosts in the sense that both fields are unphysical. Ghosts are anti-commuting bosonic (scalar) fields that have to be introduced when fixing the gauge in non-abelian gauge theories.}. Using propositions \ref{prop:gauss_integral} and \ref{prop:grassmann_integral} we can write
+One way to introduce physical fermions into the lattice description of our theory is to rewrite the determinant in the expectation value \eqref{eq:expectation_value} in terms of fermion fields (having spinor indices) that behave statistically as bosonic fields (they commute), so called \df{pseudofermions}\footnote{There is some similarity to Faddeev–Popov ghosts in the sense that both fields are unphysical. Ghosts are anti-commuting bosonic (scalar) fields that have to be introduced when fixing the gauge in non-abelian gauge theories, while pseudofermions are commuting fermionic fields.}. Using propositions \ref{prop:gauss_integral} and \ref{prop:grassmann_integral} we can write
 
 \begin{align*}
   \int \mathcal{D}\psi \mathcal{D} \bar{\psi} e^{ - \bar{\psi} D \psi } = \pi^{-V} \int \mathcal{D}\phi \mathcal{D} \phi^{\star} e^{ - \phi^{\star} D^{-1} \phi }.
@@ -1109,15 +1112,15 @@ The irrelevant factor $\pi^{-V}$ can be absorbed in a redefinition of the fields
 
 \subsection{Hybrid Monte Carlo}
 
-In openQ*D, an algorithm called \acrfull{hmc} is used to generate the gauge- and fermion-field configurations that are then evaluated in the expectation value \eqref{eq:sample_mean}. A Monte Carlo simulation consists of creating a Markov chain of field configurations according to a probability distribution. A \df{Markov chain} is a sequence of random values where each value depends only on its predecessor. When a new field configuration is accepted\footnote{via an acceptance probability}, it is called a \df{Monte Carlo step} or \df{update step}. The crucial ingredient is that field configurations with a large weight $e^{-S}$ are visited more often than configurations with small weight. Finding these random quantities with a large weight is a non-trivial task for multiple reasons: boundary condition have to be obeyed, $SU(3)$ valued quantities contain a lot of dependencies, strong ergodicity in the transition probability from one configuration to another has to be concerned \cite{finkler2020,adler1988}, a high acceptance rate is desirable since every step in the Markov chain includes inversions of the Dirac-operator \cite{gupta1990}, the random number generator has to be able to produce large amounts of random numbers in a short time \cite{gentle2003} and many more.
+In openQ*D, an algorithm called \acrfull{hmc} is used to generate the gauge- and fermion-field configurations that are then evaluated in the expectation value \eqref{eq:sample_mean}. A Monte Carlo simulation consists of creating a Markov chain of field configurations according to a probability distribution. A \df{Markov chain} is a sequence of random values where each value depends only on its predecessor. When a new field configuration is accepted\footnote{Via an acceptance probability.}, it is called a \df{Monte Carlo step} or \df{update step}. The crucial ingredient is that field configurations with a large weight $e^{-S}$ are visited more often than configurations with a small weight. Finding these random quantities with a large weight is a non-trivial task for multiple reasons: boundary condition have to be obeyed, $SU(3)$ valued quantities are not trivial to generate, strong ergodicity in the transition probability from one configuration to another has to be concerned \cite{finkler2020,adler1988}, a high acceptance rate is desirable since every step in the Markov chain includes inversions of the Dirac-operator \cite{gupta1990}, the random number generator has to be able to produce large amounts of random numbers in a short time \cite{gentle2003} and many more.
 
-The \acrshort{hmc} algorithm \cite{duane1987} features reduced correlations among Markov steps and thus fewer required samples in order to produce enough field configurations to evaluate the sample mean. Once high, the acceptance probability can be held high, because HMC conducts Markov steps among field configurations that approximately conserve energy, thus the action is conserved as well. We will not dig deeper into this vast and fascinating topic since it would go far beyond the scope of this document.
+The \acrshort{hmc} algorithm \cite{duane1987} features reduced correlations among Markov steps and thus fewer required samples in order to produce enough field configurations to evaluate the sample mean. Once high, the acceptance probability can be kept high, because HMC conducts Markov steps among field configurations that approximately conserve energy, thus the action is conserved as well. We will not discuss this vast and fascinating topic further since it would go far beyond the scope of this document.
 
 \section{OpenQ*D}
 
 \label{sec:openqxd}
 
-The open-source software OpenQ*D code has been used by the RC* collaboration for the generation of fully dynamical QCD+QED gauge configurations with C* boundary conditions and $O(a)$-improved Wilson-fermions. Its codebase is written completely parallel using MPI and thus designed for portable and scalable large-scale parallel applications. Its scalability is only limited by the CPU- and memory-resources of classical supercomputing platforms\footnote{The term "classical" in this context refers to supercomputing facilities without GPU accelerators.}. With its parallel design approach, enormous lattice sizes of $96^4 \times n$ are achievable, where $n$ is the number of ranks/processes used by the MPI library.
+The open-source software openQ*D code has been used by the RC* collaboration for the generation of fully dynamical QCD+QED gauge configurations with C* boundary conditions and $O(a)$-improved Wilson-fermions. Its codebase is written completely parallel using MPI and thus designed for portable and scalable large-scale parallel applications. Its scalability is only limited by the CPU- and memory-resources of classical supercomputing platforms\footnote{The term "classical" in this context refers to supercomputing facilities without GPU accelerators.}. With its parallel design approach, enormous lattice sizes of $96^4 \times n$ are achievable, where $n$ is the number of ranks/processes used by the MPI library.
 
 Unique features of openQ*D include the possibility to use C* boundary conditions and its solid solver implementations are specially designed for ill-conditioned systems. The deflated solver algorithm is extended by the ability to use more than one deflation subspace in a single simulation \cite{openqxd}. Additionally, the molecular dynamics evolution of the $U(1)$-field is equipped with the possibility to employ Fourier acceleration. The optimized implementation of the Dirac-operator is inherited from the openQCD package \cite{openqcd}. The application is highly configurable given as a human-readable INI-style input file holding all adjustable parameters, except the lattice size and the number of ranks\footnote{Which are given in a global header file containing application constants, meaning that the application must be recompiled when changing the lattice size or the process layout.}.
 
@@ -1128,7 +1131,7 @@ Notable as well is the archaic C-89 standard and the style of code that reflects
 }. On the other hand, the clean and concise memory layout must be stressed and the coherency in the code that always shows the same coding and naming principles throughout the entire codebase.
 
 
-%TODO: rework the footnote above
+%TODO: rework the footnote above, probably OK now...
 
 \begin{comment}
 the software package openQxD: description
@@ -1371,7 +1374,7 @@ See table \ref{tab:float:limits} for these limiting numbers in the different flo
         \hline
     \end{tabular}
     
-    \caption{\label{tab:float:limits} Summary of highest representable numbers, minimal subnormal and non-subnormal representable numbers above \num{0} in any IEEE 754 floating-point format together with their approximated precision.}
+    \caption{\label{tab:float:limits} Summary of highest representable numbers, minimal subnormal and non-subnormal representable numbers above \num{0} in any IEEE 754 floating-point format together with their approximated precision in decimal.}
     
 \end{table}
 \egroup
@@ -1389,12 +1392,10 @@ The posit data type is designed to be a replacement for the IEEE floating-point 
 \footnotetext{According to IEEE 754 floating-point arithmetic, it holds $\frac{1}{\infty} = 0$ and $\frac{1}{-\infty} = -0$, but we have $0 = -0$. This implies $\infty = - \infty$, but (also according to IEEE 754) $\infty > - \infty$.}
 
     \item Floats may under- or overflow because the standard employs the round to nearest even rounding rule ($\pm \infty$ and $0$ are considered even).
-    \item Floats are non-associative and non-distributive \footnotemark leading to rounding errors that must be considered, especially in scientific computing.
+    \item Floats are non-associative and non-distributive\footnote{There was even a system using IEEE 754 that had non-commutative floating-point operations \cite{cody1980}.} leading to rounding errors that must be considered, especially in scientific computing.
     \item The standard gives no guarantee of bit-identical results across systems.
 \end{itemize}
 
-
-\footnotetext{There was even a system using IEEE 754 that had non-commutative floating-point operations \cite{cody1980}.}
 
 The goal is to utilise the number of bits more efficiently and remove these inconsistencies. The key idea is to place half of all numbers between $0$ and $1$ and the other half are the reciprocals (the reciprocal of $0$ being $\pm \infty$). The number can then be drawn on a projective real number circle \cite{gustafson2017}. The structure of a binary posit number is illustrated in figure \ref{fig:posit}.
 
@@ -2833,6 +2834,8 @@ A solving algorithm that has a flat scaling with respect to the quark masses can
 
 \subsection{Deflation}
 
+\label{sec:deflation}
+
 \begin{theorem}[Deflation]
 
 \label{thm:deflation}
@@ -3035,8 +3038,6 @@ We assume that the condition number of $A$ is high and the \df{spectrum} of $A$,
 
 The subscripts stand for "low" and "high", corresponding to the low and high modes of the operator $A$. The property in equation \eqref{eq:separable} states that the bulk of the low eigenvalues are somewhat clustered\footnote{The high eigenmodes may not be clustered, but still separated from the low ones.}. Consider the linear sub-spaces $\Omega_l, \Omega_h \subset \Lambda$ such that the low and high eigenvectors corresponding to the low and high eigenvalues of $A$ are contained in $\Omega_l$ and $\Omega_h$, respectively. Then the condition number of $A$ restricted to the low modes is much smaller than the condition number of $A$. Therefore, if we are able to find an orthonormal basis $\{\vec{\omega}_i\}_{i=0}^N$ of the subspace $\Omega_l$ containing the bulk of the low eigenmodes of $A$, we can apply deflation from corollary \ref{cor:deflation} to solve the little equation that has a significantly smaller condition number than $A$. Then find one of the infinite solutions to the deflated system and construct a solution of the full system.
 
-% TODO: why is it easy to solve the deflated system? condition number is better
-
 \end{remark}
 
 \begin{lemma}
@@ -3065,27 +3066,29 @@ The deflated operator $\hat{A} \coloneqq P_L A$ acts on the orthogonal complemen
     &= \hat{A} \vec{x}.
 \end{align*}
 
-Define the \df{minimal and maximal eigenvalue} of $A$,
+This now means, that the low eigenmodes are projected to zero, and do not participate to the effective condition number anymore. Futher, define the \df{minimal and maximal eigenvalue} of an operator $A$,
 
 \begin{align*}
-    \lambda_{pmin}(A) &\coloneqq \min\limits_{\lambda \in \sigma(A), \abs{\lambda} > 0} \abs{\lambda}
-    & &\text{and} &
-    \lambda_{max}(A) &\coloneqq \max\limits_{\lambda \in \sigma(A)} \abs{\lambda}.
+    \lambda_{max}(A) &\coloneqq \max\limits_{\lambda \in \sigma(A)} \abs{\lambda}, \\
+    \lambda_{min}(A) &\coloneqq \min\limits_{\lambda \in \sigma(A)} \abs{\lambda}, \\
+    \lambda_{pmin}(A) &\coloneqq \min\limits_{\lambda \in \sigma(A), \abs{\lambda} > 0} \abs{\lambda}.
 \end{align*}
 
 The condition number of $\hat{A}$ can now be upper bounded,
 
 \begin{align*}
-    \kappa_{eff}({\hat{A}}) = \frac{\abs{\lambda_{max}(\hat{A})}}{\abs{\lambda_{pmin}(\hat{A})}} \ll \frac{\abs{\lambda_{max}(A)}}{\abs{\lambda_{pmin}(\hat{A})}} \le \frac{\abs{\lambda_{max}(A)}}{\abs{\lambda_{min}(A)}} = \kappa({A}),
+    \kappa_{eff}({\hat{A}}) = \frac{\abs{\lambda_{max}(\hat{A})}}{\abs{\lambda_{pmin}(\hat{A})}} = \frac{\abs{\lambda_{max}(A)}}{\abs{\lambda_{pmin}(\hat{A})}} \ll \frac{\abs{\lambda_{max}(A)}}{\abs{\lambda_{min}(A)}} = \kappa({A}),
 \end{align*}
 
-where property \eqref{eq:separable} was used in the first inequality. Similarly, for the condition number of the little operator $\kappa({\tilde{A}})$ where we have $\sigma(\tilde{A}) = \sigma(\restr{A}{\Omega}) = \sigma_l$ which directly implies $\kappa(\tilde{A}) \ll \kappa(A)$.
+where property \eqref{eq:separable} was used in the second inequality. Similarly, for the condition number of the little operator $\kappa({\tilde{A}})$ where we have $\sigma(\tilde{A}) = \sigma(\restr{A}{\Omega}) = \sigma_l$ which directly implies $\kappa(\tilde{A}) \ll \kappa(A)$. 
 
 \end{proof}
 
 \begin{remark}
-Lemma \ref{lem:condition_number} tells us that the deflated and the little system are significantly better conditioned than the full system and both are therefore solved in fewer iterations\footnote{Additionally the little system is much smaller in size than the full system, but the sparsity will not stay -- it might even become dense. The precision up to which this system has to be solved in an application of the projector is usually a fraction of the desired precision to the full solution.}. This holds only if we can find the subspace corresponding to the low eigenmodes $\Omega_l$ and if the low eigenvalues of the matrix are somewhat isolated from the bulk of the eigenvalues. Equation \eqref{eq:separable} gives us a condition on $A$ for an efficient deflation.
+Lemma \ref{lem:condition_number} tells us that the deflated and the little system are significantly better conditioned than the full system and both are therefore solved in fewer iterations\footnote{Additionally the little system is much smaller in size than the full system, but the sparsity will not stay -- it might even become dense. The precision up to which this system has to be solved in an application of the projector is usually a fraction of the desired precision of the full solution.}. This holds only if we can find the subspace corresponding to the low eigenmodes $\Omega_l$ and if the low eigenvalues of the matrix are somewhat isolated from the bulk of the eigenvalues. Equation \eqref{eq:separable} gives us a condition on $A$ for an efficient deflation.
 \end{remark}
+
+%TODO: evtl. weg damit lemma 9.4
 
 \begin{lemma}
 
@@ -3164,7 +3167,7 @@ Definition \ref{def:local_coherence} can also (very informally) be restated as $
 It turns out that the low eigenmodes with subspace $\Omega_{exact} = \Omega_l$ of the Dirac-operator are locally coherent\footnote{This is not proven, but numerical experiments show a strong sign of local coherence, \cite{luscher2007}.}.
 \end{remark}
 
-It remains to describe how to obtain the $M$ bootstrap fields $\vec{\beta_j}$. Ideally, they should be low eigenmodes of the Dirac-operator or linear combinations thereof. Usually, one starts with randomly generated vectors and repeatedly apply the inverse power method (theorem \ref{thm:inverse_power_method}) to them. The resulting vectors may not be exact eigenvectors, but the components associated to the complement of the low modes quickly decrease after some inverse iteration steps. These vectors are then, up to some $\varepsilon > 0$, linear combinations of low eigenmodes and can thus be used as bootstrap fields to generate a subspace that approximates the low eigenmode subspace well. At this point the property of local coherence can be exploited and efficient deflation subspaces can be generated from these fields by projecting them onto some block decomposition.
+It remains to describe how to obtain the $M$ bootstrap fields $\vec{\beta_j}$. Ideally, they should be low eigenmodes of the Dirac-operator or linear combinations thereof. Usually, one starts with randomly generated vectors and repeatedly apply the inverse power method (theorem \ref{thm:inverse_power_method} in appendix \ref{sec:proofs}) to them. The resulting vectors may not be exact eigenvectors, but the components associated to the complement of the low modes quickly decrease after some inverse iteration steps (see corollary \ref{cor:inverse_power_method} in appendix \ref{sec:proofs}). These vectors are then, up to some $\varepsilon > 0$, linear combinations of low eigenmodes and can thus be used as bootstrap fields to generate a subspace that approximates the low eigenmode subspace well. At this point the property of local coherence can be exploited and efficient deflation subspaces can be generated from these fields by projecting them onto some block decomposition.
 
 To summarize the results, if the Dirac-operator has a spectrum that is separable in the sense of equation \eqref{eq:separable} and the low eigenmodes are locally coherent for a small $\varepsilon$, then inexact deflation can be applied to solve the ill-conditioned Dirac equation and the procedure is more efficient than without deflation, because the deflated system is better conditioned (lemma \ref{lem:condition_number}). Also, generating the inexact deflation subspaces can be done using only a few low eigenmodes.
 
@@ -3280,7 +3283,7 @@ The analysis was done on two Dirac-operators differing in their condition number
 
 \textbf{Figure \ref{fig:dfl_sap_gcr_conf6_0-8x8-30_8x8x8x8_k_0.15649}}: Figure \ref{fig:dfl_sap_gcr_conf6_0-8x8-30_8x8x8x8_k_0.15649} is of special interest because the operator is in bad condition. The pattern we observe has a bowl-shape, where the minimum is placed at some certain configuration. Configurations in the neighbourhood of the minimum perform similar. Starting from the minimum, the run-time increases in every direction. The \num{100} configurations considered seem to sample the configuration space quite well. The plot shows that there is a non-trivial interplay between preconditioning and deflation. Clearly, solving the little equation reduces the components of the full residue associated to the low eigenmodes. On the other hand, preconditioning consolidates the spectrum around the value \num{1}. This compactification affects the high modes more than the low modes, leading to a reduction of the high-mode components of the full residue.
 
-\textbf{Figure \ref{fig:dfl_sap_gcr_conf6_0-8x8-30_8x8x8x8_k_0.05}}: In contrast to the previous operator, the matrix in figure \ref{fig:dfl_sap_gcr_conf6_0-8x8-30_8x8x8x8_k_0.05} is well-conditioned. The plot tells us that in this case low-mode deflation is a waste of resources. Applying the results from section \ref{sec:sap_gcr_results}, Schwarz-preconditioning should be kept within a tight limit for good conditioned systems. As stated previously, we expect the number of GCR-steps to decrease, when using larger deflation subspaces. On the contrary, when looking at the configuration $(n_{cy},n{mr}) = (1,1)$, we observe an \textit{increase} to the right instead. This suggests that too large deflation subspaces cause the solver to perform even worse, not only in run-time as it is with Schwarz-preconditioning, but also in the number of GCR-steps, finally leading to a regression. This specific operator has a clustering of all its eigenvalues around $1$. The exact low-mode eigenspace is still of the same size as for the operator in figure \ref{fig:dfl_sap_gcr_conf6_0-8x8-30_8x8x8x8_k_0.15649}, but the low-eigenvalues are not clearly separated anymore from the bulk of eigenvalues\footnote{The operator does not satisfy equation \eqref{eq:separable} anymore.}. A separation is thus harder to achieve, making the deflation subspace arbitrary and the deflation of the full system unprogressive and expensive. For deflation to be effective in such a case, one needs to determine the $N_s$ bootstrap vectors more precisely by using more inverse iteration steps, making the generation of deflation subspace computationally more expensive. Obviously, the better alternative would be to drop deflation entirely and minimize Schwarz-preconditioning for such a system.
+\textbf{Figure \ref{fig:dfl_sap_gcr_conf6_0-8x8-30_8x8x8x8_k_0.05}}: In contrast to the previous operator, the matrix in figure \ref{fig:dfl_sap_gcr_conf6_0-8x8-30_8x8x8x8_k_0.05} is well-conditioned. The plot tells us that in this case low-mode deflation is a waste of resources. Theoretically, it can also be seen, because a well-conditioned operator has no separable spectrum in the sense of equation \eqref{eq:separable}. Thus, the proofs in section \ref{sec:deflation} give us a reasoning why deflation is not efficient in this case. Applying the results from section \ref{sec:sap_gcr_results}, Schwarz-preconditioning should be kept within a tight limit for good conditioned systems. As stated previously, we expect the number of GCR-steps to decrease, when using larger deflation subspaces. On the contrary, when looking at the configuration $(n_{cy},n{mr}) = (1,1)$, we observe an \textit{increase} to the right instead. This suggests that too large deflation subspaces cause the solver to perform even worse, not only in run-time as it is with Schwarz-preconditioning, but also in the number of GCR-steps, finally leading to a regression. This specific operator has a clustering of all its eigenvalues around $1$. The exact low-mode eigenspace is still of the same size as for the operator in figure \ref{fig:dfl_sap_gcr_conf6_0-8x8-30_8x8x8x8_k_0.15649}, but the low-eigenvalues are not clearly separated anymore from the bulk of eigenvalues\footnote{The operator does not satisfy equation \eqref{eq:separable} anymore.}. A separation is thus harder to achieve, making the deflation subspace arbitrary and the deflation of the full system unprogressive and expensive. For deflation to be effective in such a case, one needs to determine the $N_s$ bootstrap vectors more precisely by using more inverse iteration steps, making the generation of deflation subspace computationally more expensive. Obviously, the better alternative would be to drop deflation entirely and minimize Schwarz-preconditioning for such a system.
 
 \subsubsection{Conclusion}
 
@@ -3777,15 +3780,17 @@ During a simulation, a lot of linear systems of equation of the type $A \vec{x} 
 
 \label{sec:summary}
 
-This thesis has two major purposes: (1) to investigate solver algorithms and other important application kernels appearing in the lattice QFT application openQ*D and (2) to suggest and demonstrate implementations utilizing the GPU of modern supercomputing facilities. The main motive was always an increase of performance in terms of run-time. All proposals can easily be accessed by the list of proposals in the appendix \ref{sec:proposals}. The main body of this thesis is composed of \num{4} chapters, each of them dealing with a different application kernel in openQ*D.
+This thesis has two major purposes: (1) to investigate solver algorithms and other important application kernels appearing in the lattice QFT application openQ*D and (2) to suggest and demonstrate implementations utilizing the GPU of modern supercomputing facilities. The main motive was an increase of performance in terms of run-time. The main body of this thesis comprises \num{4} chapters, each of them dealing with a different application kernel in openQ*D.
 
-The convergence analysis of the \acrshort{cg} algorithm in section \ref{sec:cg} suggests that common \num{16}-bit data types such as \gls{binary16} or \gls{bfloat16} appearing on modern GPUs are suitable for an implementation of a mixed precision solver, where most of the iterative process is calculated in reduced precision. The Dirac-operator can be formulated using such reduced data types.
+The convergence analysis of the \acrshort{cg} algorithm in section \ref{sec:cg} suggested that common \num{16}-bit data types such as \gls{binary16} or \gls{bfloat16} appearing on modern GPUs are suitable for an implementation of a mixed precision solver, where most of the iterative process is calculated in reduced precision. We found that the Dirac-operator can be formulated using such reduced data types.
 
-The run-time analysis done for the \acrshort{sapgcr} algorithm in section \ref{sec:sap_gcr} shows that large parts or even the complete algorithm can be performed on the GPU and significant performance improvements can be expected therewith. From the collected data, an adaptive variant of the algorithm (independent the CPU or GPU) can be derived with promising run-times.
+The run-time analysis done for the \acrshort{sapgcr} algorithm in section \ref{sec:sap_gcr} showed that large parts or even the complete algorithm can be performed on the GPU and significant performance improvements can be expected therewith. From the collected data, an adaptive variant of the algorithm (independent the CPU or GPU) can be derived with promising run-times.
 
-A similar run-time analysis was performed for the \acrshort{dflsapgcr} algorithm in section \ref{sec:dfl_sap_gcr}. The only new insight compared to the previous numerical results was that the size of the deflation subspace should approximately match the size of low eigenmode subspace. The theoretical part of the section contains a formal proof that deflation is efficient if the low eigenmodes of the operator in consideration are locally coherent and its spectrum is separable.
+A similar run-time analysis was performed for the \acrshort{dflsapgcr} algorithm in section \ref{sec:dfl_sap_gcr}. The only new insight compared to the previous numerical results was that the size of the deflation subspace should approximately match the size of the low eigenmode subspace. The theoretical part of the section contains a formal proof that deflation is efficient if the operator in consideration has locally coherent low eigenmodes and its spectrum is separable.
 
-In a last analysis tackling the lattice Dirac-operator in section \ref{sec:dop}, a reference implementation using threads within openQCD was implemented and investigated. On systems with NUMA the threaded variant outperforms the native one, when the number of threads and ranks was chosen to fit the NUMA-architecture of the node. Finally, different representations for the gauge fields were proposed in order increase the arithmetic intensity and decrease the memory traffic of the Dirac-kernel.
+In a last analysis addressing the lattice Dirac-operator, section \ref{sec:dop}, a reference implementation using threads within openQCD was implemented and investigated. On certain NUMA-systems the threaded variant outperformed the native one, if the number of threads and ranks was chosen to fit the NUMA-architecture of the node. Finally, different representations for the gauge fields were proposed in order to increase the arithmetic intensity and decrease the memory traffic of the Dirac-kernel.
+
+All proposals can easily be accessed by the list of proposals in the appendix \ref{sec:proposals}.
 
 \begin{comment}
 * Summarize cg
@@ -3803,17 +3808,17 @@ Third paragraph: Give a concluding statement, including a short summary of the r
 
 \label{sec:outlook}
 
-Future research from here on can go in many different directions. Immediate next steps would be to explore the Dirac-operator further. The Python-implementation could be extended to represent the operator not in terms of a \acrshort{csr}-matrix, but instead in terms of different representations for $SU(3)$-matrices (see proposal \ref{pp:dop_reps}). To implement such a representation in openQ*D directly is straight-forward. Run-time measurements such as the ones in section \ref{sec:sap_gcr_results} can then be repeated and studied. It is expected to speed up the results on the GPU, because the kernels involve less memory traffic and are arithmetically more intense. It is also of interest how these representations perform on the CPU.
+Future research from here on can go in many different directions. Immediate next steps would be to explore the Dirac-operator further. The Python-implementation could be extended to represent the operator not in terms of a \acrshort{csr}-matrix, but instead in terms of different representations for $SU(3)$-matrices (see proposal \ref{pp:dop_reps}). To implement such a representation in openQ*D directly is straight-forward. Run-time measurements such as the ones in section \ref{sec:sap_gcr_results} can then be repeated and studied. Such an implementation is expected to speed up the results on the GPU, because the kernels involve less memory traffic and are arithmetically more intense. Investigating how these representations perform on the CPU might be of interest as well.
 
 Pursuing proposal \ref{pp:alpha} further might not be fruitful. It is included in this document only for the sake of completeness.
 
-On the other hand, the OpenMP implementation in section \ref{sec:threads} can act as a starting point to employ threads and as such exploit architectures involing NUMA. Since \code{Dw()} is already implemented with threads, it is straightforward to reimplement \code{Dwee()}, \code{Dwoo()}, \code{Dweo()}, \code{Dwoe()} and \code{Dwhat()} with threads as well since all possible arising problems are already solved in the reference implementation of \code{Dw()}. Only the block variants \code{Dwee\_blk()}, ... must be considered separately, because although they have exactly the same structure in the loops, they have a completely different (and even variable) range. A straight parallelisation with OpenMP might work, but there will be false sharing, because the threads will recieve different loop-slices than in previous loops. One has to think about association of threads to blocks.
+On the other hand, the OpenMP implementation in section \ref{sec:threads} can act as a starting point to employ threads and as such exploit architectures involing NUMA. Since \code{Dw()} is already implemented with threads, it is straightforward to reimplement \code{Dwee()}, \code{Dwoo()}, \code{Dweo()}, \code{Dwoe()} and \code{Dwhat()} with threads as well since all problems that might arise are already solved in the reference implementation of \code{Dw()}. Only the block variants \code{Dwee\_blk()}, ... must be considered separately, because although they have exactly the same structure in the loops, they have a completely different (and even variable) range. A straight parallelisation with OpenMP might work, but there will be false sharing, because the threads will recieve different loop-slices than in previous loops. One has to think about association of threads to blocks.
 
 It is worth to further investigate the threaded implementation suggested in proposal \ref{pp:dop_threads}, where we want to loop over the output spinor consecutively instead of looping over quantities that are being read to avoid false sharing. Such a technique introduces a complete reimplementation of the Dirac-operator \code{Dw()}.
 
-The OpenMP variant can also be used to further implement offloading OpenMP directives to the accelerator \cite{omp_offloading}. This would be a straightforward way to implement a GPU-variant of the operator within affordable time and effort, which could act as a baseline for more sophisticated future GPU-realisations. As a certain advantage of this direction, the code will stay backward compatible since the pragmas will just be ignored by the compiler when no OpenMP compiler flags are set.
+The OpenMP variant can be used to further implement offloading OpenMP directives to the accelerator \cite{omp_offloading}. This would be a straightforward way to implement a GPU-variant of the operator within affordable time and effort, which could act as a baseline for more sophisticated future GPU-realisations. As a certain advantage of this direction, the code will stay backward compatible since the pragmas will be ignored by the compiler when no OpenMP compiler flags are set.
 
-The GPU implementation variant in proposal \ref{pp:gpu_implementation4} only scratches the surface on heterogeneous computing that enable utilizing both CPUs and GPUs at the same time. There is a lot of potential in investigating such an implementation further. It is by far the most sophisticated one, but because of time reasons we had to formulate it very vaguely. It certainly needs a lot of testing and numerical measurements. This is an active research field and investigating this direction alone could fill a thesis.
+The GPU implementation variant in proposal \ref{pp:gpu_implementation4} only scratches the surface on heterogeneous computing that enable utilizing both CPUs and GPUs at the same time. There is a lot of potential in investigating such an implementation further. It is by far the most sophisticated one, but because of time reasons we had to formulate it very vaguely. It certainly needs a lot of testing and numerical measurements. This is a vast and active research field and investigating this direction alone could fill a thesis.
 
 \begin{comment}
 
