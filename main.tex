@@ -165,19 +165,20 @@
   top=20mm,
 }
 
-%TODO: openqxd/openq*d???
-%TODO: RC*, C*, ...
-%TODO:  behavior, behaviour
-%TODO: I or we
-%TODO: abelian -> Abelian
-%TODO: openqxd part: reduce flame
+%TODO: I, my or we, our
 %TODO: rework abstract
 %TODO: color indices, einstein sum
-%TODO: Python or python
-%TODO: figure x or Figure x, also listing, table, algorithm, usw...
-%TODO: for loop or for-loop, also if-statement
-%TODO: FLOPs and FLOPS
-%TODO: flame footnote
+%TODO: cgne conclusion, say b16 and bf16 are sufficient, usw...
+
+%done: to purpose -> to propose
+%done: openqxd part: reduce flame
+%done: FLOPs and FLOPS; removed FLOPs
+%done: RC*, C*, ...
+%done: openQxD or >openQ*D<
+%done: >abelian< -> Abelian
+%done: for loop or >for-loop<, also if-statement
+%done: behavior, >behaviour<
+%done: >figure x< or Figure x, also listing, table, algorithm, usw...
 
 % defines the \code{} command
 \def\code#1{\texttt{#1}}
@@ -185,10 +186,10 @@
 % defines the \def{} command
 \def\df#1{\textbf{\textit{#1}}}
 
-\title{Master Thesis \\~\\ Performance Modelling and Analysis of the openQxD Lattice QCD Application}
+\title{Master Thesis \\~\\ Performance Modelling and Analysis of the openQ*D Lattice QCD Application}
 \author{Roman Gruber}
 %\author{author1\\[10mm]{\small Supervisors: supervisor1 \\ \hspace{18mm} supervisor2}}
-\date{ETH Zürich, \today \\~\\ Supervisor: \\ Prof. Thomas C. Schulthess \\~\\ Co-Supervisors: \\ Prof. Marina Krstić Marinković \\ Dr. Raffaele Solcà \\ Dr. Anton Kozhevnikov}  
+\date{ETH Zürich, \today \\~\\ Supervisor: \\ Prof. Thomas C. Schulthess \\~\\ Co-Supervisors: \\ Prof. Marina Krstić Marinković \\ Dr. Raffaele Solcà \\ Dr. Anton Kozhevnikov}
 
 \numberwithin{equation}{section}
 
@@ -203,7 +204,7 @@
 
 \begin{abstract}
 
-The open-source software openQ*D is used to perform lattice QCD+QED calculations using C*-boundary conditions and $O(a)$-improved Wilson-fermions. The focus of this thesis lies on the optimization of solver kernels provided with the software package intending to give guidance for porting fractions of the code to GPU-accelerated supercomputing platforms. We present an analysis of the current sparse solver implementations, purpose suitable extensions to the existing algorithms and possible CPU/GPU-hybrid implementations of them.  Various application-specific proposals for optimizations are suggested as well. The most important kernel in every lattice QFT application -- the Dirac-operator -- is investigated and a reference implementation using threads is shown which can serve as a starting point for an implementation on the GPU. Considering memory-boundedness of the problem, we present different numerical representations of the Dirac-operator with higher arithmetic intensities in their application and less memory-traffic suitable for the GPU.
+The open-source software openQ*D is used to perform lattice QCD+QED calculations using C* boundary conditions and $O(a)$-improved Wilson-fermions. The focus of this thesis lies on the optimization of solver kernels provided with the software package intending to give guidance for porting fractions of the code to GPU-accelerated supercomputing platforms. We present an analysis of the current sparse solver implementations, propose suitable extensions to the existing algorithms and possible CPU/GPU-hybrid implementations of them.  Various application-specific proposals for optimizations are suggested as well. The most important kernel in every lattice QFT application -- the Dirac-operator -- is investigated and a reference implementation using threads is shown which can serve as a starting point for an implementation on the GPU. Considering memory-boundedness of the problem, we present different numerical representations of the Dirac-operator with higher arithmetic intensities in their application and less memory-traffic suitable for the GPU.
 
 \end{abstract}
 
@@ -219,33 +220,33 @@ The open-source software openQ*D is used to perform lattice QCD+QED calculations
 
 \section{Introduction}
 
-Quantum field theory is one of the most successful theories in terms of agreement between theoretical predictions and experimental evidence. Being able to accurately predict observables such as decay constants using computational resources opens the possibility to probe and understand the Standard Model, emulate experiments or even discover new physics. In the regime of high energy, non-Abelian theories such as \acrshort{QCD} can be treated perturbatively, because the coupling constant is small with large momentum transfers. In the low-energy regime on the other hand where perturbation theory becomes unfeasible, lattice QCD provides a non-perturbative tool to analsze the hadronic dynamics from first principles.
+Quantum field theory is one of the most successful theories in terms of agreement between theoretical predictions and experimental evidence. Being able to accurately predict observables such as decay constants using computational resources opens the possibility to probe and understand the Standard Model, emulate experiments or even discover new physics. In the regime of high energy, non-abelian theories such as \acrshort{QCD} can be treated perturbatively, because the coupling constant is small with large momentum transfers. In the low-energy regime on the other hand where perturbation theory becomes unfeasible, lattice QCD provides a non-perturbative tool to analyse the hadronic dynamics from first principles.
 
 Translating the formalism of QFT to a discretised finite system such as a computer system involves many technical challenges and comes at a high cost, mainly due to extremely large demands on compute capability and memory. The main computational cost of lattice QFT calculations originates from solving the discrete Dirac equation, which is a large sparse system of linear equations. The most used kernel is certainly the application of the Dirac-operator to a spinor field. Lattice simulations allow to calculate correlation functions of hadronic operators, predict the running coupling constant, quark masses, hadronic spectra or elements of the CKM matrix. Due to the statistical approach on the calculations, results include systematic errors coming from the lattice description as well as statistical errors.
 
-(Super)computing systems tend to include more and more units called domain-specific accelerators \cite{cong2010} designed to be specialised on distinct computational tasks. The general-purpose compute-device such as the CPU gets less attention, whereas the specialised hardware device becomes more important \cite{pan2018}. A very prominent example of such a device is the GPU that was originally designed to rapidly render geometric 3D objects into 2D images, thus the name: graphics processing unit.\footnote{Other notable examples where dedicated devices are used include deep learning \cite{han2016}, bioinformatics \cite{turakhia2018}, image processing \cite{qadeer2013}, computer vision \cite{sun2018}, Bitcoin mining \cite{satoh2007} and many more.} Inherently such a process is highly parallel, where at the same time precision of the result is less important, because if the output image contains a pixel that has a different color, the overall error is barely noticed. The scientific world started to misuse these devices and executed parallel non-graphics algorithms on it \cite{brodtkorb2013}. Specially the rise of machine learning in the last \num{10}-\num{20} years kick-started a trend \cite{steinkraus2005}, because of which GPU vendors started to develop general purpose GPU accelerators specially designed for the need of these new scientific calculations.\footnote{The emergence of cryptocurrencies, such as Bitcoin \cite{nakamoto2019}, making use of the blockchain are also partly responsible for that trend.} The GPU started to be used for general-purpose computation (GPGPU) \cite{luebke2004}. A consequence was the advent of HPC clusters based on the GPU as dominant architecture \cite{kindratenko2011}.
+(Super)computing systems tend to include more and more units called domain-specific accelerators \cite{cong2010} designed to be specialised on distinct computational tasks. The general-purpose compute-device such as the CPU gets less attention, whereas the specialised hardware device becomes more important \cite{pan2018}. A very prominent example of such a device is the GPU that was originally designed to rapidly render geometric 3D objects into 2D images, thus the name: graphics processing unit.\footnote{Other notable examples where dedicated devices are used include deep learning \cite{han2016}, bioinformatics \cite{turakhia2018}, image processing \cite{qadeer2013}, computer vision \cite{sun2018}, Bitcoin mining \cite{satoh2007} and many more.} Inherently such a process is highly parallel, where at the same time precision of the result is less important, because if the output image contains a pixel that has a different color, the overall error is barely noticed. The scientific world started to misuse these devices and executed parallel non-graphics algorithms on it \cite{brodtkorb2013}. Specially the rise of machine learning in the last \num{10}-\num{20} years kick-started a trend \cite{steinkraus2005}, because of which GPU vendors started to develop general-purpose GPU accelerators specially designed for the need of these new scientific calculations.\footnote{The emergence of cryptocurrencies, such as Bitcoin \cite{nakamoto2019}, making use of the blockchain are also partly responsible for that trend.} The GPU started to be used for general-purpose computation (GPGPU) \cite{luebke2004}. A consequence was the advent of HPC clusters based on the GPU as dominant architecture \cite{kindratenko2011}.
 
 On the other side (or because of the rise of GPUs) modern supercomputers tend towards exascale computing, where the peak operations per second is around $10^{18}$ \cite{top500}. To reach such a peak performance is challenging and highly depends on the problem as well as the involved data types. Since lattice QFT calculations are bound by memory bandwidth and not by compute performance, one must think about how to reduce memory traffic in order to increase performance. The parallelizability of GPUs thus opened the door to exascale computing but made it harder to achieve its peak performance for memory-bound problems, because on GPUs the memory-bound region is even larger than on regular CPUs \cite{davis2012}.
 
-The scope of this work is an analysis of the different solver algorithms used in the lattice QFT application openQxD \cite{openqxd} as well as its implementation of the Dirac-operator. The goal was to get an idea and understand how to utilise the GPU  -- and by this -- increase the overall application performance. The following document is by no means complete or exhaustive. Different aspects of the solvers are highlighted to find potential for improvement. Where this is mainly guided and limited by my own understanding of said solvers and how they apply on the considered computing architectures.
+The scope of this work is an analysis of the different solver algorithms used in the lattice QFT application openQ*D \cite{openqxd} as well as its implementation of the Dirac-operator. The goal was to get an idea and understand how to utilise the GPU  -- and by this -- increase the overall application performance. The following document is by no means complete or exhaustive. Different aspects of the solvers are highlighted to find potential for improvement. Where this is mainly guided and limited by my own understanding of said solvers and how they apply on the considered computing architectures.
 
-The analysis in this document is mostly performed using Python-implementations of the examined kernels. This switch of programming language and philosophy enabled to run the kernels with simulated data types that are usually non-accessible within the native application without large implementation effort. The goal was to rethink the current pure-MPI variant and purpose a hybrid code that exploits both, the CPU and the GPU.
+The analysis in this document is mostly performed using Python-implementations of the examined kernels. This switch of programming language and philosophy enabled to run the kernels with simulated data types that are usually non-accessible within the native application without large implementation effort. The goal was to rethink the current pure-MPI variant and propose a hybrid code that exploits both, the CPU and the GPU.
 
-Section \ref{sec:gauge_theories} is a short theoretical introduction in non-Abelian gauge theories starting with symmetries coming from special relativity and basic quantum mechanics. The final result will be Euclidean continuum Yang-Mills-theory.
+Section \ref{sec:gauge_theories} is a short theoretical introduction in non-abelian gauge theories starting with symmetries coming from special relativity and basic quantum mechanics. The final result will be Euclidean continuum Yang-Mills-theory.
 
 Section \ref{sec:lattice_gauge_theories} directly picks up on the previous results and continues to derive discrete quantities from continuum theory by introducing the lattice discretisation which acts as a regulator for the inherent infinities appearing in the idealised continuum theory.\footnote{The continuum theory assumes infinitely extended fields (IR) with infinite spatial resolution (UV); as a result, the theory produces infinities. As direct implication, it is very intuitive that the finite lattice (IR) with finite spacing (UV) cures these two main sources of infinities.} The goal of this section is the introduction of the lattice Dirac-operator and its importance which motivates the main part of this work.
 
-The main subject of this thesis is dedicated to is the software package openQxD which is briefly presented with its main features in section \ref{sec:openqxd}.
+The main subject of this thesis is dedicated to is the software package openQ*D which is briefly presented with its main features in section \ref{sec:openqxd}.
 
-Section \ref{sec:floats} consists of a theoretical discussion of discrete real number formats, their pros and cons as well as their current and potential future appearances in the source code of openQxD.
+Section \ref{sec:floats} consists of a theoretical discussion of discrete real number formats, their pros and cons as well as their current and potential future appearances in the source code of openQ*D.
 
 With these solid theoretical foundations, the first algorithm \acrlong{cg} is investigated in terms of a convergence analysis with respect to different real number formats in section \ref{sec:cg}.
 
-Section \ref{sec:sap_gcr} deals with the \acrlong{sapgcr} algorithm and shows actual reference implementations, first purely based on CPU, then purely based on GPU and finally a hybrid version running on both. These three implementations are compared against each other and discussed, also with different real number formats. Finally, motivated by the results, an adaptive variant of the solver algorithm is purposed and compared to the native ones. A reference implementation of the adaptive version was directly written in openQxD.
+Section \ref{sec:sap_gcr} deals with the \acrlong{sapgcr} algorithm and shows actual reference implementations, first purely based on CPU, then purely based on GPU and finally a hybrid version running on both. These three implementations are compared against each other and discussed, also with different real number formats. Finally, motivated by the results, an adaptive variant of the solver algorithm is proposed and compared to the native ones. A reference implementation of the adaptive version was directly written in openQ*D.
 
 In section \ref{sec:dfl_sap_gcr} deflation of the original system of linear equations is applied resulting in an efficient and powerful solver for ill-conditioned Dirac-operators, the \acrlong{dflsapgcr} algorithm. A formal proof of efficiency compared to the non-deflated variant is provided. This holds if the Dirac-operator features certain properties such as local coherence and a clustered low-eigenvalue spectrum. These properties are precisely determined in the first part of this section. The main result of the numerical experiments is the determination of the deflation subspace dimension.
 
-The last section \ref{sec:dop} investigates the current implementation of the Dirac-operator in openQxD and gives proposals to increase its arithmetic intensity and decrease memory-traffic by introducing compressed representations of the gauge-fields. Finally, a reference implementation of the Dirac-kernel using threads was implemented and compared to the native implementation in terms of run-time.
+The last section \ref{sec:dop} investigates the current implementation of the Dirac-operator in openQ*D and gives proposals to increase its arithmetic intensity and decrease memory-traffic by introducing compressed representations of the gauge-fields. Finally, a reference implementation of the Dirac-kernel using threads was implemented and compared to the native implementation in terms of run-time.
 
 A summary and possible continuations of this work are given in sections \ref{sec:summary} and \ref{sec:outlook}, respectively.
 
@@ -382,7 +383,7 @@ dagger vs star vs bar
 $dx^D = dx^0 ... dx^{D-1}$ or $dx^D = dx^1 ... dx^{D}$,...
 \end{comment}
 
-\section{Non-Abelian gauge theories}
+\section{Non-abelian gauge theories}
 
 \label{sec:gauge_theories}
 
@@ -398,7 +399,7 @@ Let's consider a set of $N$ complex independent Dirac spinors
     \end{pmatrix},
 \end{align*}
 
-where every $\psi_a(x)$, $a \in \{1, \dots N\}$, has $4$ components with spinor indices $\alpha \in \{1, \dots 4\}$. We have a set of complex Grassmann-valued fields $\psi_{a}^{\alpha}(x)$, where $a$ is called the \df{color index} and $\alpha$ is the \df{spinor index}. It makes sense to demand the theory to be invariant under $SU(N)$-transformations, because basic quantum mechanics tells us that phases are unobservable. Such a field theory that is invariant under the gauge group $SU(N)$ has to introduce (massless) vectorial fields $A_{\mu}(x)$, called the \df{gauge fields}. From special relativity, we also demand the theory to be Lorentz-invariant. The goal is to construct a Lagrangian for fermionic fields that satisfies these symmetries.
+where every $\psi_a(x)$, $a \in \{1, \dots N\}$, has $4$ components with spinor indices $\alpha \in \{1, \dots 4\}$. Thus, we have a set of complex Grassmann-valued fields $\psi_{a}^{\alpha}(x)$, where $a$ is called the \df{color index} and $\alpha$ is the \df{spinor index}. It makes sense to demand the theory to be invariant under $SU(N)$-transformations, because basic quantum mechanics tells us that phases are unobservable. Such a field theory that is invariant under the gauge group $SU(N)$ has to introduce (massless) vectorial fields $A_{\mu}(x)$, called the \df{gauge fields}. From special relativity, we also demand the theory to be Lorentz-invariant. The goal is to construct a Lagrangian for fermionic fields that satisfies these symmetries.
 
 Let's introduce the local\footnote{The phase depends on the space-time coordinate $x$.} gauge transformation under which we want the theory to be invariant
 
@@ -419,7 +420,7 @@ We can use a property of the $\gamma$-matrices here. The $\gamma$-matrices are d
     \{\gamma^{\mu}, \gamma^{\nu}\} = 2 \eta^{\mu \nu} \cdot id, \label{eq:cliff}
 \end{align}
 
-with $\mu,\nu \in \{0, 1, \dots, D-1\}$, where $D$ is the space-time dimension and $id$ is the identity operator in spinor space. Using index notation, the matrices are decorated with spinor indices, $\gamma^{\mu}_{\alpha \beta}$. The needed property of the $\gamma$-matrices is
+with $\mu,\nu \in \{0, 1, \dots, D-1\}$, where $D$ is the space-time dimension and $id$ is the identity operator in spinor space. The needed property of the $\gamma$-matrices is
 
 \begin{align*}
     \Lambda^{\dagger} \gamma^{\mu} = \gamma^{\mu} \Lambda^{-1}.
@@ -459,7 +460,7 @@ to compensate for the shift in $x$. Now, the derivative term transforms as desir
     n^{\mu} D_{\mu} \psi(x) \longrightarrow n^{\mu} \tilde{D}_{\mu} \tilde{\psi}(x) = n^{\mu} V(x) D_{\mu} \psi(x).
 \end{align*}
 
-Since the compensator field is non-local and thus not representing a real physical particle, we can obtain a local quantity by Taylor-expanding $U(x + n \epsilon, x)$ around $\epsilon = 0$ and find
+Since the compensator field is non-local and thus not representing a real physical particle, we can obtain a local quantity by Taylor-expanding $U(x + n \epsilon, x)$ for small distances $\epsilon$ around $\epsilon = 0$ and find
 
 \begin{align*}
     U(x,x + \epsilon n) &\approx U(x,x) + \frac{1}{1!} \frac{ \partial U }{ \partial x^{\mu} } \frac{ \partial (x^{\mu} + \epsilon n^{\mu}) }{ \partial \epsilon } \Biggr \rvert_{\epsilon = 0} \cdot \epsilon + O(\epsilon^2) \\
@@ -487,7 +488,7 @@ which leads directly to the definition of the \df{gauge covariant derivative}
     D_{\mu} \coloneqq \partial_{\mu} + ig A_{\mu}^a(x) T^a. \label{eq:cov_derivative}
 \end{align}
 
-Since we introduced a new field and by this a corresponding particle, in order for the particle to have a propagator, we also have to implement a kinetic term that is quadratic in $A_{\mu}^a$ or its derivatives. Obviously, the kinetic term should be invariant under $SU(N)$ transformations as well. For this we need the plaquette\footnote{There are other (probably simpler and more elegant) methods to derive a kinetic term for the gauge fields, but the plaquette will arise again later in context of lattice gauge theories. And as a physicist sometimes one has to go though some pain and suffer a little bit here and there -- this is part of the game.}.
+We introduced a new field -- and by this a corresponding particle. In order for the particle to have a propagator, we also have to implement a kinetic term that is quadratic in $A_{\mu}^a$ or its derivatives. Obviously, the kinetic term should be invariant under $SU(N)$ transformations as well. For this we need the plaquette\footnote{There are other (probably simpler and more elegant) methods to derive a kinetic term for the gauge fields, but the plaquette will arise again later in context of lattice gauge theories. And as a physicist sometimes one has to go though some pain and suffer a little bit here and there -- this is part of the game.}.
 
 \begin{definition}[Plaquette]
 
@@ -507,9 +508,9 @@ Let $n_1 \neq n_2$ be two 4-vectors and $\epsilon > 0$. The \df{plaquette} (see 
 
 \end{definition}
 
-The plaquette $\hat{U}_{n_1,n_2}(\epsilon,x)$ is not invariant under $SU(N)$, but its trace over color space $tr(\hat{U}_{n_1,n_2}(\epsilon,x))$ is, because of the cyclicity of the trace. In the continuum theory the compensator field $U(x,y)$ is understood as the parallel transport of a curve connecting $x$ and $y$.
+The plaquette $\hat{U}_{n_1,n_2}(\epsilon,x)$ is not invariant under $SU(N)$, but its trace over color space\footnote{With trace over color space, we mean the partial trace over the color part in a tensor product of spinor- (S), color- (C) and Lorentz- (L) or other spaces. The trace function may then be decorated with the space if it's not clear from context, for example $tr_C(U)$.} is, $tr_C(\hat{U}_{n_1,n_2}(\epsilon,x))$, because of the cyclicity of the trace. In the continuum theory the compensator field $U(x,y)$ is understood as the parallel transport of a curve connecting $x$ and $y$.
 
-\begin{theorem}[The compensator field $U(x,y)$ as parallel transporter]
+\begin{theorem}[The compensator field $U(x,y)$ as parallel transport]
 
 \label{thm:pexp}
 
@@ -607,7 +608,7 @@ By staring long enough at this expression, we see that there are a lot of terms 
     \hat{U}_{n_1,n_2}(\epsilon,x) = \exp \Bigg( -ig \epsilon^2 [ \underbrace{\partial_1 A_2^a(x) - \partial_2 A_1^a(x) + g f^{abc} A_1^b(x) A_2^c(x)}_{\eqqcolon F_{12}^a} ] T^a + O(\epsilon^3) \Bigg), \numberthis \label{eq:plaq_exp}
 \end{align*}
 
-where we used the totally anti-symmetric \df{structure constants} of the Lie-algebra defined via the commutation relations $[T^a,T^b] = i f^{abc}T^c$.
+where we used the totally anti-symmetric \df{structure constants} of the Lie-algebra defined over the commutation relations $[T^a,T^b] = i f^{abc}T^c$.
 
 \begin{comment}
 
@@ -646,7 +647,7 @@ The quadratic terms in the Lagrangian are always of the form $-\frac{1}{2} (\tex
     \mathcal{L} = -\frac{1}{4} F_{\mu \nu}^a F^{\mu \nu, a} + \bar{\psi} \left( i \slashed{D} - m \right) \psi, \label{eq:ymlagrangian}
 \end{align}
 
-where $\slashed{D} = \gamma^{\mu} D_{\mu}$ is the \df{Feynman slash notation}. Just as in the Abelian theory, there is no term quadratic in $A$, $m_A A_{\mu}^a A^{\mu,a}$, a mass-term for the gauge fields, because this would violate the $SU(N)$-invariance. The fundamental vector particle which is represented by the field must therefore be massless $m_A = 0$. The constant $g$ can be interpreted as \df{coupling constant}. The terms in the above Lagrangian are the only ones that can appear if we demand the space-time to have $D=4$ dimensions, parity- (P) and time-reversal- (T) invariance. The gauge part of the Lagrangian employs interactions among the gauge fields, namely the theory is equipped with pure 3- and 4-vertices of gauge bosons.
+where $\slashed{D} = \gamma^{\mu} D_{\mu}$ is the \df{Feynman slash notation}. Just as in the abelian theory, there is no term quadratic in $A$, $m_A A_{\mu}^a A^{\mu,a}$, a mass-term for the gauge fields, because this would violate the $SU(N)$-invariance. The fundamental vector particles which are represented by these fields must therefore be massless $m_A = 0$. The constant $g$ can be interpreted as \df{coupling constant}. The terms in the above Lagrangian are the only ones that can appear if we demand the space-time to have $D=4$ dimensions, parity- (P) and time-reversal- (T) invariance. The gauge part of the Lagrangian employs interactions among the gauge fields, namely the theory is equipped with pure 3- and 4-vertices of gauge bosons.
 
 \subsection{Euclidean theory}
 
@@ -663,13 +664,13 @@ with fermion- (F) and gauge-part (G)
     \mathcal{L}_G^M &= - \frac{1}{4} F_{\mu \nu}^a F_a^{\mu \nu},
 \end{align*}
 
-where -- for simplicity -- there is only one fundamental Dirac spinor field with mass $m$, $D_{\mu} = \partial_{\mu} + ig A_{\mu}^a(x) T^a$ is the \df{gauge covariant derivative} (see equation \eqref{eq:cov_derivative}), $T^a$ are the generators of the Lie-algebra of the gauge group and $A_{\mu}^a(x)$ are the (massless) gauge fields introduced in the previous section \ref{sec:gauge_theories}. The (color) index $a$ runs from $1$ to $N^2-1$, where $N$ is degree of the special unitary symmetry group $SU(N)$. The \df{field strength tensor} is defined as (see equation \eqref{eq:ymtensor})
+where -- for simplicity -- there is only one fundamental Dirac spinor field with mass $m$, $D_{\mu} = \partial_{\mu} + ig A_{\mu}^a(x) T^a$ is the \df{gauge covariant derivative} (see equation \eqref{eq:cov_derivative}), $T^a$ are the generators of the Lie-algebra of the gauge group and $A_{\mu}^a(x)$ are the (massless) gauge fields introduced in the previous section \ref{sec:gauge_theories}. The color index $a$ runs from $1$ to $N^2-1$, where $N$ is degree of the special unitary symmetry group $SU(N)$. The \df{field strength tensor} is defined as (see equation \eqref{eq:ymtensor})
 
 \begin{align*}
     F_{\mu \nu}^a = \partial_{\mu} A_{\nu}^a - \partial_{\nu} A_{\mu}^a - g f_{abc} A_{\mu}^b A_{\nu}^c.
 \end{align*}
 
-The (Minkowski) action is defined as usual as the integral over space-time of the Lagrangian
+The (Minkowski) action is defined as usual, the integral over space-time of the Lagrangian
 
 \begin{align*}
     \mathcal{S}_{YM}^M = \int d^4x \mathcal{L}_{YM}^M.
@@ -859,7 +860,7 @@ Since the fermion fields take Grassmannian values, they can be integrated analyt
     Z = \int \mathcal{D} A \det(D) e^{i\mathcal{S}_{G}[A]},
 \end{align*}
 
-where $D$ is the \df{Dirac-operator} in continuum theory, $D = i\gamma^{\mu} D_{\mu} - m$. Unfortunately, the determinant of $D$ depends on the gauge fields $A_{\mu}^a$, thus we cannot pull the term out of the integral\footnote{In the Abelian theory it \textit{is} independent and \textit{can} be pulled out. In the expectation value \eqref{eq:expectation_value} this determinant then cancels the one in the numerator very conveniently.}.
+where $D$ is the \df{Dirac-operator} in continuum theory, $D = i\gamma^{\mu} D_{\mu} - m$. Unfortunately, the determinant of $D$ depends on the gauge fields $A_{\mu}^a$, thus we cannot pull the term out of the integral\footnote{In the abelian theory it \textit{is} independent and \textit{can} be pulled out. In the expectation value \eqref{eq:expectation_value} this determinant then cancels the one in the numerator very conveniently.}.
 
 \begin{comment}
 TODO:
@@ -870,7 +871,7 @@ non-abelian, hadronic physics, importance, renormalization problems, running cou
 
 \label{sec:lattice_gauge_theories}
 
-Non-Abelian gauge theories with a certain number of fundamental fermionic particles can have the property of asymptotic freedom, meaning that the strength of the interaction becomes asymptotically weak as the distance between elementary particles decreases and the energy scale increases. Perturbatively such theories can be treated only in the high energy regime, where the running coupling constant is small to allow perturbative expansion of the problem. Consequently, at low energies the interaction is strong leading to confinement. Lattice gauge theory is a non-perturbative approach to deal with aforementioned theories in the low energy regime by discretising the problem on a finite space-time lattice. The finiteness of the lattice volume results in a momentum cut-off $\sim 1/a$ curing IR-divergences, where $a$ is the lattice spacing. The finiteness of the lattice spacing on the other hand results in a cut-off $\sim a$ curing UV-divergences. Lattice discretisation of a field theory therefore acts as regularisation scheme.
+Non-abelian gauge theories with a certain number of fundamental fermionic particles can have the property of asymptotic freedom, meaning that the strength of the interaction becomes asymptotically weak as the distance between elementary particles decreases and the energy scale increases. Perturbatively such theories can be treated only in the high energy regime, where the running coupling constant is small to allow perturbative expansion of the problem. Consequently, at low energies the interaction is strong leading to confinement. Lattice gauge theory is a non-perturbative approach to deal with aforementioned theories in the low energy regime by discretising the problem on a finite space-time lattice. The finiteness of the lattice volume results in a momentum cut-off $\sim 1/a$ curing IR-divergences, where $a$ is the lattice spacing. The finiteness of the lattice spacing on the other hand results in a cut-off $\sim a$ curing UV-divergences. Lattice discretisation of a field theory therefore acts as regularisation scheme.
 
 \subsection{Lattice Discretisation}
 
@@ -962,7 +963,7 @@ The lattice is structured as in figure \ref{fig:link_variable}.
   \centering
   %\includestandalone[]{schemes/link_variable}
   \subimport{schemes/}{link_variable}
-  \caption{Cutout of a lattice. The point in the middle is denoted by the integer four-vector \textcolor{cblue}{$n$}, the value of the fermion-field at that point is $\psi(x)$, with $x=na$. In this 2D slice, the field at that point is connected to its neighbouring lattice points \textcolor{cblue}{$n \pm \hat{\mu}$} and \textcolor{cblue}{$n \pm \hat{\nu}$} via the link variables \textcolor{cred}{$U_{\pm\mu}(n)$} and \textcolor{cgreen}{$U_{\pm\nu}(n)$} (coming from the discretised derivative). The link variables can be thought of as lying in-between the lattice points.}
+  \caption{Cut-out of a lattice. The point in the middle is denoted by the integer four-vector \textcolor{cblue}{$n$}, the value of the fermion-field at that point is $\psi(x)$, with $x=na$. In this 2D slice, the field at that point is connected to its neighbouring lattice points \textcolor{cblue}{$n \pm \hat{\mu}$} and \textcolor{cblue}{$n \pm \hat{\nu}$} via the link variables \textcolor{cred}{$U_{\pm\mu}(n)$} and \textcolor{cgreen}{$U_{\pm\nu}(n)$} (coming from the discretised derivative). The link variables can be thought of as lying in-between the lattice points.}
   \label{fig:link_variable}
 \end{figure}
 
@@ -1067,7 +1068,7 @@ The probability density in the last line is set to $P(U) \coloneqq Z^{-1} e^{-S[
     \langle \mathcal{O}[U] \rangle \approx \frac{1}{N} \sum_{i=1}^N \mathcal{O}[U_i], \label{eq:sample_mean}
 \end{align}
 
-where $U_i$ denotes the $i$-th field configuration and $N$ is the total number of configurations considered. Clearly, the $U_i$ in the expression above are sampled according to the probability density $P(U)$. This is called \df{importance sampling}. The statistical error is $O(N^{-\frac{1}{2}})$. A large part of active and past research in lattice gauge theories consists of finding clever trickery to calculate the sum and restricting it to only the best field configurations $U_i$. An approximation called \acrfull{qqcd} just sets $\det(D) = const.$, making $tr(\log D) = 0$, leading to a theory similar to \acrshort{qed}, because the determinant cancels just as in the Abelian case. Another approach is to use the hopping expansion to calculate the determinant,
+where $U_i$ denotes the $i$-th field configuration and $N$ is the total number of configurations considered. Clearly, the $U_i$ in the expression above are sampled according to the probability density $P(U)$. This is called \df{importance sampling}. The statistical error is $O(N^{-\frac{1}{2}})$. A large part of active and past research in lattice gauge theories consists of finding clever trickery to calculate the sum and restricting it to only the best field configurations $U_i$. An approximation called \acrfull{qqcd} just sets $\det(D) = const.$, making $tr(\log D) = 0$, leading to a theory similar to \acrshort{qed}, because the determinant cancels just as in the abelian case. Another approach is to use the hopping expansion to calculate the determinant,
 
 \begin{align*}
     \det(D) = C \det(id - \kappa H) = C \exp\big(tr \log(id - \kappa H)\big) = C \exp(- \sum_{n=1}^{\infty} \frac{\kappa^n}{n} tr(H^n)).
@@ -1092,7 +1093,7 @@ value of a Wilson loop in a theory where e^S = 1.
 
 \subsection{Pseudofermions}
 
-One way to introduce physical fermions into the lattice description of our theory is to rewrite the determinant in the expectation value \eqref{eq:expectation_value} in terms of fermion fields (having spinor indices) that behave statistically as bosonic fields (they commute), so called \df{pseudofermions}\footnote{There is some similarity to Faddeev–Popov ghosts in the sense that both fields are unphysical. Ghosts are anti-commuting bosonic (scalar) fields that have to be introduced when fixing the gauge in non-Abelian gauge theories.}. Using propositions \ref{prop:gauss_integral} and \ref{prop:grassmann_integral} we can write
+One way to introduce physical fermions into the lattice description of our theory is to rewrite the determinant in the expectation value \eqref{eq:expectation_value} in terms of fermion fields (having spinor indices) that behave statistically as bosonic fields (they commute), so called \df{pseudofermions}\footnote{There is some similarity to Faddeev–Popov ghosts in the sense that both fields are unphysical. Ghosts are anti-commuting bosonic (scalar) fields that have to be introduced when fixing the gauge in non-abelian gauge theories.}. Using propositions \ref{prop:gauss_integral} and \ref{prop:grassmann_integral} we can write
 
 \begin{align*}
   \int \mathcal{D}\psi \mathcal{D} \bar{\psi} e^{ - \bar{\psi} D \psi } = \pi^{-V} \int \mathcal{D}\phi \mathcal{D} \phi^{\star} e^{ - \phi^{\star} D^{-1} \phi }.
@@ -1108,19 +1109,24 @@ The irrelevant factor $\pi^{-V}$ can be absorbed in a redefinition of the fields
 
 \subsection{Hybrid Monte Carlo}
 
-In openQxD, an algorithm called \acrfull{hmc} is used to generate the gauge- and fermion-field configurations that are then evaluated in the expectation value \eqref{eq:sample_mean}. A Monte Carlo simulation consists of creating a Markov chain of field configurations according to a probability distribution. A \df{Markov chain} is a sequence of random values where each value depends only on its predecessor. When a new field configuration is accepted\footnote{via an acceptance probability}, it is called a \df{Monte Carlo step} or \df{update step}. The crucial ingredient is that field configurations with a large weight $e^{-S}$ are visited more often than configurations with small weight. Finding these random quantities with a large weight is a non-trivial task for multiple reasons: boundary condition have to be obeyed, $SU(3)$ valued quantities contain a lot of dependencies, strong ergodicity in the transition probability from one configuration to another has to be concerned \cite{finkler2020,adler1988}, a high acceptance rate is desirable since every step in the Markov chain includes inversions of the Dirac-operator \cite{gupta1990}, the random number generator has to be able to produce large amounts of random numbers in a short time \cite{gentle2003} and many more.
+In openQ*D, an algorithm called \acrfull{hmc} is used to generate the gauge- and fermion-field configurations that are then evaluated in the expectation value \eqref{eq:sample_mean}. A Monte Carlo simulation consists of creating a Markov chain of field configurations according to a probability distribution. A \df{Markov chain} is a sequence of random values where each value depends only on its predecessor. When a new field configuration is accepted\footnote{via an acceptance probability}, it is called a \df{Monte Carlo step} or \df{update step}. The crucial ingredient is that field configurations with a large weight $e^{-S}$ are visited more often than configurations with small weight. Finding these random quantities with a large weight is a non-trivial task for multiple reasons: boundary condition have to be obeyed, $SU(3)$ valued quantities contain a lot of dependencies, strong ergodicity in the transition probability from one configuration to another has to be concerned \cite{finkler2020,adler1988}, a high acceptance rate is desirable since every step in the Markov chain includes inversions of the Dirac-operator \cite{gupta1990}, the random number generator has to be able to produce large amounts of random numbers in a short time \cite{gentle2003} and many more.
 
 The \acrshort{hmc} algorithm \cite{duane1987} features reduced correlations among Markov steps and thus fewer required samples in order to produce enough field configurations to evaluate the sample mean. Once high, the acceptance probability can be held high, because HMC conducts Markov steps among field configurations that approximately conserve energy, thus the action is conserved as well. We will not dig deeper into this vast and fascinating topic since it would go far beyond the scope of this document.
 
-\section{OpenQxD}
+\section{OpenQ*D}
 
 \label{sec:openqxd}
 
-The open-source software OpenQxD code has been used by the RC* collaboration for the generation of fully dynamical QCD+QED gauge configurations with C* boundary conditions and $O(a)$-improved Wilson-fermions. Its codebase is written completely parallel using MPI and thus designed for portable and scalable large-scale parallel applications. Its scalability is only limited by the CPU- and memory-resources of classical supercomputing platforms\footnote{The term "classical" in this context refers to supercomputing facilities without GPU accelerators.}. With its parallel design approach, enormous lattice sizes of $96^4 \times n$ are achievable, where $n$ is the number of ranks/processes used by the MPI library.
+The open-source software OpenQ*D code has been used by the RC* collaboration for the generation of fully dynamical QCD+QED gauge configurations with C* boundary conditions and $O(a)$-improved Wilson-fermions. Its codebase is written completely parallel using MPI and thus designed for portable and scalable large-scale parallel applications. Its scalability is only limited by the CPU- and memory-resources of classical supercomputing platforms\footnote{The term "classical" in this context refers to supercomputing facilities without GPU accelerators.}. With its parallel design approach, enormous lattice sizes of $96^4 \times n$ are achievable, where $n$ is the number of ranks/processes used by the MPI library.
 
-Unique features of openQxD include the possibility to use C* boundary conditions and its solid solver implementations are specially designed for ill-conditioned systems. The deflated solver algorithm is extended by the ability to use more than one deflation subspace in a single simulation \cite{openqxd}. Additionally, the molecular dynamics evolution of the $U(1)$-field is equipped with the possibility to employ Fourier acceleration. The optimized implementation of the Dirac-operator is inherited from the openQCD package \cite{openqcd}. The application is highly configurable given as a human-readable INI-style input file holding all adjustable parameters, except the lattice size and the number of ranks\footnote{Which are given in a global header file containing application constants, meaning that the application must be recompiled when changing the lattice size or the process layout.}.
+Unique features of openQ*D include the possibility to use C* boundary conditions and its solid solver implementations are specially designed for ill-conditioned systems. The deflated solver algorithm is extended by the ability to use more than one deflation subspace in a single simulation \cite{openqxd}. Additionally, the molecular dynamics evolution of the $U(1)$-field is equipped with the possibility to employ Fourier acceleration. The optimized implementation of the Dirac-operator is inherited from the openQCD package \cite{openqcd}. The application is highly configurable given as a human-readable INI-style input file holding all adjustable parameters, except the lattice size and the number of ranks\footnote{Which are given in a global header file containing application constants, meaning that the application must be recompiled when changing the lattice size or the process layout.}.
 
-Notable as well is the archaic C-89 standard and the style of code that reflects the age of the software\footnote{To name some; a lot of pointer arithmetic, functional programming style, no comments within the code, some reinventions of the wheel, manual garbage collection, \textit{very} short variable names that are meaningless to the reader, type casting in a standard with unspecified behaviour for type castings, code that is broken by compiler optimization flags, little code-reusage, platform-specific intrinsics, own testing suite implementation, own parser for input files. This comment should by no means be misunderstood as being disrespectful, it's a modern developer's opinion. I just wanted to constructively mention parts that made it (unnecessarily) hard for me as a newcomer to engage with the code, blindly assuming that other beginners might have the same experience.}. On the other hand, the clean and concise memory layout must be stressed and the coherency in the code that always shows the same coding and naming principles throughout the whole codebase.
+Notable as well is the archaic C-89 standard and the style of code that reflects the age of the software\footnote{It has the typical caveats that come with older software that grew over time, for example: no comments within the code, excessive use of pointer arithmetic or code that is broken by compiler optimization flags. This comment should by no means be misunderstood as being disrespectful, it's an opinion of a modern developer. I just wanted to constructively mention difficulties that made it (unnecessarily) hard for me as a newcomer to engage with the code, naively assuming that other beginners might have a similar experience.
+
+%To name some; a lot of pointer arithmetic, functional programming style, no comments within the code, some reinventions of the wheel, manual garbage collection, \textit{very} short variable names that are meaningless to the reader, type casting in a standard with unspecified behaviour for type castings, code that is broken by compiler optimization flags, little code-reusage, platform-specific intrinsics, own testing suite implementation, own parser for input files.
+
+}. On the other hand, the clean and concise memory layout must be stressed and the coherency in the code that always shows the same coding and naming principles throughout the entire codebase.
+
 
 %TODO: rework the footnote above
 
@@ -1135,11 +1141,11 @@ the software package openQxD: description
 
 \subsection{IEEE Standard for Floating-Point Arithmetic}
 
-Floating-point numbers are omnipresent in scientific applications. In the \acrfull{cg} kernel of openQxD \cite{openqxd}, large scalar products appear over vectors of high dimensionality over multiple ranks. The components of these vectors are single precision floating-point numbers (called \gls{binary32} from here on). The precision was reduced from \gls{binary64} to \gls{binary32} already and a speedup of roughly a factor of 2 was achieved. This motivates to explore even smaller floating-point formats with encoding lengths of 16 bits. Since scalar products as well as matrix-vector products are memory-bound operations, going to a smaller bit-length will increase the throughput of the calculation. Therefore, a 16 bits floating-point format with a smaller exponent could lead to a double of performance if the new operation is still memory-bound.
+Floating-point numbers are omnipresent in scientific applications. In the \acrfull{cg} kernel of openQ*D \cite{openqxd}, large scalar products appear over vectors of high dimensionality over multiple ranks. The components of these vectors are single precision floating-point numbers (called \gls{binary32} from here on). The precision was reduced from \gls{binary64} to \gls{binary32} already and a speedup of roughly a factor of 2 was achieved. This motivates to explore even smaller floating-point formats with encoding lengths of 16 bits. Since scalar products as well as matrix-vector products are memory-bound operations, going to a smaller bit-length will increase the throughput of the calculation. Therefore, a 16 bits floating-point format with a smaller exponent could lead to a double of performance if the new operation is still memory-bound.
 
 \begin{definition}[IEEE 754 Floating-point format]
 
-The \df{IEEE 754 floating-point format} \cite{ieee754_1985} is defined using the \df{number of exponent bits} $e$ and the \df{number of mantissa bits} $m$ respectively. A binary floating-point number is illustrated in Figure \ref{fig:float}.
+The \df{IEEE 754 floating-point format} \cite{ieee754_1985} is defined using the \df{number of exponent bits} $e$ and the \df{number of mantissa bits} $m$ respectively. A binary floating-point number is illustrated in figure \ref{fig:float}.
 
 \begin{figure}[H]
   %\includestandalone[width=\textwidth]{schemes/float}
@@ -1183,7 +1189,7 @@ The IEEE 754 standard introduces so called \df{subnormal numbers}. If all the ex
 \end{definition}
 
 \begin{remark}
-    Subnormal numbers have a variable-length mantissa and exponent, because some of the mantissa bits are used as additional exponent bits, making the numbers less precise the smaller they are (see the smooth cut-off in Figure \ref{fig:number_line}).
+    Subnormal numbers have a variable-length mantissa and exponent, because some of the mantissa bits are used as additional exponent bits, making the numbers less precise the smaller they are (see the smooth cut-off in figure \ref{fig:number_line}).
 \end{remark}
 
 Therefore, the mantissa of a regular (non-subnormal) number is (when the exponent $0<E<B$, this implies that the implicit bit is $1$)
@@ -1216,7 +1222,7 @@ The $1$ or $0$ in the front of the summand is the leading \df{\textcolor{cyellow
     The mantissa range of a regular floating-point number is $M \in [1, 2)$, while the mantissa range of a subnormal floating-point number is $M \in (0, 1)$. The number zero is not considered subnormal.
 \end{remark}
 
-The most common floating-point formats are summarised in Table \ref{tab:formats}.
+The most common floating-point formats are summarised in table \ref{tab:formats}.
 
 \bgroup
 \def\arraystretch{1.2}%  1 is the default, change whatever you need
@@ -1308,7 +1314,7 @@ The \df{minimal subnormal representable number above \num{0}} in any floating-po
 
 \end{definition}
 
-See Table \ref{tab:float:limits} for these limiting numbers in the different floating-point formats.
+See table \ref{tab:float:limits} for these limiting numbers in the different floating-point formats.
 
 \bgroup
 \def\arraystretch{1.2}%  1 is the default, change whatever you need
@@ -1390,7 +1396,7 @@ The posit data type is designed to be a replacement for the IEEE floating-point 
 
 \footnotetext{There was even a system using IEEE 754 that had non-commutative floating-point operations \cite{cody1980}.}
 
-The goal is to utilise the number of bits more efficiently and remove these inconsistencies. The key idea is to place half of all numbers between $0$ and $1$ and the other half are the reciprocals (the reciprocal of $0$ being $\pm \infty$). The number can then be drawn on a projective real number circle \cite{gustafson2017}. The structure of a binary posit number is illustrated in Figure \ref{fig:posit}.
+The goal is to utilise the number of bits more efficiently and remove these inconsistencies. The key idea is to place half of all numbers between $0$ and $1$ and the other half are the reciprocals (the reciprocal of $0$ being $\pm \infty$). The number can then be drawn on a projective real number circle \cite{gustafson2017}. The structure of a binary posit number is illustrated in figure \ref{fig:posit}.
 
 \begin{figure}[H]
   %\includestandalone[width=\textwidth]{schemes/posit}
@@ -1445,7 +1451,7 @@ The \df{minimal representable number above \num{0}} in any posit format is the r
 
 \end{definition}
 
-See Table \ref{tab:posit:limits} for these limiting numbers in the different posit formats.
+See table \ref{tab:posit:limits} for these limiting numbers in the different posit formats.
 
 \bgroup
 \def\arraystretch{1.2}%  1 is the default, change whatever you need
@@ -1486,20 +1492,20 @@ See Table \ref{tab:posit:limits} for these limiting numbers in the different pos
 \end{table}
 \egroup
 
-\footnotetext{Number of significant digits in decimal; $-\log_{10} (\code{MACHINE\_EPSILON})$. Notice that posits have \df{tapered accuracy}; numbers near \num{1} have much more precision than numbers at the borders of the regime. The precision of floats decreases as well with very large and small numbers, but posit precision decreases faster, see Figure \ref{fig:number_line}.}
+\footnotetext{Number of significant digits in decimal; $-\log_{10} (\code{MACHINE\_EPSILON})$. Notice that posits have \df{tapered accuracy}; numbers near \num{1} have much more precision than numbers at the borders of the regime. The precision of floats decreases as well with very large and small numbers, but posit precision decreases faster, see figure \ref{fig:number_line}.}
 
 Posits employ a feature called the \gls{quire}, which is the generalised answer to the \gls{fma} operation that recently found its way into \cite{ieee754_2008} in 2008, where the rounding is deferred to the very end of the operation.
 
 \begin{figure}
     \centering
     \includegraphics[width=1.0\textwidth]{plots/number_line}
-    \caption{Density or distribution of numbers for \gls{tensorfloat32}, \gls{binary16}, \gls{posit16} and \gls{bfloat16}. The number of bins was chosen to be \num{1024} of logarithmic width. The IEEE conformant floats \gls{tensorfloat32}, \gls{binary16} and \gls{bfloat16} show a similar shape, namely the distribution of numbers is exponentially decreasing for higher and smaller numbers. The high numbers undergo a rough cut-off at the highest representable number. Numbers above that value will be cast to infinity. Compared to this, the small numbers show a smooth cut-off, because of the existence subnormal numbers. The range of \gls{posit16} is larger than the range of \gls{binary16}, but especially in the exceedingly small numbers this difference in range is negligible. Some features of posits can be observed. First, their distribution is symmetric around \num{1}, because posits have no subnormals. Second, more numbers are closer to \num{1} than in case of floats; the closer to \num{1}, the better the number resolution. Closest to \num{1}, the number resolution becomes better than \gls{binary16} resolution. Third, posits have neither a fixed-length mantissa nor exponent. That is the reason the height of the posit shape depends on the number regime, which happens for floats only in the subnormal regime, where the exponent and mantissa are indeed of variable length. For all formats, the amount of numbers decreases exponentially when going away from \num{1}, but posits decrease faster. This suggests that when calculating in the number regime close to \num{1} posits might be the better choice, but when numbers span the whole number range equally, floats might be superior. In the latter case one has to take care about over- and underflows. Notice that the height of the shape is determined by the number of mantissa bits, therefore giving the precision, while the width is determined by the number of exponent bits, therefore giving the number range. For example, \gls{tensorfloat32} and \gls{binary16} have a vastly different number range but show the same precision for numbers in their intersection, meaning that \gls{binary16} is a subset of \gls{tensorfloat32}. On the other hand, \gls{tensorfloat32} and \gls{bfloat16} have approximately the same number range, but different precisions in them, meaning that \gls{bfloat16} is a subset of \gls{tensorfloat32}, which itself is a subset of \gls{binary32}. Notice that when plotting \gls{binary32} and \gls{posit32} in such a plot, they would look similar to \gls{binary16} and \gls{posit16}.}
+    \caption{Density or distribution of numbers for \gls{tensorfloat32}, \gls{binary16}, \gls{posit16} and \gls{bfloat16}. The number of bins was chosen to be \num{1024} of logarithmic width. The IEEE conformant floats \gls{tensorfloat32}, \gls{binary16} and \gls{bfloat16} show a similar shape, namely the distribution of numbers is exponentially decreasing for higher and smaller numbers. The high numbers undergo a rough cut-off at the highest representable number. Numbers above that value will be cast to infinity. Compared to this, the small numbers show a smooth cut-off, because of the existence subnormal numbers. The range of \gls{posit16} is larger than the range of \gls{binary16}, but especially in the exceedingly small numbers this difference in range is negligible. Some features of posits can be observed. First, their distribution is symmetric around \num{1}, because posits have no subnormals. Second, more numbers are closer to \num{1} than in case of floats; the closer to \num{1}, the better the number resolution. Closest to \num{1}, the number resolution becomes better than \gls{binary16} resolution. Third, posits have neither a fixed-length mantissa nor exponent. That is the reason the height of the posit shape depends on the number regime, which happens for floats only in the subnormal regime, where the exponent and mantissa are indeed of variable length. For all formats, the amount of numbers decreases exponentially when going away from \num{1}, but posits decrease faster. This suggests that when calculating in the number regime close to \num{1} posits might be the better choice, but when numbers span the entire number range equally, floats might be superior. In the latter case one has to take care about over- and underflows. Notice that the height of the shape is determined by the number of mantissa bits, therefore giving the precision, while the width is determined by the number of exponent bits, therefore giving the number range. For example, \gls{tensorfloat32} and \gls{binary16} have a vastly different number range but show the same precision for numbers in their intersection, meaning that \gls{binary16} is a subset of \gls{tensorfloat32}. On the other hand, \gls{tensorfloat32} and \gls{bfloat16} have approximately the same number range, but different precisions in them, meaning that \gls{bfloat16} is a subset of \gls{tensorfloat32}, which itself is a subset of \gls{binary32}. Notice that when plotting \gls{binary32} and \gls{posit32} in such a plot, they would look similar to \gls{binary16} and \gls{posit16}.}
     \label{fig:number_line}
 \end{figure}
 
-\subsection{Floating-point numbers in openQxD}
+\subsection{Floating-point numbers in openQ*D}
 
-To explore how the conjugate gradient kernel in openQxD would perform when using smaller bit lengths, one can look at the exponential of the numbers in the matrix and vectors, see Figure \ref{fig:exponents}. The plot shows all exponents appearing together with their overall occurrence in percent. The number zero was taken from the plot, because it has biased exponent $E=-127$. The occurrences for zero are given in the legend.
+To explore how the conjugate gradient kernel in openQ*D would perform when using smaller bit lengths, one can look at the exponential of the numbers in the matrix and vectors, see figure \ref{fig:exponents}. The plot shows all exponents appearing together with their overall occurrence in percent. The number zero was taken from the plot, because it has biased exponent $E=-127$. The occurrences for zero are given in the legend.
 
 The highest exponent in all 4 runs was $E=4$, while the lowest exponent decreased when the number of lattice points increased. The range of exponents that is representable in \gls{binary16} spans from \textcolor{corange}{$-24$} to \textcolor{cpink}{$+16$} and is indicated by the \textcolor{corange}{solid orange line} and the \textcolor{cpink}{solid pink line}. Between \textcolor{corange}{$-24$} and \textcolor{cblue}{$-14$} is the regime of subnormal numbers in \gls{binary16}, with the lowest regular (non-subnormal) exponent indicated by the \textcolor{cblue}{solid blue line}. When using half precision instead of single precision, all numbers with exponents below \textcolor{corange}{$-24$}, will be converted to zero, while exponents above \textcolor{cpink}{$+16$} will be cast to $\pm \infty$ depending on the sign of the number. It can be seen, that when calculating the norm of these numbers, only numbers between the \textcolor{cblue}{dashed blue line} and the \textcolor{cpink}{dashed pink line} will participate. If there is a number above the dashed pink line in the \textcolor{cyellow}{unsafe region} this number will -- after squaring -- be cast to $\infty$ and therefore the norm will be $\infty$ as well\footnotemark. In this case the variable holding the norm $x = \norm{\vec{v}}$ should be of higher precision than \gls{binary16}. The plot shows that the Dirac matrix \code{Dop()} is confined in a narrow exponent regime and a representation in 16-bit floats would suffice. Notice the sparsity of the Dirac matrix.
 
@@ -1508,12 +1514,12 @@ The highest exponent in all 4 runs was $E=4$, while the lowest exponent decrease
 \begin{figure}
     \centering
     \includegraphics[width=1.0\textwidth]{plots/exponents_dirac}
-    \caption{Exponent distribution of \gls{binary32} single precision floats in the residual vectors of all steps in a conjugate gradient run in openQxD as well as entries of the Dirac-operator. 4 runs were made, with local lattice size of $4^4$ and $8^4$ on one single rank and $4$ ranks, respectively. The number is normalised to $(-1)^s \cdot M \cdot 2^{E}$, where $M \in [1, 2)$.}
+    \caption{Exponent distribution of \gls{binary32} single precision floats in the residual vectors of all steps in a conjugate gradient run in openQ*D as well as entries of the Dirac-operator. 4 runs were made, with local lattice size of $4^4$ and $8^4$ on one single rank and $4$ ranks, respectively. The number is normalised to $(-1)^s \cdot M \cdot 2^{E}$, where $M \in [1, 2)$.}
     \label{fig:exponents}
 \end{figure}
 
 
-\section{Conjugate Gradient algorithm}
+\section{Conjugate Gradient}
 
 \label{sec:cg}
 
@@ -1727,7 +1733,7 @@ This implies that for $j>i$ and $i \in \{0, \dots, n-1\}$, we have
     \vec{p}_i^{\dagger} A \vec{p}_j = 0.
 \end{align*}
 
-But since $A$ is Hermitian, we can Hermitian conjugate the whole expression above and obtain
+But since $A$ is Hermitian, we can Hermitian conjugate the entire expression above and obtain
 
 \begin{align*}
     0 = \left( \vec{p}_i^{\dagger} A \vec{p}_j \right)^{\dagger} = \vec{p}_j^{\dagger} A \vec{p}_i.
@@ -1903,7 +1909,7 @@ There are some remarks to note about the method of conjugate gradient.
 \end{remark}
 
 \begin{remark}
-    In the source code of openQxD (see \cite{openqxd}) the matrix $A$ is the Dirac matrix applied twice $A = D^{\dagger} D$. This means that the denominator of $\alpha_i$ is a regular inner product as well; $\vec{p}_i^{\dagger} A \vec{p}_i = \vec{p}_i^{\dagger} D^{\dagger} D \vec{p}_i = \left( D \vec{p}_i \right)^{\dagger} \left( D \vec{p}_i \right) = \norm{ D \vec{p}_i }^2$.
+    In the source code of openQ*D (see \cite{openqxd}) the matrix $A$ is the Dirac matrix applied twice $A = D^{\dagger} D$. This means that the denominator of $\alpha_i$ is a regular inner product as well; $\vec{p}_i^{\dagger} A \vec{p}_i = \vec{p}_i^{\dagger} D^{\dagger} D \vec{p}_i = \left( D \vec{p}_i \right)^{\dagger} \left( D \vec{p}_i \right) = \norm{ D \vec{p}_i }^2$.
 \end{remark}
 
 \begin{remark}
@@ -1966,7 +1972,7 @@ There are some remarks to note about the method of conjugate gradient.
 
 \end{remark}
 
-\subsection{CG kernel in openQxD}
+\subsection{CG kernel in openQ*D}
 
 \label{sec:fp_in_openqxd}
 
@@ -1983,7 +1989,7 @@ Other possibility: "reliable updates" scheme:
     language=C,
     firstnumber=429,
     label=lst:cgne,
-    caption={The conjugate gradient kernel in \code{modules/linsolv/cgne.c} line \num{429}ff. The volume of the lattice is given by \code{vol}, \code{icom} is a communication control parameter, \code{Dop()} and \code{Dop\_dble()} are the Dirac-operators in single and double-precision, \code{ws} and \code{wsd} are workspace allocations. The remaining parameters are the maximum number of iterations \code{nmx}, the relative residue \code{res}, the source spinor \code{eta}, the starting spinor also holding the result after the run \code{psi} and \code{status} holds the number of CG-steps performed.}
+    caption={The conjugate gradient kernel in \code{modules/linsolv/cgne.c} line \num{429}ff. The volume of the lattice is given by \code{vol}, \code{icom} is a communication control parameter, \code{Dop()} and \code{Dop\_dble()} are the Dirac-operators in single and double-precision, \code{ws} and \code{wsd} are workspace allocations. The remaining parameters are the maximum number of iterations \code{nmx}, the relative residue \code{res}, the source spinor \code{eta}, the starting spinor also holding the result after the run \code{psi} and \code{status} holds the number of CG-steps performed. The return value is the norm of the residual of the current solution.}
 ]
 double cgne(int vol,int icom,void (*Dop)(spinor *s,spinor *r),
             void (*Dop_dble)(spinor_dble *s,spinor_dble *r),
@@ -2023,7 +2029,7 @@ This may happen in 4 cases:
 
 We discuss in the following the second condition in more detail: assume the precision of \gls{binary32} is reached, but the algorithm does not break out of the main loop. Therefore, the norm of the current residual compared to the norm of the current solution vector differ in their orders of magnitude by the precision limit of their data type (\gls{binary32} in this case). This means that the solution vector $\vec{x_i}$ contains large numbers compared to the residual vector $\vec{r_i}$. Therefore, the changing in residual in successive iterations is negligible compared to numbers in $\vec{x_i}$ as well. Since $\vec{r_i}$ contains small numbers, the amounts $\alpha_i$ are small too. This causes $\vec{x_{i+1}} = \vec{x_i} + \alpha_i \vec{d_i}$ to not change anymore, because adding very large and very small numbers in floating-point arithmetic will return the larger number unchanged if the two numbers differ in magnitude by the precision limit of the data type. The algorithm stalls in that case and breaking out of the main loop is the emergency brake in such a case.
 
-When one of the above conditions is met, the algorithm performs a \df{reset step} (or \df{restart step}). In a reset step, the residual is not calculated in the recursive way (as described above in definition \eqref{def:cg}) but by its definition $\vec{r_i} = \vec{b} - A \vec{x_i}$ in double precision. Such a step involves two invocations of each \code{Dop\_dble()} as well as \code{Dop()} which is expensive. The algorithm is resetting in the sense that the solution vector is set back to $\vec{x_i} = 0$, but before resetting, the solution vector in \gls{binary32} is added to the real solution vector \code{psi} in \gls{binary64} which was initialised to zero at the start of the algorithm as well. It looks like a restart of the whole calculation, but the direction for the next iteration $\vec{d_i} = \vec{r_i}$ is set to the just calculated, more accurate residual. Therefore, the algorithm now continues in a new direction $A$-orthogonal to all previous directions and progression is kept. The step is meant to remove the accumulated round-off errors due to the recursive calculation of the residuals and directions. The first step following a reset step is a step in the direction of steepest descent like the very first step of the algorithm. The less precise the data type, the more reset steps are required, because the precision limit (case 2) is reached earlier.
+When one of the above conditions is met, the algorithm performs a \df{reset step} (or \df{restart step}). In a reset step, the residual is not calculated in the recursive way (as described above in definition \eqref{def:cg}) but by its definition $\vec{r_i} = \vec{b} - A \vec{x_i}$ in double precision. Such a step involves two invocations of each \code{Dop\_dble()} as well as \code{Dop()} which is expensive. The algorithm is resetting in the sense that the solution vector is set back to $\vec{x_i} = 0$, but before resetting, the solution vector in \gls{binary32} is added to the real solution vector \code{psi} in \gls{binary64} which was initialised to zero at the start of the algorithm as well. It looks like a restart of the entire calculation, but the direction for the next iteration $\vec{d_i} = \vec{r_i}$ is set to the just calculated, more accurate residual. Therefore, the algorithm now continues in a new direction $A$-orthogonal to all previous directions and progression is kept. The step is meant to remove the accumulated round-off errors due to the recursive calculation of the residuals and directions. The first step following a reset step is a step in the direction of steepest descent like the very first step of the algorithm. The less precise the data type, the more reset steps are required, because the precision limit (case 2) is reached earlier.
 
 \subsection{Simulating CG with different data types}
 
@@ -2033,7 +2039,7 @@ Some operations such as norms, scalar products and applications of the Dirac-ope
 
 \subsubsection{Setup}
 
-The complete conjugate gradient kernel was simulated in different data types, floats as well as posits. To produce the plot series, the Dirac matrix \code{Dop\_dble()} and the source vector $\code{eta}$ were extracted in \gls{binary64} format from the original code running a simulation of a $4^4$ lattice, \acrfull{sf} boundary conditions (\code{type 1}), no C* boundary conditions (\code{cstar 0}) and $1$ rank. The first \num{2000} trajectories were considered thermalisation. The matrix was extracted in trajectory \num{2001}. A python script mimicking the exact behaviour of the \code{cgne()} kernel from the source code, was implemented to cope with arbitrary data types. The simulated data types were \gls{binary64}, \gls{binary32}, \gls{tensorfloat32}, \gls{binary16}, \gls{bfloat16}, \gls{posit32}, \gls{posit16}, and \gls{posit8}. The considered Dirac-operator represented as a \acrshort{csr}-matrix had approximately \num{2}\% non-zero values. The results are plotted in figures \ref{fig:cgne:naive} - \ref{fig:cgne:res12}.
+The complete conjugate gradient kernel was simulated in different data types, floats as well as posits. To produce the plot series, the Dirac matrix \code{Dop\_dble()} and the source vector $\code{eta}$ were extracted in \gls{binary64} format from the original code running a simulation of a $4^4$ lattice, \acrfull{sf} boundary conditions (\code{type 1}), no C* boundary conditions (\code{cstar 0}) and $1$ rank. The first \num{2000} trajectories were considered thermalisation. The matrix was extracted in trajectory \num{2001}. A Python script mimicking the exact behaviour of the \code{cgne()} kernel from the source code, was implemented to cope with arbitrary data types. The simulated data types were \gls{binary64}, \gls{binary32}, \gls{tensorfloat32}, \gls{binary16}, \gls{bfloat16}, \gls{posit32}, \gls{posit16}, and \gls{posit8}. The considered Dirac-operator represented as a \acrshort{csr}-matrix had approximately \num{2}\% non-zero values. The results are plotted in figures \ref{fig:cgne:naive} - \ref{fig:cgne:res12}.
 
 \begin{comment}
 \begin{figure}
@@ -2070,7 +2076,7 @@ The complete conjugate gradient kernel was simulated in different data types, fl
 \begin{figure}
     \centering
     \includegraphics[width=1.0\textwidth]{plots/cgne_final_3}
-    \caption{The configuration in this series of plots is equal to Figure \ref{fig:cgne:col64}, besides the value of \code{res} -- the desired relative residue of the calculated solution -- is set to $10^{-12}$ instead of $10^{-6}$. Notice that $10^{-12}$ is outside the representable number range of the data types that did not converge; \gls{binary16}, \gls{posit16} and \gls{posit8}.}
+    \caption{The configuration in this series of plots is equal to figure \ref{fig:cgne:col64}, besides the value of \code{res} -- the desired relative residue of the calculated solution -- is set to $10^{-12}$ instead of $10^{-6}$. Notice that $10^{-12}$ is outside the representable number range of the data types that did not converge; \gls{binary16}, \gls{posit16} and \gls{posit8}.}
     \label{fig:cgne:res12}
 \end{figure}
 
@@ -2084,9 +2090,9 @@ Figures \ref{fig:cgne:naive}, \ref{fig:cgne:quire}, \ref{fig:cgne:col64} and \re
 
 where \textcolor{cturquois}{\text{bfloat16}} could be either at position \textcolor{cturquois}{\text{(1)}} or \textcolor{cturquois}{\text{(2)}}, depending on what is more important, precision or number range.
 
-\textbf{Figure \ref{fig:cgne:naive}:} In Figure \ref{fig:cgne:naive} where the original data type is naively\footnote{Naive in this context means that \textit{all} appearances of binary32-variables in the cgne-kernel were replaced by variables of simulated data type.} replaced by the simulated data type, it can be concluded that only data types with large enough number ranges converged. \gls{binary64}, \gls{binary32} and \gls{posit32} converged each after \code{status=27} steps with one reset step. The less precise \gls{tensorfloat32} took \code{status=27} ($+3$) and the even less precise \gls{bfloat16} required \code{status=32} ($+5$) steps. Such a hierarchical result was expected since they have the same exponent range and thus approximately the same number range but differ only in precision (see Table \ref{tab:formats}). Notice that the less precise the data type, the more reset steps are needed. This happens because the precision limit of the simulated data type is reached faster if the data type has less precision.
+\textbf{Figure \ref{fig:cgne:naive}:} In figure \ref{fig:cgne:naive} where the original data type is naively\footnote{Naive in this context means that \textit{all} appearances of binary32-variables in the cgne-kernel were replaced by variables of simulated data type.} replaced by the simulated data type, it can be concluded that only data types with large enough number ranges converged. \gls{binary64}, \gls{binary32} and \gls{posit32} converged each after \code{status=27} steps with one reset step. The less precise \gls{tensorfloat32} took \code{status=27} ($+3$) and the even less precise \gls{bfloat16} required \code{status=32} ($+5$) steps. Such a hierarchical result was expected since they have the same exponent range and thus approximately the same number range but differ only in precision (see table \ref{tab:formats}). Notice that the less precise the data type, the more reset steps are needed. This happens because the precision limit of the simulated data type is reached faster if the data type has less precision.
 
-The round-off accumulation error of \gls{posit32} is slightly better than the one of \gls{binary32}, although defeated by $8$ orders of magnitude of \gls{binary64} because of its much more precision. It is notable to remark that the round-off accumulation does not increase significantly in successice steps, what would be expected from a recursive calculation. The reason for the small difference between \gls{binary32} and \gls{posit32} could be that the involved real numbers are closer to representable numbers in \gls{posit32} than in \gls{binary32}. Posits have a larger number density around \num{1} compared to floats of the same bit-length, and therefore more precision in that regime (see Figure \ref{fig:number_line} for the example of \gls{binary16} versus \gls{posit16}). Posits also have more numbers because they have no \acrshortpl{nan}. Round-off accumulation dependents crucially on the precision of the data type; the lower the precision, the higher the round-off accumulation. The difference in $A$-orthogonality is negligible for \gls{posit32} compared to \gls{binary32}, but clearly surpassed by \gls{binary64}.
+The round-off accumulation error of \gls{posit32} is slightly better than the one of \gls{binary32}, although defeated by $8$ orders of magnitude of \gls{binary64} because of its much more precision. It is notable to remark that the round-off accumulation does not increase significantly in successice steps, what would be expected from a recursive calculation. The reason for the small difference between \gls{binary32} and \gls{posit32} could be that the involved real numbers are closer to representable numbers in \gls{posit32} than in \gls{binary32}. Posits have a larger number density around \num{1} compared to floats of the same bit-length, and therefore more precision in that regime (see figure \ref{fig:number_line} for the example of \gls{binary16} versus \gls{posit16}). Posits also have more numbers because they have no \acrshortpl{nan}. Round-off accumulation dependents crucially on the precision of the data type; the lower the precision, the higher the round-off accumulation. The difference in $A$-orthogonality is negligible for \gls{posit32} compared to \gls{binary32}, but clearly surpassed by \gls{binary64}.
 
 \gls{binary16} did not converge (\code{status=-1}) after the maximal number of \code{nmx=256} steps. Its footprint is absent in plot \textit{1d}, because it consisted only of \acrshortpl{nan} and infinities, causing $\alpha_i = 0$ and $\beta_i = 1$. This implied that $\vec{r}_i = \vec{r}_{i+1}$ and $\vec{p}_{i+1} = \vec{r}_{i+1}$ and therefore $\vec{x}_{i+1} = \vec{x}_{i}$ and the algorithm stalled. This explains why the residues don't change in plots \textit{1a} and \textit{1b}. The reason for the first infinity was an overflow when calculating the norm of $\vec{b}$ in the very first iteration. This suggests that the limited number range of \gls{binary16} might not be enough (at least for a naive replacement), comparing to \gls{bfloat16} with the same bit-length, but larger number range that was able to converge, although very slowly.
 
@@ -2096,7 +2102,7 @@ Similarly, for \gls{posit16}, the maximal representable value with $es=1$ is \nu
 
 We observe that number range is more important than precision, when naively replacing the data type, but the higher the precision, the faster the convergence and the fewer reset steps are needed.
 
-\textbf{Figure \ref{fig:cgne:quire}:} In Figure \ref{fig:cgne:quire} the replacement utilised the possibility to use \glspl{quire} for the posit runs. Therefore, the numbers for the float data types are exactly equal to the ones in Figure \ref{fig:cgne:naive}, because floats have no such feature. They are not further discussed.
+\textbf{Figure \ref{fig:cgne:quire}:} In figure \ref{fig:cgne:quire} the replacement utilised the possibility to use \glspl{quire} for the posit runs. Therefore, the numbers for the float data types are exactly equal to the ones in figure \ref{fig:cgne:naive}, because floats have no such feature. They are not further discussed.
 
 Comparing plots \textit{1c} and \textit{2c} and looking at \gls{posit32}, one can see that the round-off accumulation in the residual due to its recursive calculation is slightly better than without using the \gls{quire}. This makes sense, because \glspl{quire} introduce deferred rounding. This is exploited in the calculation of norms and matrix-vector products. It results in a somewhat better maintaining of $A$-orthogonality for the direction vectors.
 
@@ -2104,21 +2110,21 @@ However, the data points of \gls{posit16} bear little resemblance to their previ
 
 Using the same arguments and analysis, \gls{posit8} did not give a meaningful result.
 
-\textbf{Figure \ref{fig:cgne:col64}:} In Figure \ref{fig:cgne:col64}, a smarter replacement was done. All reduction variables that have a collective role suffer from overflow. For example, the norm of a vector $\vec{v} \in \mathbb{R}^n$ is 
+\textbf{Figure \ref{fig:cgne:col64}:} In figure \ref{fig:cgne:col64}, a smarter replacement was done. All reduction variables that have a collective role suffer from overflow. For example, the norm of a vector $\vec{v} \in \mathbb{R}^n$ is 
 
 \begin{align*}
     \norm{\vec{v}} = \sqrt{ \sum_{i=1}^{n} v_i^2 }.
 \end{align*}
 
-The number below the square root may be much bigger before squaring than after. If we calculate the norm in \gls{posit8}, the result will be $\norm{\vec{y}} \leq 8$. More importantly, when using a data type that overflows such as \gls{binary16}, the value after squaring might be perfectly fine, but the value under the square root could be outside the range of representable numbers, $\sqrt{\infty} = \infty$ and $\sqrt{0} = 0$. This is avoided if the collective variable is of a data type with larger number range than the underlying data type that is summed over. In Figure \ref{fig:cgne:col64} all reduction variables were of type \gls{binary64}.
+The number below the square root may be much bigger before squaring than after. If we calculate the norm in \gls{posit8}, the result will be $\norm{\vec{y}} \leq 8$. More importantly, when using a data type that overflows such as \gls{binary16}, the value after squaring might be perfectly fine, but the value under the square root could be outside the range of representable numbers, $\sqrt{\infty} = \infty$ and $\sqrt{0} = 0$. This is avoided if the collective variable is of a data type with larger number range than the underlying data type that is summed over. In figure \ref{fig:cgne:col64} all reduction variables were of type \gls{binary64}.
 
 The data of \gls{binary64} exhibits no significant alterations. Again comparing \gls{binary32} and \gls{posit32} with their previous data points, we see that the round-off accumulation of \gls{binary32} is a little better and \gls{posit32} is approximately the same as with the \gls{quire}, suggesting that when using posits utilising the \gls{quire} is probably sufficient.
 
-Looking at \gls{tensorfloat32}, it has the same exponent range as \gls{binary32}, but less precision and it has the same number of mantissa bits as \gls{binary16}, but at a higher exponent range. Compared to \gls{binary16}, both data types have the same amount of numbers to be distributed in their respective number range. It is expected to perform worse or equal to \gls{binary32}, but better or equal to \gls{binary16} and \gls{bfloat16}. Therefore, it's expected to converge in $27 \le \code{status} \le 28$ steps, see equation \eqref{eq:hierarchy}. This is indeed the case with \code{status=27} steps. We see that the larger number range compared to \gls{binary16} has little effect on the speed of convergence. This is because the number regime is within the \gls{binary16} regime, except for reduction variables. This explains as well why \gls{tensorfloat32} performed precisely as in the naive replacement, Figure \ref{fig:cgne:naive}, but the round-off accumulation is better because of the more precise collective variables.
+Looking at \gls{tensorfloat32}, it has the same exponent range as \gls{binary32}, but less precision and it has the same number of mantissa bits as \gls{binary16}, but at a higher exponent range. Compared to \gls{binary16}, both data types have the same amount of numbers to be distributed in their respective number range. It is expected to perform worse or equal to \gls{binary32}, but better or equal to \gls{binary16} and \gls{bfloat16}. Therefore, it's expected to converge in $27 \le \code{status} \le 28$ steps, see equation \eqref{eq:hierarchy}. This is indeed the case with \code{status=27} steps. We see that the larger number range compared to \gls{binary16} has little effect on the speed of convergence. This is because the number regime is within the \gls{binary16} regime, except for reduction variables. This explains as well why \gls{tensorfloat32} performed precisely as in the naive replacement, figure \ref{fig:cgne:naive}, but the round-off accumulation is better because of the more precise collective variables.
 
 The \gls{bfloat16} with even less precision but comparable number range of \gls{tensorfloat32} converged in \code{status=28} steps as well, but required two more reset steps, tightening the previous conclusion about speed of convergence.
 
-The most interesting data points are the ones of \gls{binary16} and \gls{posit16} that both were able to converge in \code{status=28} and \code{status=34} steps, respectively. They performed quite similar, even though it would be expected that \gls{posit16} would perform slightly better because of the increased number range and larger number density in the relevant number regimes (see Figure \ref{fig:number_line}). In plot \textit{3c} the increase of round-off accumulation can be observed for \gls{binary16} and \gls{posit16} in steps where the real residue changes (where the algorithm makes progress, see for example: steps \num{1} to \num{10}). Notice that, when the real residue stalls and the recursive residue still (wrongly) decreases, the round-off accumulation will saturate until the orders of magnitude of the two numbers differs too much such that their difference is dominated by the larger number. This can be seen in the data points of \gls{posit16} in plot \textit{3a}. It suggests that the precision limit was chosen too low for the data type. Notice that the precision limit is defined to be \code{100*MACHINE\_EPSILON}, where \code{MACHINE\_EPSILON} depends on the data type. The \code{MACHINE\_EPSILON} for the posit data types is quite misleading, because it gives us (by definition) the precision of numbers around \num{1}. This is the regime where posits are most precise, their precision falling off very rapidly when leaving it. Thus for \gls{posit16} in the regime $10^{-1}$ the \code{MACHINE\_EPSILON} is correct (seen at iteration \num{14}), while in the regime $10^{-3}$ it is chosen to small and we can see a staircase-shape around the reset steps at iterations \num{28} and \num{35}. Such a stalling of the real residue should be avoided at any cost because the algorithm stalls as well in that case. The \code{MACHINE\_EPSILON} is defined to be the difference between \num{1} and the lowest number above \num{1}. For floats this definition makes more sense, because their precision does not fall off that fast, but for posits which are most precise around \num{1} this gives a too precise value, not reflecting the real precision of posits in their whole number range correctly. Instead, the machine epsilon should be a function of the number regime, increasing when going far away from \num{1}. This is the reason for the staircase-shaped curve of \gls{posit16} in plot \textit{3a}. This phenomenon is even more prominent for \gls{posit16} in plot \textit{4a} of Figure \ref{fig:cgne:res12}. The \gls{posit32} does not have this problem, because its \code{MACHINE\_EPSILON} is sufficient for the number regime used in the algorithm. When demanding lower relative residuals, staircase-shapes should be expected for \gls{posit32} as well.
+The most interesting data points are the ones of \gls{binary16} and \gls{posit16} that both were able to converge in \code{status=28} and \code{status=34} steps, respectively. They performed quite similar, even though it would be expected that \gls{posit16} would perform slightly better because of the increased number range and larger number density in the relevant number regimes (see figure \ref{fig:number_line}). In plot \textit{3c} the increase of round-off accumulation can be observed for \gls{binary16} and \gls{posit16} in steps where the real residue changes (where the algorithm makes progress, see for example: steps \num{1} to \num{10}). Notice that, when the real residue stalls and the recursive residue still (wrongly) decreases, the round-off accumulation will saturate until the orders of magnitude of the two numbers differs too much such that their difference is dominated by the larger number. This can be seen in the data points of \gls{posit16} in plot \textit{3a}. It suggests that the precision limit was chosen too low for the data type. Notice that the precision limit is defined to be \code{100*MACHINE\_EPSILON}, where \code{MACHINE\_EPSILON} depends on the data type. The \code{MACHINE\_EPSILON} for the posit data types is quite misleading, because it gives us (by definition) the precision of numbers around \num{1}. This is the regime where posits are most precise, their precision falling off very rapidly when leaving it. Thus for \gls{posit16} in the regime $10^{-1}$ the \code{MACHINE\_EPSILON} is correct (seen at iteration \num{14}), while in the regime $10^{-3}$ it is chosen to small and we can see a staircase-shape around the reset steps at iterations \num{28} and \num{35}. Such a stalling of the real residue should be avoided at any cost because the algorithm stalls as well in that case. The \code{MACHINE\_EPSILON} is defined to be the difference between \num{1} and the lowest number above \num{1}. For floats this definition makes more sense, because their precision does not fall off that fast, but for posits which are most precise around \num{1} this gives a too precise value, not reflecting the real precision of posits in their entire number range correctly. Instead, the machine epsilon should be a function of the number regime, increasing when going far away from \num{1}. This is the reason for the staircase-shaped curve of \gls{posit16} in plot \textit{3a}. This phenomenon is even more prominent for \gls{posit16} in plot \textit{4a} of figure \ref{fig:cgne:res12}. The \gls{posit32} does not have this problem, because its \code{MACHINE\_EPSILON} is sufficient for the number regime used in the algorithm. When demanding lower relative residuals, staircase-shapes should be expected for \gls{posit32} as well.
 
 Comparing \gls{binary16} with \gls{bfloat16} and \gls{tensorfloat32}, we see again that exponent range is less relevant than precision, but precision determines the amount of reset steps.
 
@@ -2147,13 +2153,13 @@ To make sure that the previous analysis is consistent, and the physics involved 
 
 \subsubsection{Conclusion}
 
-The decision between floats and posits is not trivial. It highly depends on how fast the machine can perform \acrshort{FLOPS} and \acrshort{POPS}. For example, division in floating-point arithmetic is very expensive (it may exceed \num{24} CPU cycles, many compiler optimisations evade them), whereas in posit arithmetic it is said to be cheap, because obtaining the inverse of a number is easy.
+The decision between floats and posits is not trivial. There is currently no hardware available, that has dedicated posit units and posits are not studied as intensive as floats. Furthermore, floats are widespread, well understood and implemented in common hardware.
 
-On the other hand, there is currently no hardware available, that has dedicated posit units and posits are not studied as intensive as floats. Furthermore, floats are widespread, well understood and implemented in common hardware.
+%It highly depends on how fast the machine can perform \acrshort{FLOPS} and \acrshort{POPS}. For example, division in floating-point arithmetic is very expensive (it may exceed \num{24} CPU cycles, many compiler optimisations evade them), whereas in posit arithmetic it is said to be cheap, because obtaining the inverse of a number is easy.
 
-If one decides to replace \gls{binary32} with posits, the most elegant solution would be to naively replace the data type and utilise \glspl{quire} in collective operations. To use \gls{binary64} in reduction variables is not recommended, because this would introduce many type conversions between the floating-point and the posit format which is assumed to be expensive. The drawback of this method is that \gls{posit16} may only converge if the relative residue is chosen high enough (see plot \textit{2a} in Figure \ref{fig:cgne:quire}).
+If one decides to replace \gls{binary32} with posits, the most elegant solution would be to naively replace the data type and utilise \glspl{quire} in collective operations. To use \gls{binary64} in reduction variables is not recommended, because this would introduce many type conversions between the floating-point and the posit format which is assumed to be expensive. The drawback of this method is that \gls{posit16} may only converge if the relative residue is chosen high enough (see plot \textit{2a} in figure \ref{fig:cgne:quire}).
 
-If the decision goes for floats, which might be the more realistic scenario, then the most elegant solution would be to use reduction variables in \gls{binary64}. Type conversions between different IEEE floating-point types are not considered to be expensive. The \gls{tensorfloat32} compared to \gls{binary32} and \gls{bfloat16} answers the question how important precision is in the calculation. All of them have the same number of exponent bits and therefore approximately the same number range, but very different precisions. We see that all of them were able to converge in any experiment, but with \gls{binary64} as collective variable, the results were closest to each other (see Figure \ref{fig:cgne:col64} plot \textit{3a}). The only relevant difference was in the number of reset steps. If the data type is lower in bit-length, the memory-boundedness suggests that the calculation performs faster, but the trade-off is the amount of (computationally expensive) reset steps that increases with less precision. However, the data type for reduction operations should be precise and should have a large number range. Since the number of variables needed in that data type does not scale with the problem size, we can use a data type with large bit-length such as \gls{binary64}. Comparing the convergence of \gls{bfloat16} in the naive case (Figure \ref{fig:cgne:naive} plot \textit{1a}) with the case \gls{binary64} collective variables (Figure \ref{fig:cgne:col64} plot \textit{3a}), it can be seen that the algorithm converged \num{21} steps faster, only because the reduction data type was chosen to be \gls{binary64}. On the other hand, comparing the performance of \gls{binary16} in the two plots, we see that the number range of the reduction data type brought \gls{binary16} from no convergence to convergence within \code{status=35} steps -- only marginally slower than \gls{binary32}. These arguments make \gls{binary64} the best choice for variables with a collective role.
+If the decision goes for floats, which might be the more realistic scenario, then the most elegant solution would be to use reduction variables in \gls{binary64}. Type conversions between different IEEE floating-point types are not considered to be expensive. The \gls{tensorfloat32} compared to \gls{binary32} and \gls{bfloat16} answers the question how important precision is in the calculation. All of them have the same number of exponent bits and therefore approximately the same number range, but very different precisions. We see that all of them were able to converge in any experiment, but with \gls{binary64} as collective variable, the results were closest to each other (see figure \ref{fig:cgne:col64} plot \textit{3a}). The only relevant difference was in the number of reset steps. If the data type is lower in bit-length, the memory-boundedness suggests that the calculation performs faster, but the trade-off is the amount of (computationally expensive) reset steps that increases with less precision. However, the data type for reduction operations should be precise and should have a large number range. Since the number of variables needed in that data type does not scale with the problem size, we can use a data type with large bit-length such as \gls{binary64}. Comparing the convergence of \gls{bfloat16} in the naive case (figure \ref{fig:cgne:naive} plot \textit{1a}) with the case \gls{binary64} collective variables (figure \ref{fig:cgne:col64} plot \textit{3a}), it can be seen that the algorithm converged \num{21} steps faster, only because the reduction data type was chosen to be \gls{binary64}. On the other hand, comparing the performance of \gls{binary16} in the two plots, we see that the number range of the reduction data type brought \gls{binary16} from no convergence to convergence within \code{status=35} steps -- only marginally slower than \gls{binary32}. These arguments make \gls{binary64} the best choice for variables with a collective role.
 
 \begin{proposal}{Mixed Precision}{mp}
 
@@ -2189,7 +2195,7 @@ The above analysis suggests that the calculation of the solution can (at least p
 
 \begin{proposal}{Approximating the amounts $\alpha_i$}{alpha}
 
-Looking at plot \textit{4e} of Figure \ref{fig:cgne:res12}, where the amounts $\alpha_i$ are plotted for every iteration, we see that after every reset step the amounts need $2-3$ steps to reach a value that is not changing very much for future iterations. This becomes apparent when looking at the fitting lines. The values of the $\alpha_i$ are in the range $10^{-1}$ and the slopes $m$ of the fitting lines are in the range $10^{-4}$ - $10^{-5}$, suggesting that the value of $\alpha_i$ is not changing from iteration to iteration when only looking at $2-3$ significant decimal digits.
+Looking at plot \textit{4e} of figure \ref{fig:cgne:res12}, where the amounts $\alpha_i$ are plotted for every iteration, we see that after every reset step the amounts need $2-3$ steps to reach a value that is not changing very much for future iterations. This becomes apparent when looking at the fitting lines. The values of the $\alpha_i$ are in the range $10^{-1}$ and the slopes $m$ of the fitting lines are in the range $10^{-4}$ - $10^{-5}$, suggesting that the value of $\alpha_i$ is not changing from iteration to iteration when only looking at $2-3$ significant decimal digits.
 
 A possibility to reduce computational cost in each iteration could be to approximate the values of future $\alpha_i$ to be constant. The less precise the data type, the larger the change in $\alpha_i$. The large error in $\alpha_i$ of \gls{bfloat16} in all plots suggests that the algorithm is not sensible to errors in $\alpha_i$. Therefore, it can be expected that the results should not change significantly with an approximated value of $\alpha_i$.
 
@@ -2238,7 +2244,7 @@ Collective data type: number range $>$ precision
 
 \end{comment}
 
-\section{SAP preconditioned GCR algorithm}
+\section{SAP preconditioned GCR}
 
 \label{sec:sap_gcr}
 
@@ -2257,7 +2263,7 @@ with $\psi = R^{-1} \psi^{\prime}$ and $L$, $R$ chosen wisely such that $LDR$ is
 \footnotemark.
 \footnotetext{Even lattice points are the ones where the sum of the global Cartesian coordinates $(n_0 + n_1 + n_2 + n_3)$ in units of the lattice spacing $a$ is even, notice $x_{\mu} = a n_{\mu}$, where ${\mu} = 0, 1, \dots, D$.}
 If the sites are ordered such that the even sites come first\footnotemark,
-\footnotetext{This is indeed the case in openQxD (see \code{main/README.global}) in \cite{openqxd}.}
+\footnotetext{This is indeed the case in openQ*D (see \code{main/README.global}) in \cite{openqxd}.}
 
 \begin{align*}
     D &=
@@ -2424,7 +2430,7 @@ Obviously, an application of $M^{-1}$ should be possible without involving $A^{-
 
 \footnotetext{Determined by the value of \code{mnr} in the solver section of the input file.}
 
-In openQxD the \code{SAP\_GCR} solver is implemented as follows: The large problem is solved using a flexible \acrshort{gcr} solver, that in each of its \code{nmx} steps uses a different preconditioner. The preconditioner is given by \code{ncy} steps of the \acrlong{sap} applied to the current solution vector. Each \acrshort{sap} cycle involves approximately solving all grey blocks followed by all white blocks on the whole lattice, each with \code{nmr} steps of the \acrshort{mr} method using even-odd preconditioning (\code{isolv=1}) or not (\code{isolv=0}).
+In openQ*D the \code{SAP\_GCR} solver is implemented as follows: The large problem is solved using a flexible \acrshort{gcr} solver, that in each of its \code{nmx} steps uses a different preconditioner. The preconditioner is given by \code{ncy} steps of the \acrlong{sap} applied to the current solution vector. Each \acrshort{sap} cycle involves approximately solving all grey blocks followed by all white blocks on the entire lattice, each with \code{nmr} steps of the \acrshort{mr} method using even-odd preconditioning (\code{isolv=1}) or not (\code{isolv=0}).
 
 \begin{proposal}{MR in reduced precision}{sap_reduced_precision}
 
@@ -2448,7 +2454,7 @@ For a specific implementation of the GPU-solver, one possibility is to encode th
 
 \end{proposal}
 
-\subsection{Generalised Conjugate Residual algorithm}
+\subsection{Generalised Conjugate Residual}
 
 TODO: Why GCR? it allows inexact preconditioning without compromising the correctness of the solution.
 
@@ -2595,11 +2601,11 @@ There are some remarks to note about the method of \acrshort{gcr}.
     Compared to the conjugate gradient algorithm, we imposed $A^{\dagger} A$-orthogonality of the directions $\vec{p}_i$ instead of $A$-orthogonality as well as $A$-orthogonality of $\vec{r}_{i+1}$ and $\vec{p}_i$ instead of regular orthogonality. A vanishing of all previous $\beta_{ij}$ on the other hand was not imposed, leading to the sum in the step equation of $\vec{p}_{i+1}$.
 \end{remark}
 
-\subsection{GCR in openQxD}
+\subsection{GCR in openQ*D}
 
-The actual implementation of the \acrshort{gcr} algorithm in openQxD is quite different\footnotemark, but equivalent to definition \ref{df:gcr} (see lemma \ref{lem:gcr_equiv}). Ref. \cite{luscher2004} explains the implementation of the algorithm in detail. The main \acrshort{gcr}-loop looks as in algorithm \ref{alg:gcr} (see figure 3 in \cite{luscher2004})
+The actual implementation of the \acrshort{gcr} algorithm in openQ*D is quite different\footnotemark, but equivalent to definition \ref{df:gcr} (see lemma \ref{lem:gcr_equiv}). Ref. \cite{luscher2004} explains the implementation of the algorithm in detail. The main \acrshort{gcr}-loop looks as in algorithm \ref{alg:gcr} (see figure 3 in \cite{luscher2004})
 
-\footnotetext{Called GMRES recursive algorithm (GMRESR) \cite{vuik1995}, see \code{fgcr()} in \code{modules/linsolv/fgcr.c} lines \num{212}ff in \cite{openqxd}.}
+\footnotetext{Called GMRES recursive (GMRESR) algorithm \cite{vuik1995}, see \code{fgcr()} in \code{modules/linsolv/fgcr.c} lines \num{212}ff in \cite{openqxd}.}
 
 \begin{figure}
 \centering
@@ -2676,7 +2682,7 @@ where in the last step equation \eqref{eq:gcr:Api:equiv} was inserted. The $\chi
 
 \begin{proposal}{GCR in mixed precision}{gcr_mp}
 
-In the current version of openQxD \cite{openqxd}, the outer \acrshort{gcr} solver is performed in pure \gls{binary64}. A mixed precision variant would require the preconditioning $M_{sap}$ to be done in mixed precision as well. Algorithm \ref{alg:mixed_precision} would directly apply with $solve()$ replaced by \code{fgcr()} with the difference that \code{fgcr()} has to accept $D$, $M_{sap}$, $\vec{x}_0$ and $\vec{b}$ in the desired precision.
+In the current version of openQ*D \cite{openqxd}, the outer \acrshort{gcr} solver is performed in pure \gls{binary64}. A mixed precision variant would require the preconditioning $M_{sap}$ to be done in mixed precision as well. Algorithm \ref{alg:mixed_precision} would directly apply with $solve()$ replaced by \code{fgcr()} with the difference that \code{fgcr()} has to accept $D$, $M_{sap}$, $\vec{x}_0$ and $\vec{b}$ in the desired precision.
 
 \end{proposal}
 
@@ -2686,7 +2692,7 @@ In the current version of openQxD \cite{openqxd}, the outer \acrshort{gcr} solve
 
 \subsubsection{Setup}
 
-The complete \acrshort{sapgcr} kernel was implemented using Python in the same way as the \code{fgcr()} function from the source code\footnote{See line 212ff in \code{modules/linsolv/fgcr.c} in \cite{openqxd}.}. The Dirac-operator \code{Dop\_dble()} was extracted in the same way as for the \code{cgne()} kernel previously (see section \ref{sec:simulating_cgne}) using the same configuration. The python implementation contains a floating-point data type for the reduction variables separately (\code{rdtype}). It also accepts a "large" data type (\code{ldtype}) by which the restart steps are calculated in, and a "small" data type (\code{sdtype}) in which the regular and the \acrshort{mr} steps are performed in. The result is obtained in terms of the "large" data type. There are various configuration settings to choose from (see table \ref{tab:sap_gcr_settings}).
+The complete \acrshort{sapgcr} kernel was implemented using Python in the same way as the \code{fgcr()} function from the source code\footnote{See line 212ff in \code{modules/linsolv/fgcr.c} in \cite{openqxd}.}. The Dirac-operator \code{Dop\_dble()} was extracted in the same way as for the \code{cgne()} kernel previously (see section \ref{sec:simulating_cgne}) using the same configuration. The Python implementation contains a floating-point data type for the reduction variables separately (\code{rdtype}). It also accepts a "large" data type (\code{ldtype}) by which the restart steps are calculated in, and a "small" data type (\code{sdtype}) in which the regular and the \acrshort{mr} steps are performed in. The result is obtained in terms of the "large" data type. There are various configuration settings to choose from (see table \ref{tab:sap_gcr_settings}).
 
 \begin{table}[H]
 \centering
@@ -2726,7 +2732,7 @@ The following plot series gives an estimate on how much speed improvement can be
 Two configurations are non-standard: $(n_{cy}, n_{mr}) = (0,0)$ and "adaptive". The former indicates no preconditioning (thus a pure \acrshort{gcr} run) and in the latter configuration the parameters $n_{cy}$, $n_{mr}$ were chosen automatically in every iteration anew (see proposal \ref{pp:adaptive}).
 
 
-The colors denote the data type setup (\code{ldtype}, \code{rdtype}, \code{sdtype}) and the marker symbols indicate whether the calculation was performed purely on the CPU (circles; \textcolor{cbrown}{$\mcirc$}, \textcolor{cred}{$\mcirc$}, \textcolor{cblue}{$\mcirc$}), purely on the GPU (crosses; \textcolor{cbrown}{$\times$}, \textcolor{cred}{$\times$}, \textcolor{cblue}{$\times$}) or a hybrid variant (diamonds; \textcolor{cbrown}{$\diamond$}, \textcolor{cred}{$\diamond$}, \textcolor{cblue}{$\diamond$}), where only the MR-steps are calculated on the GPU and the remainder on the CPU, see proposal \ref{pp:sap_mr_gpu}. Runs of openQxD dealing with the same problem are shown by black squares (if available, squares; $\msquare$). All combinations of the above configurations are present in the plots. The different plots show results from different matrices. \num{3} matrices where extracted directly from a run of openQxD (figures \ref{fig:sap_gcr_sf_8x8x8x8}, \ref{fig:sap_gcr_sf_8x8x8x8_2} and \ref{fig:sap_gcr_sf_16x16x16x16}), while \num{2} further matrices where taken from \cite{davis2011} (figures \ref{fig:sap_gcr_conf6_0-8x8-20_0.15717} and \ref{fig:sap_gcr_conf6_0-8x8-20_0.15}). The matrix \code{conf6\_0-8x8-2} taken from \cite{davis2011} has a parameter $0 \le k \le k_c$, the hopping parameter (see section \ref{sec:hopping_expansion}). The closer $k$ is to its critical value $k_c$ the worse the matrix is conditioned. The used values for $k$ and $k_c$ are given in the title of the plots. The relative residual was chosen to be $10^{-6}$ and the number of GCR-steps until restart \code{nkv=7}.
+The colors denote the data type setup (\code{ldtype}, \code{rdtype}, \code{sdtype}) and the marker symbols indicate whether the calculation was performed purely on the CPU (circles; \textcolor{cbrown}{$\mcirc$}, \textcolor{cred}{$\mcirc$}, \textcolor{cblue}{$\mcirc$}), purely on the GPU (crosses; \textcolor{cbrown}{$\times$}, \textcolor{cred}{$\times$}, \textcolor{cblue}{$\times$}) or a hybrid variant (diamonds; \textcolor{cbrown}{$\diamond$}, \textcolor{cred}{$\diamond$}, \textcolor{cblue}{$\diamond$}), where only the MR-steps are calculated on the GPU and the remainder on the CPU, see proposal \ref{pp:sap_mr_gpu}. Runs of openQ*D dealing with the same problem are shown by black squares (if available, squares; $\msquare$). All combinations of the above configurations are present in the plots. The different plots show results from different matrices. \num{3} matrices where extracted directly from a run of openQ*D (figures \ref{fig:sap_gcr_sf_8x8x8x8}, \ref{fig:sap_gcr_sf_8x8x8x8_2} and \ref{fig:sap_gcr_sf_16x16x16x16}), while \num{2} further matrices where taken from \cite{davis2011} (figures \ref{fig:sap_gcr_conf6_0-8x8-20_0.15717} and \ref{fig:sap_gcr_conf6_0-8x8-20_0.15}). The matrix \code{conf6\_0-8x8-2} taken from \cite{davis2011} has a parameter $0 \le k \le k_c$, the hopping parameter (see section \ref{sec:hopping_expansion}). The closer $k$ is to its critical value $k_c$ the worse the matrix is conditioned. The used values for $k$ and $k_c$ are given in the title of the plots. The relative residual was chosen to be $10^{-6}$ and the number of GCR-steps until restart \code{nkv=7}.
 
 \begin{figure}[h]
     \centering
@@ -2772,7 +2778,7 @@ The colors denote the data type setup (\code{ldtype}, \code{rdtype}, \code{sdtyp
 
 \subsubsection{Discussion of figures \ref{fig:sap_gcr_start} - \ref{fig:sap_gcr_end}}
 
-A clear trend visible in the whole plot series is that the pure-GPU variants are most efficient when the block size is large (the number of blocks is small). The pure-CPU variants behave differently -- the block size has less influence on the run-time. In general, the pure-GPU variants are faster than the pure-CPU ones. This is because they take advantage of concurrency. The hybrid-variants are as expected in-between them, behaving similarly to the pure-GPU ones.
+A clear trend visible in the entire plot series is that the pure-GPU variants are most efficient when the block size is large (the number of blocks is small). The pure-CPU variants behave differently -- the block size has less influence on the run-time. In general, the pure-GPU variants are faster than the pure-CPU ones. This is because they take advantage of concurrency. The hybrid-variants are as expected in-between them, behaving similarly to the pure-GPU ones.
 
 As a further general observation, the power of the \acrshort{sapgcr} solver is only fully unfolded if the condition number of the operator is large; the plots of \code{sf\_no\_cstar\_8x8x8x8}, \code{sf\_no\_cstar\_8x8x8x8\_2} and \code{sf\_no\_cstar\_16x16x16x16} (figures \ref{fig:sap_gcr_sf_8x8x8x8}, \ref{fig:sap_gcr_sf_8x8x8x8_2} and \ref{fig:sap_gcr_sf_16x16x16x16}) show no significant performance improvement of the SAP-preconditioning compared to a pure GCR solver without preconditioning\footnote{The runs with configuration $(n_{cy}, n_{mr}) = (0,0)$}, whereas the runs on \code{conf6\_0-8x8-2} do (figures \ref{fig:sap_gcr_conf6_0-8x8-20_0.15717} and \ref{fig:sap_gcr_conf6_0-8x8-20_0.15}).
 
@@ -2786,7 +2792,7 @@ An analysis of the different data types shows that the general trend is the lowe
 
 \textbf{Figure \ref{fig:sap_gcr_conf6_0-8x8-20_0.15717}}: Using the same matrix as above, but at the critical point $k=k_c$, we are in the regime where the \acrshort{sapgcr} algorithm shows its true potential; nearly all cases performed better than the trivial case without any preconditioning. The pure-GPU cases behave as usual -- large block sizes result in faster convergence. This time even the pure-CPU shows a dependence on the block size. Although, this dependence is weak, the CPU seems to perform slightly better on smaller block sizes (on contrary to the GPU). The hybrid cases -- as usual in-between -- are closer to the pure-GPU ones, because despite being hybrid most of the work is done on the GPU. The pattern within a certain block size is repeating and the best amount of preconditioning seems to be at $(n_{cy}, n_{mr}) = (4,6)$.
 
-\textbf{Figure \ref{fig:sap_gcr_sf_8x8x8x8_2}}: Finally, the second matrix from openQxD \code{sf\_no\_cstar\_8x8x8x8\_2} shows similar patterns as the first matrix with the same configuration. The measurement was repeated in order to check whether there is a visible pattern common to both matrices. No such pattern were observed. It is noticeable that there is an exceptional configuration that took disproportionally longer than the others at $(n_{cy}, n_{mr}) = (12,2)$. More importantly it is not the same configuration, making it hard to determine the best set of parameters beforehand and at the same time maintaining a perfect amount of preconditioning for all invocations of the solver.
+\textbf{Figure \ref{fig:sap_gcr_sf_8x8x8x8_2}}: Finally, the second matrix from openQ*D \code{sf\_no\_cstar\_8x8x8x8\_2} shows similar patterns as the first matrix with the same configuration. The measurement was repeated in order to check whether there is a visible pattern common to both matrices. No such pattern were observed. It is noticeable that there is an exceptional configuration that took disproportionally longer than the others at $(n_{cy}, n_{mr}) = (12,2)$. More importantly it is not the same configuration, making it hard to determine the best set of parameters beforehand and at the same time maintaining a perfect amount of preconditioning for all invocations of the solver.
 
 %The discussion is just a more extreme version of the previous paragraph. Within all block sizes, one can see the same pattern repeating. It seems that the configurations involving substantial amounts of preconditioning (large \code{ncy}, \code{nmr}) perform worse.
 
@@ -2811,13 +2817,13 @@ So, every block is treated differently in every cycle. A maximum of \num{20} Sch
 
 The results on how this adaptive variant competes with static configurations can be seen in figures \ref{fig:sap_gcr_start} - \ref{fig:sap_gcr_end}. The adaptive runs are indicated with configuration $adap.$ with two different values of $\alpha$. Although the adaptive variant of the algorithm is not the fastest among all configurations, the plots show that it is certainly the most versatile one. It is to be chosen if the condition of the operator is not known beforehand and might even change drastically within a long running simulation.
 
-A reference implementation was written directly in openQxD and can be found in the GitLab repository ref. \cite{gitlab_adaptive}.
+A reference implementation was written directly in openQ*D and can be found in the GitLab repository ref. \cite{gitlab_adaptive}.
 
 \end{proposal}
 
-In openQxD, every rank has its own local lattice to process. The solver algorithms are implemented in a parallel manner, such that the solver is called on all ranks simultaneously. The simulation problem was chosen to be such that the task of one rank was compared on one single core of the CPU and on one single GPU (with all its parallelizability). It is therefore not surprising that in most cases, the GPU solved the problem much faster than the CPU. Keeping this in mind, it is natural to associate a larger local lattice to the available GPUs in the system (maybe 4-8 times larger, depending on the available memory) and let them participate to the solution of the full problem just as they were additional ranks (compare proposal \ref{pp:gpu_implementation1}).
+In openQ*D, every rank has its own local lattice to process. The solver algorithms are implemented in a parallel manner, such that the solver is called on all ranks simultaneously. The simulation problem was chosen to be such that the task of one rank was compared on one single core of the CPU and on one single GPU (with all its parallelizability). It is therefore not surprising that in most cases, the GPU solved the problem much faster than the CPU. Keeping this in mind, it is natural to associate a larger local lattice to the available GPUs in the system (maybe 4-8 times larger, depending on the available memory) and let them participate to the solution of the full problem just as they were additional ranks (compare proposal \ref{pp:gpu_implementation1}).
 
-\section{Deflated SAP preconditioned GCR algorithm}
+\section{Deflated SAP preconditioned GCR}
 
 \label{sec:dfl_sap_gcr}
 
@@ -2886,14 +2892,14 @@ If we find clever subspaces in which the projectors $P_L$ and $P_R$ project with
 Notice that $P_L A$ as well as $(1-P_L)A$ are not invertible. There are infinitely many solutions $\vec{x}^{\star}_1$ and $\vec{x}^{\star}_2$\footnotemark. Nonetheless the solution vector $\vec{x}^{\star}$ is still unique after the projection in equation \eqref{eq:def_projection}, because $P_R$ removes all ambiguity from the vector.
 \end{remark}
 
-\footnotetext{Let $P$ be a linear projector (not the identity-operator) and $A$ an invertible linear operator. The system of interest is $PA\vec{x} = P\vec{b}$. There exists at least one solution to this, namely the unique solution to $A\vec{x} = \vec{b}$. Since $PA$ is not invertible, the only two possibilities are zero or infinite solutions and it can't be zero solutions.}
+\footnotetext{Let $P$ be a linear projector (not the identity-operator) and $A$ an invertible linear operator. The system of interest is $PA\vec{x} = P\vec{b}$. There exists at least one solution to this, namely the unique solution to $A\vec{x} = \vec{b}$. Since $PA$ is not invertible, the only two possibilities are either zero or infinite solutions to $PA\vec{x} = P\vec{b}$, but it can't be zero solutions.}
 
 \begin{remark}
 Comparing deflation to left preconditioning, the difference is that in deflation $P_L$ is a projector and $P_L A$ has condition number infinite while in case of preconditioning $P_L $ is invertible (a good approximation of $A^{-1}$) and the condition number of $P_L A$ is expected to be smaller than the one of $A$.
 \end{remark}
 
 \begin{remark}
-If $A$ is positive definite, $P_L A \vec{x} = P_L \vec{b}$ is positive semi-definite, has infinite solutions and condition number infinite. Fortunately, such a system can be solved as long as the right-hand side is consistent, meaning that there exists an $\vec{x}$ solving $A \vec{x} = \vec{b}$, \cite{kaasschieter1988}.
+If $A$ is positive definite, $P_L A$ is positive semi-definite and has condition number infinite. Furthermore, $P_L A \vec{x} = P_L \vec{b}$ has infinite solutions. Fortunately, such a system can be solved as long as the right-hand side is consistent, meaning that there exists an $\vec{x}$ solving $A \vec{x} = \vec{b}$, \cite{kaasschieter1988}.
 \end{remark}
 
 Therefore, it makes sense to define the relevant quantity.
@@ -3248,7 +3254,7 @@ The \acrshort{dflsapgcr}-kernel was implemented in Python by extending the alrea
     \label{tab:dfl_sap_gcr_settings}
 \end{table}
 
-The following plot series shows the interplay between deflation and Schwarz-preconditioning in terms of run-time. Figures \ref{fig:dfl_sap_gcr_start} - \ref{fig:dfl_sap_gcr_end} contain the measurements. The relative residual for the full system was chosen to the $10^{-9}$, the block size for the Schwarz-preconditioning is $4^4$ and the number of Krylov vectors until a restart was chosen to be $n_{kv} = 7$. The whole algorithm was executed on the CPU. Hybrid or pure-GPU runs are expected to look very similar in shape, the number of GCR-steps will be equal to the pure-CPU case. The plots show the dimension of the deflation subspace in $x$-direction and the amount of Schwarz-preconditioning in terms of $(n_{cy},n_{mr})$ in $y$-direction. The colors denote the run-time and the numbers within the blocks show the absolute run-time in seconds needed to solve the system and the number of outer GCR-steps needed until convergence (the value of the \code{status} variable). The time needed for the generation of the deflation subspaces is not included in the time measurements. For each time measurement, the average of \num{10} runs was taken. As in section \ref{sec:sap_gcr_results}, the configuration $(n_{cy},n_{mr}) = (0,0)$ denotes the absence of any Schwarz-preconditioning. Analogously if the dimension of the deflation subspace $\dim \Omega = N_s n_b = 0$ vanishes, it means no deflation is applied to the problem. All deflation subspaces were generated by starting with $N_s$ random vectors, $n_b$ blocks to project onto and applying the procedure described in section \ref{sec:dfl_subspace}. The number of inverse iteration steps was chosen to be $n_{inv} = 5$, where for each inversion one step of a \acrshort*{sapgcr}-solver was used with $n_{cy} = 5$, $n_{mr} = 4$.
+The following plot series shows the interplay between deflation and Schwarz-preconditioning in terms of run-time. Figures \ref{fig:dfl_sap_gcr_start} - \ref{fig:dfl_sap_gcr_end} contain the measurements. The relative residual for the full system was chosen to the $10^{-9}$, the block size for the Schwarz-preconditioning is $4^4$ and the number of Krylov vectors until a restart was chosen to be $n_{kv} = 7$. The entire algorithm was executed on the CPU. Hybrid or pure-GPU runs are expected to look very similar in shape, the number of GCR-steps will be equal to the pure-CPU case. The plots show the dimension of the deflation subspace in $x$-direction and the amount of Schwarz-preconditioning in terms of $(n_{cy},n_{mr})$ in $y$-direction. The colors denote the run-time and the numbers within the blocks show the absolute run-time in seconds needed to solve the system and the number of outer GCR-steps needed until convergence (the value of the \code{status} variable). The time needed for the generation of the deflation subspaces is not included in the time measurements. For each time measurement, the average of \num{10} runs was taken. As in section \ref{sec:sap_gcr_results}, the configuration $(n_{cy},n_{mr}) = (0,0)$ denotes the absence of any Schwarz-preconditioning. Analogously if the dimension of the deflation subspace $\dim \Omega = N_s n_b = 0$ vanishes, it means no deflation is applied to the problem. All deflation subspaces were generated by starting with $N_s$ random vectors, $n_b$ blocks to project onto and applying the procedure described in section \ref{sec:dfl_subspace}. The number of inverse iteration steps was chosen to be $n_{inv} = 5$, where for each inversion one step of a \acrshort*{sapgcr}-solver was used with $n_{cy} = 5$, $n_{mr} = 4$.
 
 \begin{figure}[h]
     \centering
@@ -3285,7 +3291,7 @@ As mentioned before, the plots exhibit a bowl-shape, where the minimum gives the
 TODO
 
 \begin{comment}
-\section{Multi-shift Conjugate Gradient algorithm}
+\section{Multi-shift Conjugate Gradient}
 
 TODO
 
@@ -3312,7 +3318,7 @@ The gauge fields are SU(3) matrices. Inspecting their representations, they can 
 
 \end{comment}
 
-The lattice Dirac-operator \eqref{eq:dwop} in openQxD is implemented in terms of the various gauge-fields $U_{\mu}(n)$, only these are stored in memory\footnote{To be precise openQxD also implements the Sheikholeslami-Wohlert-term \cite{sheikholeslami1985} which needs to store a set of fields as well and the boundary $O(a)$-improvement term that only depends on two constants $c_F, c^{\prime}_F$, depending on the chosen boundary conditions.}. In every HMC-trajectory the fields are updated, and the operator changes. In every Monte Carlo step the Dirac-operator has to be inverted for a given source vector to create the pseudofermion action, see equation \eqref{eq:pseudofermion_action}. To construct correlation functions requires the inverse of the operator from a given source point to any other point on the lattice. This requires \num{12} rows or columns of $D^{-1}$, thus \num{12} inversions. Or simply calculating the quark-propagator from one lattice point to another requires an inversion as well. In summary, inverting the Dirac-operator takes about \num{90}\% of computation time of a lattice simulation. It is thus a fundamental kernel in every numerical lattice QFT calculation.
+The lattice Dirac-operator \eqref{eq:dwop} in openQ*D is implemented in terms of the various gauge-fields $U_{\mu}(n)$, only these are stored in memory\footnote{To be precise openQ*D also implements the Sheikholeslami-Wohlert-term \cite{sheikholeslami1985} which needs to store a set of fields as well and the boundary $O(a)$-improvement term that only depends on two constants $c_F, c^{\prime}_F$, depending on the chosen boundary conditions.}. In every HMC-trajectory the fields are updated, and the operator changes. In every Monte Carlo step the Dirac-operator has to be inverted for a given source vector to create the pseudofermion action, see equation \eqref{eq:pseudofermion_action}. To construct correlation functions requires the inverse of the operator from a given source point to any other point on the lattice. This requires \num{12} rows or columns of $D^{-1}$, thus \num{12} inversions. Or simply calculating the quark-propagator from one lattice point to another requires an inversion as well. In summary, inverting the Dirac-operator takes about \num{90}\% of computation time of a lattice simulation. It is thus a fundamental kernel in every numerical lattice QFT calculation.
 
 \subsection{Threaded Dirac-operator}
 
@@ -3414,9 +3420,9 @@ The runs were disposed using the mentioned environment variables and Slurms CPU-
     \label{tab:dop_omp_amd}
 \end{table}
 
-\textbf{Table \ref{tab:dop_omp_amd}}: In table \ref{tab:dop_omp_amd} the number of physical and logical cores was a power of \num{2}, therefore in both cases -- native and with threads -- all logical cores on the node could be utilized. In general, the best run-times were achieved with the native operator. The only exception for the $16^4$ lattice was the run with \num{64} ranks and \num{2} threads per rank. With that lattice size the whole gauge-field configuration fits into L2 cache of one processor (see table \ref{tab:lattice_sizes}), making consecutive runs very fast. Especially for the threaded variant, with twice as many threads the problem is not solved in half the time. This suggests that the overhead for dealing with threads is not negligible, and the threaded variant certainly needs improvement. It should be seen as a first working step towards hyper-threading. On the other hand, the native implementation lacks an ideal strong scaling, which can be seen by looking at the first two rows. Generally, the runs with only \num{128} ranks are faster than the runs using every of the \num{256} logical cores. This holds for all considered lattice sizes. Let's concentrate on the most interesting lattice size $64^4$. The threaded variant brings no benefit compared to the native one, but there are configurations that are comparable in run-time, namely the ones with $(n_r, n_{th})=(64,4)$ as well as $(32,8)$. Both make use of all logical cores on the node. Improving the threaded implementation can therefore lead to a speedup increase (see conclusion). Generally, the less ranks, the worse the performance becomes. This can be explained by false sharing among the threads and ignorance concerning NUMA-effects when implementing the threaded operator.
+\textbf{Table \ref{tab:dop_omp_amd}}: In table \ref{tab:dop_omp_amd} the number of physical and logical cores was a power of \num{2}, therefore in both cases -- native and with threads -- all logical cores on the node could be utilized. In general, the best run-times were achieved with the native operator. The only exception for the $16^4$ lattice was the run with \num{64} ranks and \num{2} threads per rank. With that lattice size the entire gauge-field configuration fits into L2 cache of one processor (see table \ref{tab:lattice_sizes}), making consecutive runs very fast. Especially for the threaded variant, with twice as many threads the problem is not solved in half the time. This suggests that the overhead for dealing with threads is not negligible, and the threaded variant certainly needs improvement. It should be seen as a first working step towards hyper-threading. On the other hand, the native implementation lacks an ideal strong scaling, which can be seen by looking at the first two rows. Generally, the runs with only \num{128} ranks are faster than the runs using every of the \num{256} logical cores. This holds for all considered lattice sizes. Let's concentrate on the most interesting lattice size $64^4$. The threaded variant brings no benefit compared to the native one, but there are configurations that are comparable in run-time, namely the ones with $(n_r, n_{th})=(64,4)$ as well as $(32,8)$. Both make use of all logical cores on the node. Improving the threaded implementation can therefore lead to a speedup increase (see conclusion). Generally, the less ranks, the worse the performance becomes. This can be explained by false sharing among the threads and ignorance concerning NUMA-effects when implementing the threaded operator.
 
-\textbf{Table \ref{tab:dop_omp_intel}}: Table \ref{tab:dop_omp_intel} shows a different picture: most notable for the analysis is the fact that the total number of physical and logical cores was \textit{not} a power of \num{2} on this node. This makes it difficult to utilize all resources using the native implementation. This fact is reflected by the results. The threaded variant has substantial performance increase compared to the best native pure-MPI implementation using \num{64} ranks. Especially the configurations with ranks and threads $(n_r, n_{th})=(16,7)$, $(8,14)$ and $(4,14)$ perform best. The reason for this lies in the complicated association of cores to NUMA-domains. The node has \num{4} NUMA-domains, where the logical cores are associated to NUMA-domains in a non-trival manner (see listings \ref{lst:lscpu}). \num{14} logical cores share an L3 cache. This explains why the mentioned configurations with \num{14} threads perform well. The jobs were disposed in a way that the \num{14} threads are bound to physical cores with the same L3 cache, thus cores in the same NUMA-domain. The job $(16,7)$ that performed best was disposed such that each of the \num{4} NUMA-domains contained a group of \num{4} consecutive ranks with \num{7} threads each. All \num{112} logical cores were utilized.
+\textbf{Table \ref{tab:dop_omp_intel}}: Table \ref{tab:dop_omp_intel} shows a different picture: most notable for the analysis is the fact that the total number of physical and logical cores was \textit{not} a power of \num{2} on this node. This makes it difficult to utilize all resources using the native implementation. This fact is reflected by the results. The threaded variant has substantial performance increase compared to the best native pure-MPI implementation using \num{64} ranks. Especially the configurations with ranks and threads $(n_r, n_{th})=(16,7)$, $(8,14)$ and $(4,14)$ perform best. The reason for this lies in the complicated association of cores to NUMA-domains. The node has \num{4} NUMA-domains, where the logical cores are associated to NUMA-domains in a non-trival manner (see listing \ref{lst:lscpu}). \num{14} logical cores share an L3 cache. This explains why the mentioned configurations with \num{14} threads perform well. The jobs were disposed in a way that the \num{14} threads are bound to physical cores with the same L3 cache, thus cores in the same NUMA-domain. The job $(16,7)$ that performed best was disposed such that each of the \num{4} NUMA-domains contained a group of \num{4} consecutive ranks with \num{7} threads each. All \num{112} logical cores were utilized.
 
 \begin{figure}
 \begin{lstlisting}[
@@ -3536,7 +3542,7 @@ CPU NODE SOCKET CORE L1d:L1i:L2:L3 ONLINE
 
 \subsubsection{Conclusion}
 
-The threaded variant is useful on machines where the number of logical or physical cores is not a power of \num{2}, or can somehow not be fully utilized by the pure-MPI implementation. Since in openQCD (and openQxD) the number of ranks in one direction can only be $2,4,6,\dots$ and the lattice size in one direction can only be $4,6,8,\dots$, these numbers are limited for a given lattice size and a processor where the number of CPUs is not a power of \num{2}. Utilizing the whole node is not always possible\footnote{For example the node in table \ref{tab:dop_omp_intel}, where only a maximum of \num{64} from a total of \num{112} logical cores could be utilized.}. On the other hand, the threaded operator can utilize the whole node, because the number of threads per rank is arbitrary.
+The threaded variant is useful on machines where the number of logical or physical cores is not a power of \num{2}, or can somehow not be fully utilized by the pure-MPI implementation. Since in openQCD (and openQ*D) the number of ranks in one direction can only be $2,4,6,\dots$ and the lattice size in one direction can only be $4,6,8,\dots$, these numbers are limited for a given lattice size and a processor where the number of CPUs is not a power of \num{2}. Utilizing the entire node is not always possible\footnote{For example the node in table \ref{tab:dop_omp_intel}, where only a maximum of \num{64} from a total of \num{112} logical cores could be utilized.}. On the other hand, the threaded operator can utilize the entire node, because the number of threads per rank is arbitrary.
 
 When implementing threads, it is important to write NUMA-aware code. In the above implementation there are certainly performance degradations due to NUMA-effects and false sharing. It was tried to obey the first-touch policy as often as possible, by initializing the involved arrays with a parallel for-loop, just as they are accessed later in the main for-loop\footnote{See line 1295ff in \code{modules/dirac/Dw.c} in \cite{openqcd_threads}} within the Dirac-operator. However, a certain amount of false sharing was not preventable without significantly changing the original code.
 
@@ -3574,17 +3580,17 @@ future:
 It makes sense to look at different representations of the gauge-fields $U_{\mu}(n)$, since on GPUs sparse linear algebra is even more memory-bound than on CPUs. While collecting the data on GPUs in sections \ref{sec:sap_gcr_results} and \ref{sec:dfl_sap_gcr_results} the GPU load was never higher than \num{20}-\num{30}\%. If we achieve higher arithmetic intensities in the calculations and less memory traffic in application kernels such as the Dirac-operator, we can achieve a \num{2}-\num{4} times faster GPU-implementation than the reference implementation in Python that was used in the analysis. This gives motivation to the following proposal and definition.
 
 \begin{definition}[Arithmetic Intensity]
-  The \df{arithmetic intensity} of a piece of code is the ratio of the work $W$ and the memory traffic $Q$,
+  The \df{arithmetic intensity} $I$ is the ratio of the \df{work} $W$ and the \df{memory traffic} $Q$ appearing in a considered piece of code,
   \begin{align*}
     I = \frac{W}{Q}.
   \end{align*}
-  The work $W$ needs to be given in terms of \acrfull{FLOPs} and the memory traffic $Q$ in terms of bytes. The unit of arithmetic intensity $I$ is then FLOPS per byte and depends on the data type of the involved quantities.
+  The work $W$ needs to be given as number of floating-point operations and the memory traffic $Q$ in terms of stored and loaded bytes. The unit of arithmetic intensity $I$ is then floating-point operations per byte and depends on the data type of the involved quantities.
 \end{definition}
 
 \begin{proposal}{Representation of the Dirac-operator}{dop_reps}
-For the implementation of the Dirac-operator on the GPU, the software library QUDA \cite{clark2010} is a good sample. To improve the performance of their Dirac-operator, the authors of QUDA used a representation of the $SU(3)$-fields with \num{8} real numbers, a gauge transformation to make almost all of the gauge fields in temporal direction to the identity-matrix and a change of basis in the $\gamma$-matrices, such that one of the four matrices has a quite simple form. The most interesting one is the $SU(3)$-representation with only \num{8} real numbers. In openQxD \footnote{See line 43 in \code{include/su3.h} in \cite{openqxd}.} the struct \code{su3\_dble} representing a $SU(3)$-gauge-field consists of \num{18} double precision numbers. The C macro for a matrix-matrix multiplication of 2 such \code{su3\_dble} \footnote{See line 490ff in \code{include/su3.h} in \cite{openqxd}.} consists of $18 \cdot 12$ FLOPs, $2 \cdot 18$ loads and $18$ stores. Using \gls{binary64}, the arithmetic intensity is $I = 0.5$ FLOPs per byte, making the problem memory-bound.
+For the implementation of the Dirac-operator on the GPU, the software library QUDA \cite{clark2010} is a good sample. To improve the performance of their Dirac-operator, the authors of QUDA used a representation of the $SU(3)$-fields with \num{8} real numbers, a gauge transformation to make almost all of the gauge fields in temporal direction to the identity-matrix and a change of basis in the $\gamma$-matrices, such that one of the four matrices has a quite simple form. The most interesting one is the $SU(3)$-representation with only \num{8} real numbers. In openQ*D \footnote{See line 43 in \code{include/su3.h} in \cite{openqxd}.} the struct \code{su3\_dble} representing a $SU(3)$-gauge-field consists of \num{18} double precision numbers. The C macro for a matrix-matrix multiplication of 2 such \code{su3\_dble} \footnote{See line 490ff in \code{include/su3.h} in \cite{openqxd}.} consists of $18 \cdot 12$ floating-point operations, $2 \cdot 18$ loads and $18$ stores. Using \gls{binary64}, the arithmetic intensity is $I = 0.5$ floating-point operations per byte, making the problem memory-bound.
 
-Since the rows and columns of $SU(3)$-matrices form an orthonormal basis of $\mathbb{C}^3$, one representation of such matrices consists of only the first two rows/columns and the third row/column is calculated as the vector product of the former two \cite{deforcrand1985}. This is a representation with \num{12} real numbers. A matrix-matrix multiplication of two such matrices ends up in $270$ FLOPs, $2 \cdot 12$ loads and $12$ stores. This results in an arithmetic intensity of $I = 0.9375$ FLOPs per byte using \gls{binary64} -- still memory-bound.
+Since the rows and columns of $SU(3)$-matrices form an orthonormal basis of $\mathbb{C}^3$, one representation of such matrices consists of only the first two rows/columns and the third row/column is calculated as the vector product of the former two \cite{deforcrand1985}. This is a representation with \num{12} real numbers. A matrix-matrix multiplication of two such matrices ends up in $270$ floating-point operations, $2 \cdot 12$ loads and $12$ stores. This results in an arithmetic intensity of $I = 0.9375$ floating-point operations per byte using \gls{binary64} -- still memory-bound.
 
 If the representation of a $SU(3)$-gauge-field would be chosen such that the struct contains only \num{10} numbers \cite{bunk1986}, then a matrix $A \in SU(3)$ would be represented as ($a_{ij} \in \mathbb{C}$)
 
@@ -3635,7 +3641,7 @@ Using this, only $a_{11}, a_{12}, a_{21}$ and the real parts of $a_{13}$ and $a_
 \centering
     \begin{tabular}{ |p{1.2cm}|p{2cm}|p{2cm}|p{2cm}|  }
         \hline
-        \multicolumn{4}{|c|}{Arithmetic intensities in FLOPs per byte} \\
+        \multicolumn{4}{|c|}{Arithmetic intensities in floating-point operations per byte} \\
         \hline
         Reals & I(binary64) & I(binary32) & I(binary16) \\
         \hline
@@ -3675,7 +3681,7 @@ In table \ref{tab:dw_dble} one invocation of \code{Dw\_dble()} was called and th
     \label{tab:dw_dble}
 \end{table}
 
-When modifying the C structs \code{su3} or \code{su3\_dble}, one has to search the whole codebase for typecasts of these structs to other types, because such casts rely on guarantees of the ANSI C standard about memory layouts of fields within the struct. When changing the struct, the layout in memory is altered as well, making the typecast to another (unchanged) struct faulty, \cite{siff1999}.
+When modifying the C structs \code{su3} or \code{su3\_dble}, one has to search the entire codebase for typecasts of these structs to other types, because such casts rely on guarantees of the ANSI C standard about memory layouts of fields within the struct. When changing the struct, the layout in memory is altered as well, making the typecast to another (unchanged) struct faulty, \cite{siff1999}.
 
 \begin{comment}
 A necessary condition for GPU acceleration to be advantageous is that the benefit of doing work on the GPU exceeds the cost of getting the data there.
@@ -3690,7 +3696,7 @@ There are multiple possibilities how to implement GPU-utilisation into the curre
 
 \begin{proposal}{GPU Implementation Variant 1}{gpu_implementation1} % ref with pp:gpu_implementation1
 
-Keeping in mind the results of section \ref{sec:sap_gcr_results}, the pure GPU implementation of \code{SAP\_GCR} was by far the fastest. Thus, it makes sense to associate a local lattice to each GPU as well, to treat a GPU as an additional rank with its own local lattice. Each GPU would then act as another rank and the full lattice can be extended by as many local lattices as there are available GPUs. Some nodes might have GPUs, some not. Each GPU has a \df{bystander process} running on the CPU. Process contexts associated to a GPU (CPU) are from now on called \df{GPU ranks} (\df{CPU ranks}). The bystander process will not require a lot of CPU load, since it only hosts control and informational variables and is not involved in any calculations, the process will be in sleeping state almost the whole time when waiting for the GPU-calculation to complete. The communication from a GPU rank to another rank (CPU or GPU) in the system can be done either via the bystander process or via direct injection into the network bypassing the CPU and the bystander process. The former case will not require a change of the MPI communication code among ranks. Since the communication will only take negligible computational effort on the bystander process, it will not \textit{steal} from the CPU ranks running on the same node. As an example: Let's assume the application runs on one single node with \num{8} cores and \num{4} GPUs attached to it. This would involve \num{8} CPU ranks (separate processes) and \num{4} GPU ranks with in total \num{4} (separate) bystander processes. Technically the machine is over-subscripted, and the operating system needs to schedule the processes. But since the bystander processes will be in sleeping state most of the time, this will not (or only negligibly) degrade the performance of the \num{8} CPU ranks.
+Keeping in mind the results of section \ref{sec:sap_gcr_results}, the pure GPU implementation of \code{SAP\_GCR} was by far the fastest. Thus, it makes sense to associate a local lattice to each GPU as well, to treat a GPU as an additional rank with its own local lattice. Each GPU would then act as another rank and the full lattice can be extended by as many local lattices as there are available GPUs. Some nodes might have GPUs, some not. Each GPU has a \df{bystander process} running on the CPU. Process contexts associated to a GPU (CPU) are from now on called \df{GPU ranks} (\df{CPU ranks}). The bystander process will not require a lot of CPU load, since it only hosts control and informational variables and is not involved in any calculations. The process will be in sleeping state almost all of the time when waiting for the GPU-calculation to complete. The communication from a GPU rank to another rank (CPU or GPU) in the system can be done either via the bystander process or via direct injection into the network bypassing the CPU and the bystander process. The former case will not require a change of the MPI communication code among ranks. Since the communication will only take negligible computational effort on the bystander process, it will not \textit{steal} from the CPU ranks running on the same node. As an example: Let's assume the application runs on one single node with \num{8} cores and \num{4} GPUs attached to it. This would involve \num{8} CPU ranks (separate processes) and \num{4} GPU ranks with in total \num{4} (separate) bystander processes. Technically the machine is over-subscripted, and the operating system needs to schedule the processes. But since the bystander processes will be in sleeping state most of the time, this will not (or only negligibly) degrade the performance of the \num{8} CPU ranks.
 
 \begin{itemize}
     \item Advantage: The application can run on hybrid machines in the sense that some nodes can have GPUs attached to them while others have none.
@@ -3730,6 +3736,15 @@ All mentioned variants so far include the waiting problem; either the CPU or the
 
 It makes sense to partition the workload into chunks. The size of a chunk should be suitable for all involved processing devices. The chunks are published in a queue and associated to idle workers running on the CPU or on the GPU. Data locality should be considered when distributing the work. Stale workers signal their idling and are associated new work. The queue is managed by one process per node or per NUMA-domain. A node can also have no GPU-accelerator. The participating worker processes/threads are then only of type CPU. When all workers on a node become idle, they may steal chunks from other nodes until all nodes are done and the application hits an MPI-barrier. At this point data still resides in various locations in memory, tracked by the management process(es). In the next iteration of the same or a different kernel, data locality can be exploited from anew when associating chunks to workers.
 
+\begin{itemize}
+    \item Advantage: No waiting problem anymore.
+    \item Advantage: Fully utilized CPU \textit{and} GPU.
+    \item Advantage: This system works on clusters having nodes with and without GPU accelerators -- both can contribute to the solution.
+    \item Disadvantage: More communication overhead due to the work-stealing nature.
+    \item Disadvantage: Enormous imlementation effort.
+\end{itemize}
+
+
 \end{proposal}
 
 \begin{comment}
@@ -3762,7 +3777,7 @@ During a simulation, a lot of linear systems of equation of the type $A \vec{x} 
 
 \label{sec:summary}
 
-This thesis has two major purposes: (1) to investigate solver algorithms and other important application kernels appearing in the lattice QFT application openQxD and (2) to suggest and demonstrate implementations utilizing the GPU of modern supercomputing facilities. The main motive was always an increase of performance in terms of run-time. All proposals can easily be accessed by the list of proposals in the appendix \ref{sec:proposals}. The main body of this thesis is composed of \num{4} chapters, each of them dealing with a different application kernel in openQxD.
+This thesis has two major purposes: (1) to investigate solver algorithms and other important application kernels appearing in the lattice QFT application openQ*D and (2) to suggest and demonstrate implementations utilizing the GPU of modern supercomputing facilities. The main motive was always an increase of performance in terms of run-time. All proposals can easily be accessed by the list of proposals in the appendix \ref{sec:proposals}. The main body of this thesis is composed of \num{4} chapters, each of them dealing with a different application kernel in openQ*D.
 
 The convergence analysis of the \acrshort{cg} algorithm in section \ref{sec:cg} suggests that common \num{16}-bit data types such as \gls{binary16} or \gls{bfloat16} appearing on modern GPUs are suitable for an implementation of a mixed precision solver, where most of the iterative process is calculated in reduced precision. The Dirac-operator can be formulated using such reduced data types.
 
@@ -3788,7 +3803,7 @@ Third paragraph: Give a concluding statement, including a short summary of the r
 
 \label{sec:outlook}
 
-Future research from here on can go in many different directions. Immediate next steps would be to explore the Dirac-operator further. The Python-implementation could be extended to represent the operator not in terms of a \acrshort{csr}-matrix, but instead in terms of different representations for $SU(3)$-matrices (see proposal \ref{pp:dop_reps}). To implement such a representation in openQxD directly is straight-forward. Run-time measurements such as the ones in section \ref{sec:sap_gcr_results} can then be repeated and studied. It is expected to speed up the results on the GPU, because the kernels involve less memory traffic and are arithmetically more intense. It is also of interest how these representations perform on the CPU.
+Future research from here on can go in many different directions. Immediate next steps would be to explore the Dirac-operator further. The Python-implementation could be extended to represent the operator not in terms of a \acrshort{csr}-matrix, but instead in terms of different representations for $SU(3)$-matrices (see proposal \ref{pp:dop_reps}). To implement such a representation in openQ*D directly is straight-forward. Run-time measurements such as the ones in section \ref{sec:sap_gcr_results} can then be repeated and studied. It is expected to speed up the results on the GPU, because the kernels involve less memory traffic and are arithmetically more intense. It is also of interest how these representations perform on the CPU.
 
 Pursuing proposal \ref{pp:alpha} further might not be fruitful. It is included in this document only for the sake of completeness.
 
