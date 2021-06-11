@@ -169,8 +169,9 @@
 %TODO: A invbar => A|_Omega invbar on Omega subspace?, Yannick sagt ja: A^tilde^-1 = A^-1 |_A(Omega).
 %TODO: evtl. formal definition of memory bound, compute bound, latency bound
 %TODO: before handin in check for weird page breaks on whole document, specially the proposals, zB "Mixed Precision Solvers"
-%TODO: figure[htbp]
 
+%done: figure[htbp]
+%done: sweep through all also's and decide
 %done: rework abstract, probably not neccessary ...
 %done: I, my or we, our
 %done: color indices, einstein sum --> fixed by a footnote in "Conventions"
@@ -409,7 +410,7 @@ Let's consider a set of $N$ complex independent Dirac spinors
     \end{pmatrix},
 \end{align*}
 
-where every $\psi_a(x)$, $a \in \{1, \dots N\}$, has $4$ components with spinor indices $\alpha \in \{1, \dots 4\}$. Thus, we have a set of complex Grassmann-valued fields $\psi_{a}^{\alpha}(x)$, where $a$ is called the \df{color index} and $\alpha$ is the \df{spinor index}. It makes sense to demand the theory to be invariant under $SU(N)$-transformations, because basic quantum mechanics tells us that phases are unobservable. Such a field theory that is invariant under the gauge group $SU(N)$ has to introduce (massless) vectorial fields $A_{\mu}(x)$, called the \df{gauge-fields}. From special relativity, we also demand the theory to be Lorentz-invariant. The goal is to construct a Lagrangian for fermionic fields that satisfies these symmetries.
+where every $\psi_a(x)$, $a \in \{1, \dots N\}$, has $4$ components with spinor indices $\alpha \in \{1, \dots 4\}$. Thus, we have a set of complex Grassmann-valued fields $\psi_{a}^{\alpha}(x)$, where $a$ is called the \df{color index} and $\alpha$ is the \df{spinor index}. It makes sense to demand the theory to be invariant under $SU(N)$-transformations, because basic quantum mechanics tells us that phases are unobservable. Such a field theory that is invariant under the gauge group $SU(N)$ has to introduce (massless) vectorial fields $A_{\mu}(x)$, called the \df{gauge-fields}. From special relativity, we demand the theory to be Lorentz-invariant. The goal is to construct a Lagrangian for fermionic fields that satisfies these symmetries.
 
 Let's introduce the local\footnote{The phase depends on the space-time coordinate $x$.} gauge transformation under which we want the theory to be invariant
 
@@ -417,7 +418,7 @@ Let's introduce the local\footnote{The phase depends on the space-time coordinat
     \psi(x) \longrightarrow \tilde{\psi}(x) = V(x) \psi(x),
 \end{align*}
 
-with $V(x) \in SU(N)$, thus it has indices in color space, explicitly $V(x)_{ab}$. Since we want our fermions to possess a non-zero mass, the Lagrangian will contain a term quadratic in the field $\psi$. A first approach of an $SU(N)$-invariant expression would be a term proportional to $\psi^{\dagger} \psi$. Unfortunately, $\psi$ is Grassmann valued\footnote{For a formal introduction to Grassmann variables see appendix \ref{sec:grassmann}.}, thus anti-commutes with itself, meaning the mentioned term is equal to zero.\footnote{To be pedantic, $0$ \textit{is} $SU(N)$- and Lorentz-invariant.} Special relativity also demands the term to be a Lorentz-scalar, which $\psi^{\dagger} \psi$ is not. Under Lorentz-transformation $\Lambda$, $\psi$ and $\psi(x)^{\dagger}$ transform as
+with $V(x) \in SU(N)$, thus it has indices in color space, explicitly $V(x)_{ab}$. Since we want our fermions to possess a non-zero mass, the Lagrangian will contain a term quadratic in the field $\psi$. A first approach of an $SU(N)$-invariant expression would be a term proportional to $\psi^{\dagger} \psi$. Unfortunately, $\psi$ is Grassmann valued\footnote{For a formal introduction to Grassmann variables see appendix \ref{sec:grassmann}.}, thus anti-commutes with itself, meaning the mentioned term is equal to zero.\footnote{To be pedantic, $0$ \textit{is} $SU(N)$- and Lorentz-invariant.} Special relativity demands the term to be a Lorentz-scalar, which $\psi^{\dagger} \psi$ is not. Under Lorentz-transformation $\Lambda$, $\psi$ and $\psi(x)^{\dagger}$ transform as
 
 \begin{align*}
     \psi(x) &\longrightarrow \Lambda \psi(x), \\
@@ -498,7 +499,7 @@ which leads directly to the definition of the \df{gauge covariant derivative}
     D_{\mu} \coloneqq \partial_{\mu} + ig A_{\mu}^a(x) T^a. \label{eq:cov_derivative}
 \end{align}
 
-We introduced a new field -- and by this a corresponding particle. In order for the particle to have a propagator, we also have to implement a kinetic term that is quadratic in $A_{\mu}^a$ or its derivatives. Obviously, the kinetic term should be invariant under $SU(N)$ transformations as well. For this we need the plaquette\footnote{There are other (probably simpler and more elegant) methods to derive a kinetic term for the gauge-fields, but the plaquette will arise again later in context of lattice gauge theories. And as a physicist sometimes one has to go though some pain and suffer a little bit here and there -- this is part of the game.}.
+We introduced a new field -- and by this a corresponding particle. In order for the particle to have a propagator, we have to implement a kinetic term that is quadratic in $A_{\mu}^a$ or its derivatives. Obviously, the kinetic term should be invariant under $SU(N)$ transformations as well. For this we need the plaquette\footnote{There are other (probably simpler and more elegant) methods to derive a kinetic term for the gauge-fields, but the plaquette will arise again later in context of lattice gauge theories. And as a physicist sometimes one has to go though some pain and suffer a little bit here and there -- this is part of the game.}.
 
 \begin{definition}[Plaquette]
 
@@ -564,7 +565,7 @@ Since the solution to a first order differential equation with a fixed boundary 
     D_{\mu} \psi(x) &\longrightarrow \tilde{D}_{\mu} \tilde{\psi}(x) = \textcolor{cyellow}{\tilde{D}_{\mu} V(x)} \psi(x),
 \end{align*}
 
-meaning that the $\textcolor{cyellow}{yellow}$ parts must be equal (as operators acting to the right applied to \textit{any} field) and $\tilde{D}_{\mu}$ is written in terms of the transformed fields $\tilde{A}_{\mu}^a$. We have not derived a transformation rule for $A_{\mu}^a(x)$. We also don't have to because, if $U(x,y)$ is the solution to \eqref{eq:Udgl}, then
+meaning that the $\textcolor{cyellow}{yellow}$ parts must be equal (as operators acting to the right applied to \textit{any} field) and $\tilde{D}_{\mu}$ is written in terms of the transformed fields $\tilde{A}_{\mu}^a$. We have not derived a transformation rule for $A_{\mu}^a(x)$. And we don't have to because, if $U(x,y)$ is the solution to \eqref{eq:Udgl}, then
 
 \begin{align*}
     \frac{dx^{\mu}}{ds} \left[ \tilde{D}_{\mu} V(x) U(x,y) V^{\dagger}(y) \right] &= \frac{dx^{\mu}}{ds} \left[ \tilde{D}_{\mu} V(x) U(x,y) \right] V^{\dagger}(y) \\
@@ -2235,7 +2236,7 @@ A possibility to reduce computational cost in each iteration could be to approxi
     \item Advantage: The residuals can be calculated using $\vec{b} - A \vec{x}$, instead of recursively. This implies less round-off accumulation.
     \item Advantage: Only one matrix-vector multiplication per iteration.
     \item Disadvantage: Since the $\alpha_i$ are just approximated, the number of required iterations may increase.
-    \item Disadvantage: The Dirac-operator $D$ must be given in the form of $A = D^{\dagger} D$ as \textit{one} operator, else the algorithm still consists of \num{2} matrix-vector multiplications per iteration and the benefit is non-existent. Also, $D^{\dagger} D$ is less sparse than $D$.
+    \item Disadvantage: The Dirac-operator $D$ must be given in the form of $A = D^{\dagger} D$ as \textit{one} operator, else the algorithm still consists of \num{2} matrix-vector multiplications per iteration and the benefit is non-existent. Further, $D^{\dagger} D$ is less sparse than $D$.
 \end{itemize}
 
 The results of simulations with approximated values for the $\alpha_i$ can be observed in plot series \ref{fig:cgne:4x4x4x4:e1} and \ref{fig:cgne:8x8x8x8:e1}. The value was approximated based on previous values. The first \num{5} steps where skipped (thus the algorithm performed natively). In step number \num{5}, the last \num{3} values of $\alpha_i$ where averaged. In the following steps the constant value calculated in step \num{5} was reused. After every reset step, the value of $\alpha_i$ had to be recalculated using the above procedure. Therefore, a data type such as \gls{bfloat16} that has reset steps after approximately every \num{7}th regular step, will benefit in only \num{2} steps per reset step. This is little difference to native runs of data types with high precision.
@@ -3206,7 +3207,7 @@ Definition \ref{def:local_coherence} can be interpreted such that the fields in 
 \end{remark}
 
 \begin{remark}
-Definition \ref{def:local_coherence} can also (very informally) be restated as $\Omega_{exact}$ is approximately the span of the projected bootstrap fields.
+Definition \ref{def:local_coherence} can (very informally) be restated as $\Omega_{exact}$ is approximately the span of the projected bootstrap fields.
 \end{remark}
 
 \begin{remark}
@@ -3895,13 +3896,13 @@ The GPU implementation variant in proposal \ref{pp:gpu_implementation4} only scr
 
 At this point let me thank my supervisor Prof. Thomas Schulthess for giving me the opportunity to deep dive into this fascinating topic and for organizing the best co-supervisors one could ask for; Prof. Marina Marinković, Dr. Raffaele Solcà and Dr. Anton Kozhevnikov. I have learned a lot from them. They gave me great support and assistance. It was a pleasure to work with them!
 
-Special thanks to Prof. Marinković, who treated me like one of them, answering my many questions with patience. She welcomed me with warmth in her group and I felt like a valuable part. I cannot emphasise enough, that it was appreciated!
+Special thanks to Prof. Marinković, who treated me like one of them, answering my many questions with patience. She welcomed me with warmth in her group and I felt like a valuable part. I cannot emphasise enough how it was appreciated!
 
 %At this point let me thank my supervisor Prof. Thomas Schulthess for giving me the opportunity to deep dive into this fascinating topic and the co-supervisors Prof. Marina Marinkovic, Dr. Raffaele Solcà and Dr. Anton Kozhevnikov for treating me as a part of their groups and answering my many questions with patience. I have learned a lot from them. They gave me great support and assistance. It was a pleasure to work with them!
 
 One of the greatest challenges of my thesis although was organizing a meeting date suitable for all participants, a task comparable to a complicated numerical problem with many boundary conditions, that ironically and very accurately resembled the challenges in numerical lattice QFT. On the other hand, when finally a meeting date was fixed, it tended to be as stable as the Bitcoin stock market price.
 
-Further, I also want to thank my girlfriend, Cheryl Lüssi, who took the time to fight through all of this in a remarkably unfinished stage. Even so, she still talks to me. She did all of this despite having more important things to do (for example writing an own thesis).
+Further, I want to thank my girlfriend, Cheryl Lüssi, who took the time to fight through this document in a remarkably unfinished stage. Even so, she still talks to me. She did all of this despite having more important things to do (for example writing a thesis herself).
 
 Many thanks to my fellow student Yannick Seitz for being so pedantic with my math. Testing documents against him, always ends up in a mathematically clear and concise text, because he never stops asking no matter how annoying he is.
 
