@@ -165,16 +165,16 @@
   top=20mm,
 }
 
-%TODO: I, my or we, our
-%TODO: rework abstract, probably not neccessary ...
-%TODO: color indices, einstein sum
-%TODO: cgne conclusion, say b16 and bf16 are sufficient + elaborate a little bit, usw...
-%TODO: A invbar => A|_Omega invbar on Omega subspace?, Yannick sagt: A^tilde^-1 = A^-1 |_A(Omega).
-%TODO: gauge-field <-> gauge field, fermion-field <-> fermion field
+%TODO: A invbar => A|_Omega invbar on Omega subspace?, Yannick sagt ja: A^tilde^-1 = A^-1 |_A(Omega).
 %TODO: evtl. formal definition of memory bound, compute bound, latency bound
-%TODO: before handin in check for weird page breaks, zB "Mixed Precision Solvers"
-%TODO: comedy effect of last footnote
+%TODO: before handin in check for weird page breaks on whole document, specially the proposals, zB "Mixed Precision Solvers"
+%TODO: figure[htbp]
 
+%done: rework abstract, probably not neccessary ...
+%done: I, my or we, our
+%done: color indices, einstein sum --> fixed by a footnote in "Conventions"
+%done: gauge-field <-> gauge field, fermion-field <-> fermion field
+%done: cgne conclusion, say b16 and bf16 are sufficient + elaborate a little bit, usw...
 %done: to purpose -> to propose
 %done: openqxd part: reduce flame
 %done: FLOPs and FLOPS; removed FLOPs
@@ -257,7 +257,7 @@ A summary and possible continuations of this work are given in sections \ref{sec
 
 \begin{comment}
 From quda paper:
-latticeQCD ,where the main computational challenge is to efficiently solve the discretised Dirac equation in the presence of an SU(3) gauge field. In lattice QCD, the propagation of quarks is given by the inverse of the Dirac operator,
+latticeQCD ,where the main computational challenge is to efficiently solve the discretised Dirac equation in the presence of an SU(3) gauge-field. In lattice QCD, the propagation of quarks is given by the inverse of the Dirac operator,
 which is a large sparse matrix. Hence, many systems of linear equations must
 be solved involving this matrix; it is this requirement that makes lattice QCD
 a grand challenge subject. In such linear solvers, the application of the Dirac
@@ -314,6 +314,8 @@ In \acrshort{QCD} blabla see proposal \ref{pp:one}. \textcolor{corange}{orange},
 
 \end{comment}
 
+\newpage
+
 \section{Conventions}
 
 \begin{convention}[Units]
@@ -334,7 +336,7 @@ The Minkowski metric $\eta$ has signature $(+---)$. The scalar product between t
   \langle x, y \rangle = x^{\mu} y_{\mu} \coloneqq \sum_{\mu=0}^D x^{\mu} y_{\mu},
 \end{align*}
 
-where $D$ denotes the space-time dimension and repeated indices are summed over (Einstein summation convention).
+where $D$ denotes the space-time dimension. Repeated indices are summed over\footnote{Even if they are both superscripted or subscripted, $a_i b_i \coloneqq \sum_i a_i b_i$, $a^i b^i \coloneqq \sum_i a^i b^i$ and $a^i b_i \coloneqq \sum_i a^i b_i$.} (Einstein summation convention), unless stated otherwise in the text.
 
 \end{convention}
 
@@ -388,6 +390,8 @@ dagger vs star vs bar
 $dx^D = dx^0 ... dx^{D-1}$ or $dx^D = dx^1 ... dx^{D}$,...
 \end{comment}
 
+\newpage
+
 \section{Non-abelian gauge theories}
 
 \label{sec:gauge_theories}
@@ -404,7 +408,7 @@ Let's consider a set of $N$ complex independent Dirac spinors
     \end{pmatrix},
 \end{align*}
 
-where every $\psi_a(x)$, $a \in \{1, \dots N\}$, has $4$ components with spinor indices $\alpha \in \{1, \dots 4\}$. Thus, we have a set of complex Grassmann-valued fields $\psi_{a}^{\alpha}(x)$, where $a$ is called the \df{color index} and $\alpha$ is the \df{spinor index}. It makes sense to demand the theory to be invariant under $SU(N)$-transformations, because basic quantum mechanics tells us that phases are unobservable. Such a field theory that is invariant under the gauge group $SU(N)$ has to introduce (massless) vectorial fields $A_{\mu}(x)$, called the \df{gauge fields}. From special relativity, we also demand the theory to be Lorentz-invariant. The goal is to construct a Lagrangian for fermionic fields that satisfies these symmetries.
+where every $\psi_a(x)$, $a \in \{1, \dots N\}$, has $4$ components with spinor indices $\alpha \in \{1, \dots 4\}$. Thus, we have a set of complex Grassmann-valued fields $\psi_{a}^{\alpha}(x)$, where $a$ is called the \df{color index} and $\alpha$ is the \df{spinor index}. It makes sense to demand the theory to be invariant under $SU(N)$-transformations, because basic quantum mechanics tells us that phases are unobservable. Such a field theory that is invariant under the gauge group $SU(N)$ has to introduce (massless) vectorial fields $A_{\mu}(x)$, called the \df{gauge-fields}. From special relativity, we also demand the theory to be Lorentz-invariant. The goal is to construct a Lagrangian for fermionic fields that satisfies these symmetries.
 
 Let's introduce the local\footnote{The phase depends on the space-time coordinate $x$.} gauge transformation under which we want the theory to be invariant
 
@@ -493,7 +497,7 @@ which leads directly to the definition of the \df{gauge covariant derivative}
     D_{\mu} \coloneqq \partial_{\mu} + ig A_{\mu}^a(x) T^a. \label{eq:cov_derivative}
 \end{align}
 
-We introduced a new field -- and by this a corresponding particle. In order for the particle to have a propagator, we also have to implement a kinetic term that is quadratic in $A_{\mu}^a$ or its derivatives. Obviously, the kinetic term should be invariant under $SU(N)$ transformations as well. For this we need the plaquette\footnote{There are other (probably simpler and more elegant) methods to derive a kinetic term for the gauge fields, but the plaquette will arise again later in context of lattice gauge theories. And as a physicist sometimes one has to go though some pain and suffer a little bit here and there -- this is part of the game.}.
+We introduced a new field -- and by this a corresponding particle. In order for the particle to have a propagator, we also have to implement a kinetic term that is quadratic in $A_{\mu}^a$ or its derivatives. Obviously, the kinetic term should be invariant under $SU(N)$ transformations as well. For this we need the plaquette\footnote{There are other (probably simpler and more elegant) methods to derive a kinetic term for the gauge-fields, but the plaquette will arise again later in context of lattice gauge theories. And as a physicist sometimes one has to go though some pain and suffer a little bit here and there -- this is part of the game.}.
 
 \begin{definition}[Plaquette]
 
@@ -552,7 +556,7 @@ or equivalently
     \frac{dx^{\mu}}{ds} D_{\mu} U(x,y) = 0. \label{eq:Udgl}
 \end{align}
 
-Since the solution to a first order differential equation with a fixed boundary condition must be unique, equation \eqref{eq:realu} is therefore the unique solution to the above differential equation. A defining property of the covariant derivative was, that when applied to a fermion field, it transforms as
+Since the solution to a first order differential equation with a fixed boundary condition must be unique, equation \eqref{eq:realu} is therefore the unique solution to the above differential equation. A defining property of the covariant derivative was, that when applied to a fermion-field, it transforms as
 
 \begin{align*}
     D_{\mu} \psi(x) &\longrightarrow \tilde{D}_{\mu} \tilde{\psi}(x) = \textcolor{cyellow}{V(x) D_{\mu}} \psi(x), \\
@@ -652,7 +656,7 @@ The quadratic terms in the Lagrangian are always of the form $-\frac{1}{2} (\tex
     \mathcal{L} = -\frac{1}{4} F_{\mu \nu}^a F^{\mu \nu, a} + \bar{\psi} \left( i \slashed{D} - m \right) \psi, \label{eq:ymlagrangian}
 \end{align}
 
-where $\slashed{D} = \gamma^{\mu} D_{\mu}$ is the \df{Feynman slash notation}. Just as in the abelian theory, there is no term quadratic in $A$, $m_A A_{\mu}^a A^{\mu,a}$, a mass-term for the gauge fields, because this would violate the $SU(N)$-invariance. The fundamental vector particles which are represented by these fields must therefore be massless $m_A = 0$. The constant $g$ can be interpreted as \df{coupling constant}. The terms in the above Lagrangian are the only ones that can appear if we demand the space-time to have $D=4$ dimensions, parity- (P) and time-reversal- (T) invariance. The gauge part of the Lagrangian employs interactions among the gauge fields, namely the theory is equipped with pure 3- and 4-vertices of gauge bosons.
+where $\slashed{D} = \gamma^{\mu} D_{\mu}$ is the \df{Feynman slash notation}. Just as in the abelian theory, there is no term quadratic in $A$, $m_A A_{\mu}^a A^{\mu,a}$, a mass-term for the gauge-fields, because this would violate the $SU(N)$-invariance. The fundamental vector particles which are represented by these fields must therefore be massless $m_A = 0$. The constant $g$ can be interpreted as \df{coupling constant}. The terms in the above Lagrangian are the only ones that can appear if we demand the space-time to have $D=4$ dimensions, parity- (P) and time-reversal- (T) invariance. The gauge part of the Lagrangian employs interactions among the gauge-fields, namely the theory is equipped with pure 3- and 4-vertices of gauge bosons.
 
 \subsection{Euclidean theory}
 
@@ -669,10 +673,10 @@ with fermion- (F) and gauge-part (G)
     \mathcal{L}_G^M &= - \frac{1}{4} F_{\mu \nu}^a F_a^{\mu \nu},
 \end{align*}
 
-where -- for simplicity -- there is only one fundamental Dirac spinor field with mass $m$, $D_{\mu} = \partial_{\mu} + ig A_{\mu}^a(x) T^a$ is the \df{gauge covariant derivative} (see equation \eqref{eq:cov_derivative}), $T^a$ are the generators of the Lie-algebra of the gauge group and $A_{\mu}^a(x)$ are the (massless) gauge fields introduced in the previous section \ref{sec:gauge_theories}. The color index $a$ runs from $1$ to $N^2-1$, where $N$ is degree of the special unitary symmetry group $SU(N)$. The \df{field strength tensor} is defined as (see equation \eqref{eq:ymtensor})
+where -- for simplicity -- there is only one fundamental Dirac spinor field with mass $m$, $D_{\mu} = \partial_{\mu} + ig A_{\mu}^a(x) T^a$ is the \df{gauge covariant derivative} (see equation \eqref{eq:cov_derivative}), $T^a$ are the generators of the Lie-algebra of the gauge group and $A_{\mu}^a(x)$ are the (massless) gauge-fields introduced in the previous section \ref{sec:gauge_theories}. The color index $a$ runs from $1$ to $N^2-1$, where $N$ is degree of the special unitary symmetry group $SU(N)$. The \df{field strength tensor} is defined as (see equation \eqref{eq:ymtensor})
 
 \begin{align*}
-    F_{\mu \nu}^a = \partial_{\mu} A_{\nu}^a - \partial_{\nu} A_{\mu}^a - g f_{abc} A_{\mu}^b A_{\nu}^c.
+    F_{\mu \nu}^a = \partial_{\mu} A_{\nu}^a - \partial_{\nu} A_{\mu}^a - g f^{abc} A_{\mu}^b A_{\nu}^c.
 \end{align*}
 
 The (Minkowski) action is defined as usual, the integral over space-time of the Lagrangian
@@ -699,7 +703,7 @@ where $t \in \mathbb{R}$ is the Minkowski time coordinate and the real number $\
     \psi(\vec{x}, t)^{\dagger} &\longrightarrow \psi_E(\vec{x}, \tau)^{\dagger} S, \\
 \end{align*}
 
-where $S$ is a (invertible) matrix in spinor space that has to be determined. Since the gauge fields are vector quantities, they transform under Wick-rotation just as the coordinates $x^0 \to -ix^4$ and $x^k \to x^k$ with $k \in \{1, 2, 3\}$, but the fields appear with lower indices and are therefore covariant. In analogy to the space-time components $x_0 \to ix_4$, we have
+where $S$ is a (invertible) matrix in spinor space that has to be determined. Since the gauge-fields are vector quantities, they transform under Wick-rotation just as the coordinates $x^0 \to -ix^4$ and $x^k \to x^k$ with $k \in \{1, 2, 3\}$, but the fields appear with lower indices and are therefore covariant. In analogy to the space-time components $x_0 \to ix_4$, we have
 
 \begin{align*}
     A^{0,a}(\vec{x}, t) &\longrightarrow - i (A_E)^{4,a}(\vec{x}, \tau) \\
@@ -830,14 +834,14 @@ as desired to model a probability density in the path integral.
 
 \subsubsection{Gauge part}
 
-Next, we look at the pure gauge Lagrangian $\mathcal{L}_{G}^M$. The Euclidean field strength tensor consists of derivatives and gauge fields, both transform equally under Wick-rotation. Thus, the trace over the field strength tensor transforms just as it is
+Next, we look at the pure gauge Lagrangian $\mathcal{L}_{G}^M$. The Euclidean field strength tensor consists of derivatives and gauge-fields, both transform equally under Wick-rotation. Thus, the trace over the field strength tensor transforms just as it is
 
 \begin{align*}
     \mathcal{L}_G^M &= - \frac{1}{4} F_{\mu \nu}^a F_a^{\mu \nu} \\
     &\stackrel{\text{WR}}{\longrightarrow} - \frac{1}{4} (F_E)_{\mu \nu}^a (F_E)_a^{\mu \nu} = - \mathcal{L}_G^E.
 \end{align*}
 
-Using the same rules for derivatives and gauge fields, it derives as
+Using the same rules for derivatives and gauge-fields, it derives as
 
 \begin{align*}
     (F_E)_{\mu \nu}^a = \partial_{\mu} (A_E)_{\nu}^a - \partial_{\nu} (A_E)_{\mu}^a - g f_{abc} (A_E)_{\mu}^b (A_E)_{\nu}^c.
@@ -859,18 +863,20 @@ The observable can be any combination of time-ordered products of gauge- and fer
 
 The expectation value \eqref{eq:expectation_value} has an unconventional limit that has to be taken from the expression\footnote{Only physicists come up with the idea of taking a limit that contains an infinitesimal $\epsilon$ multiplied by an infinitly growing quantity. Calling it unconventional barely does justice. Surprisingly, this expression is mathematically legal, because $\epsilon$ -- although infinitesimal -- is held constant while taking the limit. Nonetheless it hurts the eye.}. The limit has a slight tilt in the complex plane in order to suppress terms of the form $e^{-i \Delta E_n t}$, where $\Delta E_n \coloneqq E_n - E$ denotes the energy difference of the state with quantum numbers $n$ ($n$ might be a multi-index) to the state considered in the observable. The term with the least suppressed weight and the lowest $\Delta E_m$ for some $E_m \approx E$ dominates the limit. Using that particular limit, exactly the state considered in the observable is projected out.
 
-Since the fermion fields take Grassmannian values, they can be integrated analytically in the partition function using proposition \ref{prop:grassmann_integral} resulting in
+Since the fermion-fields take Grassmannian values, they can be integrated analytically in the partition function using proposition \ref{prop:grassmann_integral} resulting in
 
 \begin{align*}
     Z = \int \mathcal{D} A \det(D) e^{i\mathcal{S}_{G}[A]},
 \end{align*}
 
-where $D$ is the \df{Dirac-operator} in continuum theory, $D = i\gamma^{\mu} D_{\mu} - m$. Unfortunately, the determinant of $D$ depends on the gauge fields $A_{\mu}^a$, thus we cannot pull the term out of the integral\footnote{In the abelian theory it \textit{is} independent and \textit{can} be pulled out. In the expectation value \eqref{eq:expectation_value} this determinant then cancels the one in the numerator very conveniently.}.
+where $D$ is the \df{Dirac-operator} in continuum theory, $D = i\gamma^{\mu} D_{\mu} - m$. Unfortunately, the determinant of $D$ depends on the gauge-fields $A_{\mu}^a$, thus we cannot pull the term out of the integral\footnote{In the abelian theory it \textit{is} independent and \textit{can} be pulled out. In the expectation value \eqref{eq:expectation_value} this determinant then cancels the one in the numerator very conveniently.}.
 
 \begin{comment}
 TODO:
 non-abelian, hadronic physics, importance, renormalization problems, running coupling
 \end{comment}
+
+\newpage
 
 \section{Lattice Gauge Theories}
 
@@ -978,7 +984,7 @@ Since the compensator fields $U_{\mu}(n)$ (their discretised variants are usuall
     U_{\mu}(n) = U_{-\mu}(n + \hat{\mu})^{\dagger}, \label{eq:U_relation}
 \end{align}
 
-because the connection between lattice site $n$ and $n + \mu$ is equal in both directions\footnote{This follows directly from the continuum version, equation \eqref{eq:realu}, and holds in the lattice description as well.}. The spinor fields $\psi(n)_{\alpha,a}$ residing on the lattice points carry color- ($a$) and spinor indices ($\alpha$). Therefore, for each lattice site, we have \num{12} complex numbers from the fermion fields and \num{4} $SU(3)$ matrices coming from the link variables.
+because the connection between lattice site $n$ and $n + \mu$ is equal in both directions\footnote{This follows directly from the continuum version, equation \eqref{eq:realu}, and holds in the lattice description as well.}. The spinor fields $\psi(n)_{\alpha,a}$ residing on the lattice points carry color- ($a$) and spinor indices ($\alpha$). Therefore, for each lattice site, we have \num{12} complex numbers from the fermion-fields and \num{4} $SU(3)$ matrices coming from the link variables.
 
 The full discretised Yang-Mills action is
 
@@ -993,7 +999,7 @@ with
     \mathcal{S}_F &= a^4 \sum_{n \in \Lambda} \bar{\psi}(n) \underbrace{\left[ \sum_{\mu} \frac{\gamma^{\mu}}{2} (D_{+\mu} + D_{-\mu}) + m \right]}_{\coloneqq D} \psi(n).
 \end{align*}
 
-The expression in the square brackets between the fermion fields is the (naive) \df{lattice Dirac-operator}. One of the problems with this term is that it brings so called \df{doublers} into the theory, artifacts from the lattice discretisation. Doublers are unphysical poles in the fermion-propagator $D^{-1}$ and thus correspond to particles that do not exist in the continuum theory which has only one pole. In 4-dimensional space-time, the action above incorporates \num{15} unphysical doublers\footnotemark. Wilson found a solution to this problem \cite{wilson1974}, namely he added a term proportional to $a$ to the action which vanishes in the continuum limit. With $0 \ne r \in \mathbb{R}$, the \df{Wilson-Dirac-operator} then is
+The expression in the square brackets between the fermion-fields is the (naive) \df{lattice Dirac-operator}. One of the problems with this term is that it brings so called \df{doublers} into the theory, artifacts from the lattice discretisation. Doublers are unphysical poles in the fermion-propagator $D^{-1}$ and thus correspond to particles that do not exist in the continuum theory which has only one pole. In 4-dimensional space-time, the action above incorporates \num{15} unphysical doublers\footnotemark. Wilson found a solution to this problem \cite{wilson1974}, namely he added a term proportional to $a$ to the action which vanishes in the continuum limit. With $0 \ne r \in \mathbb{R}$, the \df{Wilson-Dirac-operator} then is
 
 \footnotetext{For general D-dimensional space-time the theory would contain $2^D -1$ doublers. Of the total $2^D$ poles only one is physical. Here there might be a slight overflow in notation, $D$ denotes the space-time dimension, while the Dirac-operator is also denoted as $D$. We assume that the meaning is clear from context.}
 
@@ -1085,7 +1091,7 @@ The sum in the exponential will then be truncated after some powers.
 TODO: as a renormalization scheme, observables, ...
 boundary conditions, specially SF type, 
 
-By introducing the finite lattice the measure of the functional integral Dpsi (which in principle are infinite regular integrals) has been translated into many \footnote{To be precise, it's 12 times N^4 complex integrals; or 24*N^4 real integral} regular complex integral measures dpsi_{alpha,a}(n). The gauge field measure DA analogously translated into 4*N^4 SU(N) group valued measures DU_{\mu}(n) - integrations over the group. However the fields are reduced to a countable number of regular numbers.
+By introducing the finite lattice the measure of the functional integral Dpsi (which in principle are infinite regular integrals) has been translated into many \footnote{To be precise, it's 12 times N^4 complex integrals; or 24*N^4 real integral} regular complex integral measures dpsi_{alpha,a}(n). The gauge-field measure DA analogously translated into 4*N^4 SU(N) group valued measures DU_{\mu}(n) - integrations over the group. However the fields are reduced to a countable number of regular numbers.
 
 from: Digitizing Gauge Fields: Lattice Monte Carlo Results for Future Quantum Computers
 The Haar measure has the property that
@@ -1098,7 +1104,7 @@ value of a Wilson loop in a theory where e^S = 1.
 
 \subsection{Pseudofermions}
 
-One way to introduce physical fermions into the lattice description of our theory is to rewrite the determinant in the expectation value \eqref{eq:expectation_value} in terms of fermion fields (having spinor indices) that behave statistically as bosonic fields (they commute), so called \df{pseudofermions}\footnote{There is some similarity to Faddeev–Popov ghosts in the sense that both fields are unphysical. Ghosts are anti-commuting bosonic (scalar) fields that have to be introduced when fixing the gauge in non-abelian gauge theories, while pseudofermions are commuting fermionic fields.}. Assume we have two fundamental fermions in the theory $\psi_u$ and $\psi_d$ (for example the up- and down-quark) of approximately the same mass. The same mass implies that their Dirac-operators are equal $D_u = D_d = D$ and the path integral looks like
+One way to introduce physical fermions into the lattice description of our theory is to rewrite the determinant in the expectation value \eqref{eq:expectation_value} in terms of fermion-fields (having spinor indices) that behave statistically as bosonic fields (they commute), so called \df{pseudofermions}\footnote{There is some similarity to Faddeev–Popov ghosts in the sense that both fields are unphysical. Ghosts are anti-commuting bosonic (scalar) fields that have to be introduced when fixing the gauge in non-abelian gauge theories, while pseudofermions are commuting fermionic fields.}. Assume we have two fundamental fermions in the theory $\psi_u$ and $\psi_d$ (for example the up- and down-quark) of approximately the same mass. The same mass implies that their Dirac-operators are equal $D_u = D_d = D$ and the path integral looks like
 
 \begin{align*}
 \int \mathcal{D}\psi_u \mathcal{D} \bar{\psi}_u \mathcal{D}\psi_d \mathcal{D} \bar{\psi}_d e^{ - \bar{\psi}_u D \psi_u - \bar{\psi}_d D \psi_d }.
@@ -1124,6 +1130,8 @@ In openQ*D, an algorithm called \acrfull{hmc} is used to generate the gauge- and
 
 The \acrshort{hmc} algorithm \cite{duane1987} features reduced correlations among Markov steps and thus fewer required samples in order to produce enough field configurations to evaluate the sample mean. Once high, the acceptance probability can be kept high, because HMC conducts Markov steps among field configurations that approximately conserve energy, thus the action is conserved as well. We will not discuss this vast and fascinating topic further since it would go far beyond the scope of this document.
 
+\newpage
+
 \section{OpenQ*D}
 
 \label{sec:openqxd}
@@ -1145,6 +1153,8 @@ Notable as well is the archaic C-89 standard and the style of code that reflects
 the software package openQxD: description
   * importance of CG in openQxD and what it does / how it's used in the software / why 90\% computation time
 \end{comment}
+
+\newpage
 
 \section{Real number formats}
 
@@ -1505,7 +1515,7 @@ See table \ref{tab:posit:limits} for these limiting numbers in the different pos
 
 Posits employ a feature called the \df{quire}. The \gls{quire} is the generalised answer to the \gls{fma} operation that recently found its way into \cite{ieee754_2008} in 2008, where the rounding is deferred to the very end of the operation.
 
-\begin{figure}
+\begin{figure}[ht]
     \centering
     \includegraphics[width=1.0\textwidth]{plots/number_line2}
     \caption{Density and distribution of numbers for \gls{tensorfloat32}, \gls{binary16}, \gls{posit16} and \gls{bfloat16}. The number of bins was chosen to be \num{1024} of logarithmic width. The y-axis gives the amount of numbers in the number regime given by the x-axis. The IEEE conformant floats \gls{tensorfloat32}, \gls{binary16} and \gls{bfloat16} show a similar shape, namely the distribution of numbers is exponentially decreasing for higher and smaller numbers. The high numbers undergo a rough cut-off at the highest representable number. Numbers above that value will be cast to infinity. Compared to this, the small numbers show a smooth cut-off, because of the existence subnormal numbers. The range of \gls{posit16} is larger than the range of \gls{binary16}, but especially in their smallest numbers this difference in range is negligible. Some features of posits can be observed. First, their distribution is symmetric around \num{1}, because posits have no subnormals and the reciprocal of every number is in the set as well. Second, more numbers are closer to \num{1} than in case of floats; the closer to \num{1}, the better the number resolution. Closest to \num{1}, the number resolution becomes better than \gls{binary16} resolution. Third, posits have neither a fixed-length mantissa nor exponent. That is the reason the height of the posit shape depends on the number regime, which happens for floats only in the subnormal regime, where the exponent and mantissa are indeed of variable length. For all formats, the amount of numbers decreases exponentially when going away from \num{1}, but posits decrease faster. This suggests that when calculating in the number regime close to \num{1} posits might be the better choice, but when numbers span the entire number range equally, floats might be superior. In the latter case one has to take care about over- and underflows. Notice that the height of the shape is determined by the number of mantissa bits, therefore giving the precision, while the width is determined by the number of exponent bits, therefore giving the number range. For example, \gls{tensorfloat32} and \gls{binary16} have a vastly different number range but show the same precision for numbers in their intersection, meaning that \gls{binary16} is a subset of \gls{tensorfloat32}. On the other hand, \gls{tensorfloat32} and \gls{bfloat16} have approximately the same number range, but different precisions in them, meaning that \gls{bfloat16} is a subset of \gls{tensorfloat32}, which itself is a subset of \gls{binary32}. Notice that when plotting \gls{binary32} and \gls{posit32} in such a plot, they would look similar to \gls{binary16} vs. \gls{posit16}.}
@@ -1520,13 +1530,14 @@ The highest exponent in all 4 runs was $E=4$, while the lowest exponent decrease
 
 \footnotetext{A method to circumvent this is to scale the vector entries during the calculation and scale the result back, exploiting homogeneity of the norm, $\norm{\vec{v}} = \frac{1}{s}\norm{s\vec{v}}$ for $s \in \mathbb R_{> 0}$.}
 
-\begin{figure}
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=1.0\textwidth]{plots/exponents_dirac}
     \caption{Exponent distribution of \gls{binary32} single precision floats in the residual vectors of all steps in a conjugate gradient run in openQ*D as well as entries of the Dirac-operator. 4 runs were made, with local lattice size of $4^4$ and $8^4$ on one single rank and $4$ ranks, respectively. The number is normalised to $(-1)^s \cdot M \cdot 2^{E}$, where $M \in [1, 2)$. For the Dirac-operator with volume $4^4/2$ only the even lattice points were considered.}
     \label{fig:exponents}
 \end{figure}
 
+\newpage
 
 \section{Conjugate Gradient}
 
@@ -1573,11 +1584,11 @@ Therefore, finding the extrema of $f(\vec{x})$ is equivalent to solving the line
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.7\textwidth]{plots/qform_contour2}
+    \includegraphics[width=1.0\textwidth]{plots/qform_contour}
     \caption{Example of a quadratic form $f(\vec{x})$ with $A = \begin{pmatrix}
         3 & 2 \\
         2 & 6
-    \end{pmatrix}$, $\vec{b} = (2, -8)^T$ and $c=0$. The analytic minimum is $\vec{x}^{*} = (2, -2)^T$. The red and green lines show two runs of steepest descent, with different starting vectors $\vec{x}_0$. The dashed magenta line shows a conjugate gradient run (notice that it only needed \num{2} steps).}
+    \end{pmatrix}$, $\vec{b} = (2, -8)^T$ and $c=0$. The analytic minimum is $\vec{x}^{*} = (2, -2)^T$. The left plot shows runs of steepest descent with different starting vectors $\vec{x}_0$. The right plots shows conjugate gradient runs with the same starting vectors. Notice that all CG-runs needed $\le 2$ steps to converge exactly.}
     \label{fig:qform}
 \end{figure}
 
@@ -2178,6 +2189,8 @@ The above analysis suggests that the calculation of the solution can (at least p
 
 Algorithm \ref{alg:mixed_precision} shows an example implementation of such a mixed precision calculation. The array $d$ consists of all available data types participating in the calculation in ascending order, meaning the least precise data type comes first. The function $solve()$ performs the underlying algorithm (for example conjugate gradient) in the data type given by its arguments. It expects at least a starting vector $\vec{x_0}$ and a tolerance and returns the status\footnote{See section \ref{sec:fp_in_openqxd}}, the calculated solution and the residual up to the given tolerance. Reduction variables within $solve()$ are calculated in a datatype with high precision.
 
+Since the Dirac-operator can be written in reduced precision, all solvers mentioned in this document can be conducted (at least partially) in reduced precision as described above.
+
 \end{proposal}
 
 \begin{figure}
@@ -2232,14 +2245,14 @@ Notice that with larger lattice sizes, the approximation of the amounts has less
 
 \end{proposal}
 
-\begin{figure}
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=1.0\textwidth]{plots/cgne_4x4x4x4_e1}
     \caption{Plots \textit{1a} to \textit{1f} shows the convergence analysis of a conjugate gradient run with a $4^4$ lattice, relative residual $10^{-6}$ and approximated values of $\alpha_i$. In plots \textit{2a} to \textit{2f} the residual was chosen to be $10^{-12}$. Plots \textit{1e} and \textit{2e} show the relative error in the approximated $\alpha_i$ compared to the real $\alpha_i$.}
     \label{fig:cgne:4x4x4x4:e1}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=1.0\textwidth]{plots/cgne_8x8x8x8_e1}
     \caption{The same setup as figure \ref{fig:cgne:4x4x4x4:e1}, but with an $8^4$ lattice.}
@@ -2261,6 +2274,8 @@ Simulated data type: precision $>$ number range
 Collective data type: number range $>$ precision
 
 \end{comment}
+
+\newpage
 
 \section{SAP preconditioned GCR}
 
@@ -2757,7 +2772,7 @@ Two configurations are non-standard: $(n_{cy}, n_{mr}) = (0,0)$ and "adap.". The
 
 The colors denote the data type setup (\code{ldtype}, \code{rdtype}, \code{sdtype}) and the marker symbols indicate whether the calculation was performed purely on the CPU (circles; \textcolor{cbrown}{$\mcirc$}, \textcolor{cred}{$\mcirc$}, \textcolor{cblue}{$\mcirc$}), purely on the GPU (crosses; \textcolor{cbrown}{$\times$}, \textcolor{cred}{$\times$}, \textcolor{cblue}{$\times$}) or a hybrid variant (diamonds; \textcolor{cbrown}{$\diamond$}, \textcolor{cred}{$\diamond$}, \textcolor{cblue}{$\diamond$}), where only the MR-steps are calculated on the GPU and the remainder on the CPU, see proposal \ref{pp:sap_mr_gpu}. Runs of openQ*D dealing with the same problem are indicated by black squares (if available, squares; $\msquare$). All combinations of the above configurations are present in the plots. The different plots show results from different matrices. \num{3} matrices where extracted directly from a run of openQ*D (figures \ref{fig:sap_gcr_sf_8x8x8x8}, \ref{fig:sap_gcr_sf_16x16x16x16} and \ref{fig:sap_gcr_sf_8x8x8x8_2}), while \num{2} further matrices where taken from a matrix collection \cite{davis2011} (figures \ref{fig:sap_gcr_conf6_0-8x8-20_0.15} and \ref{fig:sap_gcr_conf6_0-8x8-20_0.15717}). The matrix \code{conf6\_0-8x8-2} taken from \cite{davis2011} has a parameter $0 \le k \le k_c$, the hopping parameter (see section \ref{sec:hopping_expansion}). The closer $k$ is to its critical value $k_c$ the worse the matrix is conditioned. The used values for $k$ and $k_c$ are given in the title of the plots. In all plots, the relative residual was chosen to be $10^{-6}$ and the number of GCR-steps until restart \code{nkv=7}.
 
-\begin{figure}[h]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=1.0\textwidth]{plots/sap_gcr_sf_no_cstar_8x8x8x8_lattice_8x8x8x8_res=1e-06_nkv=7}
     \caption{Time measurements for the \code{SAP\_GCR} kernel on different matrices and configurations. The measurements were conducted on an AMD EPYC 7742 CPU @ 2.25GHz with 512 GB memory and an NVIDIA A100 (via SXM4) GPU with 40 GB memory.}
@@ -2766,7 +2781,7 @@ The colors denote the data type setup (\code{ldtype}, \code{rdtype}, \code{sdtyp
     \label{fig:sap_gcr_sf_8x8x8x8}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=1.0\textwidth]{plots/sap_gcr_sf_no_cstar_16x16x16x16_lattice_16x16x16x16_res=1e-06_nkv=7}
     \caption{Time measurements for the \code{SAP\_GCR} kernel on different matrices and configurations. The measurements were conducted on an AMD EPYC 7742 CPU @ 2.25GHz with 512 GB memory and an NVIDIA A100 (via SXM4) GPU with 40 GB memory.}
@@ -2774,7 +2789,7 @@ The colors denote the data type setup (\code{ldtype}, \code{rdtype}, \code{sdtyp
     \label{fig:sap_gcr_sf_16x16x16x16}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=1.0\textwidth]{plots/sap_gcr_conf6_0-8x8-20_kc=0.15717_k=0.15_lattice_8x8x8x8_res=1e-06_nkv=7}
     \caption{Time measurements for the \code{SAP\_GCR} kernel on different matrices and configurations. The measurements were conducted on an AMD EPYC 7742 CPU @ 2.25GHz with 512 GB memory and an NVIDIA A100 (via SXM4) GPU with 40 GB memory.}
@@ -2782,7 +2797,7 @@ The colors denote the data type setup (\code{ldtype}, \code{rdtype}, \code{sdtyp
     \label{fig:sap_gcr_conf6_0-8x8-20_0.15}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=1.0\textwidth]{plots/sap_gcr_conf6_0-8x8-20_kc=0.15717_k=0.15717_lattice_8x8x8x8_res=1e-06_nkv=7}
     \caption{Time measurements for the \code{SAP\_GCR} kernel on different matrices and configurations. The measurements were conducted on an AMD EPYC 7742 CPU @ 2.25GHz with 512 GB memory and an NVIDIA A100 (via SXM4) GPU with 40 GB memory.}
@@ -2790,7 +2805,7 @@ The colors denote the data type setup (\code{ldtype}, \code{rdtype}, \code{sdtyp
     \label{fig:sap_gcr_conf6_0-8x8-20_0.15717}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=1.0\textwidth]{plots/sap_gcr_sf_no_cstar_8x8x8x8_2_lattice_8x8x8x8_res=1e-06_nkv=7}
     \caption{Time measurements for the \code{SAP\_GCR} kernel on different matrices and configurations. The measurements were conducted on an Intel(R) 6130 @ 2.10GHz with 1.5 TB memory and an NVIDIA V100 (via PCIe) GPU with 16 GB memory.}
@@ -2846,6 +2861,8 @@ A reference implementation was written directly in openQ*D and can be found in t
 
 %TODO: what to do with the following?
 %In openQ*D, every rank has its own local lattice to process. The solver algorithms are implemented in a parallel manner, such that the solver is called on all ranks simultaneously. The simulation problem was chosen to be such that the task of one rank was compared on one single core of the CPU and on one single GPU (with all its parallelizability). It is therefore not surprising that in most cases, the GPU solved the problem much faster than the CPU. Keeping this in mind, it is natural to associate a larger local lattice to the available GPUs in the system (maybe 4-8 times larger, depending on the available memory) and let them participate to the solution of the full problem just as they were additional ranks (compare proposal \ref{pp:gpu_implementation1}).
+
+\newpage
 
 \section{Deflated SAP preconditioned GCR}
 
@@ -3333,6 +3350,8 @@ TODO: \acrlong{mscg} in mixed precision. Currently only in binary64.
 \end{proposal}
 \end{comment}
 
+\newpage
+
 \section{Dirac operator}
 
 \label{sec:dop}
@@ -3345,7 +3364,7 @@ By ”Inversion” we mean inverting partially this matrix id est solving a set 
 Dψ=η (2.8)
 where D and η are given and ψ is unknown. D is a 12N×12N complex matrix and η and ψ are 12N complex vectors. The solution is often called ”quark-propagator”. 
 
-The gauge fields are SU(3) matrices. Inspecting their representations, they can be represented using 18, 12, 10 or 8 real numbers. The 8-representation involves 6 numbers between [-1,1] and 2 between [-pi,pi]. This is in all number ranges of all floating-point types! In QUDA, they use 16-bit (or 8-bit) signed integers and cudaReadModeNormalizedFloat to convert to a binary32 in the range [-1,1].
+The gauge-fields are SU(3) matrices. Inspecting their representations, they can be represented using 18, 12, 10 or 8 real numbers. The 8-representation involves 6 numbers between [-1,1] and 2 between [-pi,pi]. This is in all number ranges of all floating-point types! In QUDA, they use 16-bit (or 8-bit) signed integers and cudaReadModeNormalizedFloat to convert to a binary32 in the range [-1,1].
 
 \end{comment}
 
@@ -3619,7 +3638,7 @@ It makes sense to look at different representations of the gauge-fields $U_{\mu}
 \end{definition}
 
 \begin{proposal}{Representation of the Dirac-operator}{dop_reps}
-For the implementation of the Dirac-operator on the GPU, the software library QUDA \cite{clark2010} is a good sample. To improve the performance of their Dirac-operator, the authors of QUDA used a representation of the $SU(3)$-fields with \num{8} real numbers, a gauge transformation to make almost all of the gauge fields in temporal direction to the identity-matrix and a change of basis in the $\gamma$-matrices, such that one of the four matrices has a quite simple form. The most interesting one is the $SU(3)$-representation with only \num{8} real numbers. In openQ*D the struct \code{su3\_dble}\footnote{See line 43 in \code{include/su3.h} in \cite{openqxd}.} representing an $SU(3)$-gauge-field consists of \num{18} double precision numbers. The C-macro for a matrix-matrix multiplication of 2 such structs, \code{\_su3\_times\_su3()}\footnote{See line 490ff in \code{include/su3.h} in \cite{openqxd}.}, consists of $18 \cdot 12$ floating-point operations, $2 \cdot 18$ loads and $18$ stores. Using \gls{binary64}, the arithmetic intensity is $I = 0.5$ floating-point operations per byte, making the problem memory-bound.
+For the implementation of the Dirac-operator on the GPU, the software library QUDA \cite{clark2010} is a good sample. To improve the performance of their Dirac-operator, the authors of QUDA used a representation of the $SU(3)$-fields with \num{8} real numbers, a gauge transformation to make almost all of the gauge-fields in temporal direction to the identity-matrix and a change of basis in the $\gamma$-matrices, such that one of the four matrices has a quite simple form. The most interesting one is the $SU(3)$-representation with only \num{8} real numbers. In openQ*D the struct \code{su3\_dble}\footnote{See line 43 in \code{include/su3.h} in \cite{openqxd}.} representing an $SU(3)$-gauge-field consists of \num{18} double precision numbers. The C-macro for a matrix-matrix multiplication of 2 such structs, \code{\_su3\_times\_su3()}\footnote{See line 490ff in \code{include/su3.h} in \cite{openqxd}.}, consists of $18 \cdot 12$ floating-point operations, $2 \cdot 18$ loads and $18$ stores. Using \gls{binary64}, the arithmetic intensity is $I = 0.5$ floating-point operations per byte, making the problem memory-bound.
 
 Since the rows and columns of $SU(3)$-matrices form an orthonormal basis of $\mathbb{C}^3$, one representation of such matrices consists of only the first two rows/columns and the third row/column is calculated as the vector product of the former two \cite{deforcrand1985}. This is a representation with \num{12} real numbers. A matrix-matrix multiplication of two such matrices ends up in $270$ floating-point operations, $2 \cdot 12$ loads and $12$ stores. This results in an arithmetic intensity of $I = 0.9375$ floating-point operations per byte using \gls{binary64} -- still memory-bound.
 
@@ -3720,6 +3739,7 @@ A necessary condition for GPU acceleration to be advantageous is that the benefi
 
 \end{proposal}
 
+\newpage
 
 \section{GPU Implementation}
 
@@ -3805,6 +3825,8 @@ During a simulation, a lot of linear systems of equation of the type $A \vec{x} 
 
 \end{comment}
 
+\newpage
+
 \section{Summary}
 
 \label{sec:summary}
@@ -3817,7 +3839,7 @@ The run-time analysis done for the \acrshort{sapgcr} algorithm in section \ref{s
 
 A similar run-time analysis was performed for the \acrshort{dflsapgcr} algorithm in section \ref{sec:dfl_sap_gcr}. The only new insight compared to the previous numerical results was that the size of the deflation subspace should approximately match the size of the low eigenmode subspace. The theoretical part of the section explains this result and contains a formal proof that deflation is efficient if the operator in consideration has locally coherent low eigenmodes and its spectrum is separable.
 
-In a last analysis addressing the lattice Dirac-operator, section \ref{sec:dop}, a reference implementation using threads within openQCD was implemented and investigated. On certain NUMA-systems the thread variant outperformed the native one, if the number of threads and ranks was chosen to fit the NUMA-architecture of the node. Finally, different representations for the gauge fields were proposed in order to increase the arithmetic intensity and decrease the memory traffic in the Dirac-kernel, especially suitable for the GPU.
+In a last analysis addressing the lattice Dirac-operator, section \ref{sec:dop}, a reference implementation using threads within openQCD was implemented and investigated. On certain NUMA-systems the thread variant outperformed the native one, if the number of threads and ranks was chosen to fit the NUMA-architecture of the node. Finally, different representations for the gauge-fields were proposed in order to increase the arithmetic intensity and decrease the memory traffic in the Dirac-kernel, especially suitable for the GPU.
 
 All proposals can easily be accessed by the list of proposals in the appendix \ref{sec:proposals}.
 
@@ -3832,6 +3854,8 @@ Second paragraph: Explain the structure of the thesis and say something about th
 Third paragraph: Give a concluding statement, including a short summary of the results.
 
 \end{comment}
+
+\newpage
 
 \section{Outlook}
 
@@ -3854,7 +3878,7 @@ The GPU implementation variant in proposal \ref{pp:gpu_implementation4} only scr
 ** openMP offloading to the GPU -> easy way to implement Dop on GPU
 ** explore thread variant more
 * use performance profiler tools and look for false sharing, etc...
-** tests with different representations of the gauge fields
+** tests with different representations of the gauge-fields
 * reimplementation of Dop on the GPU
 * multiple right hand sides
 ** Python implementation of the Dirac-operator used a CSR matrix as its representation. Some of the tests could be repeated with the operator implemented as in openQxD, as a function of link variables.
@@ -3864,14 +3888,23 @@ The GPU implementation variant in proposal \ref{pp:gpu_implementation4} only scr
 
 \end{comment}
 
+\newpage
+
 \section{Acknowledgements}
 
-At this point let me thank my supervisor Prof. Thomas Schulthess for giving me the opportunity to deep dive into this fascinating topic and the co-supervisors Prof. Marina Marinković, Dr. Raffaele Solcà and Dr. Anton Kozhevnikov for treating me as a part of their groups and answering my many questions with patience. I have learned a lot from them. They gave me great support and assistance. It was a pleasure to work with them!
+At this point let me thank my supervisor Prof. Thomas Schulthess for giving me the opportunity to deep dive into this fascinating topic and for organizing the best co-supervisors one could ask for; Prof. Marina Marinković, Dr. Raffaele Solcà and Dr. Anton Kozhevnikov. I have learned a lot from them. They gave me great support and assistance. It was a pleasure to work with them!
+
+Special thanks to Prof. Marinković, who treated me like one of them, answering my many questions with patience. She welcomed me with warmth in her group and I felt like a valuable part. I cannot emphasise enough, that it was appreciated!
+
+%At this point let me thank my supervisor Prof. Thomas Schulthess for giving me the opportunity to deep dive into this fascinating topic and the co-supervisors Prof. Marina Marinkovic, Dr. Raffaele Solcà and Dr. Anton Kozhevnikov for treating me as a part of their groups and answering my many questions with patience. I have learned a lot from them. They gave me great support and assistance. It was a pleasure to work with them!
 
 One of the greatest challenges of my thesis although was organizing a meeting date suitable for all participants, a task comparable to a complicated numerical problem with many boundary conditions, that ironically and very accurately resembled the challenges in numerical lattice QFT. On the other hand, when finally a meeting date was fixed, it tended to be as stable as the Bitcoin stock market price.
 
-This section would not be complete if I do not thank the coffee and energy drink manufacturing industry. Without them it would certainly not have been possible to write all of this in \num{6} months\footnote{I'll probably owe them my first heart attack as well.}.
+Further, I also want to thank my girlfriend, Cheryl Lüssi, who took the time to fight through all of this in a remarkably unfinished stage. Even so, she still talks to me. She did all of this despite having more important things to do (for example writing an own thesis).
 
+Many thanks to my fellow student Yannick Seitz for being so pedantic with my math. Testing documents against him, always ends up in a mathematically clear and concise text, because he never stops asking no matter how annoying he is.
+
+This section would not be complete if I do not thank the coffee and energy drink manufacturing industry. Without them it would certainly not have been possible to write all of this in \num{6} months\footnote{I'll probably owe them my first heart attack as well.}.
 
 \newpage
 
@@ -4026,7 +4059,7 @@ In order to satisfy the Pauli exclusion principle and thus making fermions anti-
   Grassmann variables are non-zero roots of zero: $\theta^2 = 0$, for $0 \ne \theta \in \mathbb{G}$.
 \end{remark}
 
-We have to think about derivatives with respect to Grassmann variables as well as integrals over Grassmann variables, since they appear in the path integral formalism of fermion fields. For this it makes sense to impose some requirements such that the formulation is coherent and leading to the correct quantum theory governed by the Dirac equation. We want the integral over Grassmann variables to be the "inverse of the derivative". The conditions are
+We have to think about derivatives with respect to Grassmann variables as well as integrals over Grassmann variables, since they appear in the path integral formalism of fermion-fields. For this it makes sense to impose some requirements such that the formulation is coherent and leading to the correct quantum theory governed by the Dirac equation. We want the integral over Grassmann variables to be the "inverse of the derivative". The conditions are
 
 \begin{enumerate}
   \item Linearity of derivatives and integrals,
