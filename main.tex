@@ -173,6 +173,7 @@
 %TODO: gauge-field <-> gauge field, fermion-field <-> fermion field
 %TODO: evtl. formal definition of memory bound, compute bound, latency bound
 %TODO: before handin in check for weird page breaks, zB "Mixed Precision Solvers"
+%TODO: comedy effect of last footnote
 
 %done: to purpose -> to propose
 %done: openqxd part: reduce flame
@@ -992,7 +993,7 @@ with
     \mathcal{S}_F &= a^4 \sum_{n \in \Lambda} \bar{\psi}(n) \underbrace{\left[ \sum_{\mu} \frac{\gamma^{\mu}}{2} (D_{+\mu} + D_{-\mu}) + m \right]}_{\coloneqq D} \psi(n).
 \end{align*}
 
-The expression in the square brackets between the fermion fields is the (naive) \df{lattice Dirac-operator}. One of the problems with this term is that it brings so called \df{doublers} into the theory, artifacts from the lattice discretisation. Doublers are unphysical poles in the fermion propagator $D^{-1}$ and thus correspond to particles that do not exist in the continuum theory which has only one pole. In 4-dimensional space-time, the action above incorporates \num{15} unphysical doublers\footnotemark. Wilson found a solution to this problem \cite{wilson1974}, namely he added a term proportional to $a$ to the action which vanishes in the continuum limit. With $0 \ne r \in \mathbb{R}$, the \df{Wilson-Dirac-operator} then is
+The expression in the square brackets between the fermion fields is the (naive) \df{lattice Dirac-operator}. One of the problems with this term is that it brings so called \df{doublers} into the theory, artifacts from the lattice discretisation. Doublers are unphysical poles in the fermion-propagator $D^{-1}$ and thus correspond to particles that do not exist in the continuum theory which has only one pole. In 4-dimensional space-time, the action above incorporates \num{15} unphysical doublers\footnotemark. Wilson found a solution to this problem \cite{wilson1974}, namely he added a term proportional to $a$ to the action which vanishes in the continuum limit. With $0 \ne r \in \mathbb{R}$, the \df{Wilson-Dirac-operator} then is
 
 \footnotetext{For general D-dimensional space-time the theory would contain $2^D -1$ doublers. Of the total $2^D$ poles only one is physical. Here there might be a slight overflow in notation, $D$ denotes the space-time dimension, while the Dirac-operator is also denoted as $D$. We assume that the meaning is clear from context.}
 
@@ -1056,11 +1057,11 @@ and write for observables including only gauge-fields
 
 For fermionic observables we obtain inverses of the Dirac-operator,
 
-\begin{align*}
-    \langle T[\psi^{\alpha}_a(x) \bar{\psi}^{\beta}_b(y)] \rangle = \lim_{\tau \to \infty} \frac{ \int \mathcal{D} A D^{-1}(x,y)^{\alpha \beta}_{a b} e^{-S[A]} }{ \int \mathcal{D} A e^{-S[A]} },
-\end{align*}
+\begin{align}
+    \langle T[\psi^{\alpha}_a(x) \bar{\psi}^{\beta}_b(y)] \rangle = \lim_{\tau \to \infty} \frac{ \int \mathcal{D} A D^{-1}(x,y)^{\alpha \beta}_{a b} e^{-S[A]} }{ \int \mathcal{D} A e^{-S[A]} }, \label{eq:fermion_observables}
+\end{align}
 
-where $D^{-1}(x,y)^{\alpha \beta}_{a b}$ is the fermion propagator from $(x,\alpha,a)$ to $(y,\beta,b)$. The Euclidean action \eqref{eq:eucl_action} is real and bounded from below for QCD at zero chemical potential \cite{gupta1998}. While evaluating the functional integral exactly is clearly not feasible, but since the term $e^{-S}$ in the Euclidean space-time can be seen as probability density, we can interpret the functional integral as expectation value in the statistical sense. Using the compensator fields $U$ instead of the connections $A_{\mu}^a$, a discretisation of this expression would look like
+where $D^{-1}(x,y)^{\alpha \beta}_{a b}$ is the \df{fermion-propagator} from $(x,\alpha,a)$ to $(y,\beta,b)$. The Euclidean action \eqref{eq:eucl_action} is real and bounded from below for QCD at zero chemical potential \cite{gupta1998}. While evaluating the functional integral exactly is clearly not feasible, but since the term $e^{-S}$ in the Euclidean space-time can be seen as probability density, we can interpret the functional integral as expectation value in the statistical sense. Using the compensator fields $U$ instead of the connections $A_{\mu}^a$, a discretisation of this expression would look like
 
 \begin{align*}
     \langle \mathcal{O}[U] \rangle = \lim_{\tau \to \infty} \frac{1}{Z} \int \mathcal{D} U e^{-S[U]} \mathcal{O}[U] \longrightarrow \sum_U P(U) \mathcal{O}[U].
@@ -1097,19 +1098,25 @@ value of a Wilson loop in a theory where e^S = 1.
 
 \subsection{Pseudofermions}
 
-One way to introduce physical fermions into the lattice description of our theory is to rewrite the determinant in the expectation value \eqref{eq:expectation_value} in terms of fermion fields (having spinor indices) that behave statistically as bosonic fields (they commute), so called \df{pseudofermions}\footnote{There is some similarity to Faddeev–Popov ghosts in the sense that both fields are unphysical. Ghosts are anti-commuting bosonic (scalar) fields that have to be introduced when fixing the gauge in non-abelian gauge theories, while pseudofermions are commuting fermionic fields.}. Using propositions \ref{prop:gauss_integral} and \ref{prop:grassmann_integral} we can write
+One way to introduce physical fermions into the lattice description of our theory is to rewrite the determinant in the expectation value \eqref{eq:expectation_value} in terms of fermion fields (having spinor indices) that behave statistically as bosonic fields (they commute), so called \df{pseudofermions}\footnote{There is some similarity to Faddeev–Popov ghosts in the sense that both fields are unphysical. Ghosts are anti-commuting bosonic (scalar) fields that have to be introduced when fixing the gauge in non-abelian gauge theories, while pseudofermions are commuting fermionic fields.}. Assume we have two fundamental fermions in the theory $\psi_u$ and $\psi_d$ (for example the up- and down-quark) of approximately the same mass. The same mass implies that their Dirac-operators are equal $D_u = D_d = D$ and the path integral looks like
 
 \begin{align*}
-  \int \mathcal{D}\psi \mathcal{D} \bar{\psi} e^{ - \bar{\psi} D \psi } = \pi^{-V} \int \mathcal{D}\phi \mathcal{D} \phi^{\star} e^{ - \phi^{\star} D^{-1} \phi }.
+\int \mathcal{D}\psi_u \mathcal{D} \bar{\psi}_u \mathcal{D}\psi_d \mathcal{D} \bar{\psi}_d e^{ - \bar{\psi}_u D \psi_u - \bar{\psi}_d D \psi_d }.
 \end{align*}
 
-In this expression $\psi, \bar{\psi}$ are (discretised) complex Grassmann-valued vectors of size $12 V$ and $\phi, \phi^{\star}$ are regular complex-valued vectors, $V = \abs{\Lambda}$ is the number of lattice points. Thus, the Dirac-operator has to be inverted for a given vector $\phi$ to construct the (effective) \df{pseudofermion action} for the probability weight \eqref{eq:sample_mean}
+If the the determinant of $D$ is real, using propositions \ref{prop:gauss_integral} and \ref{prop:grassmann_integral} we can write
+
+\begin{align*}
+  \int \mathcal{D}\psi_u \mathcal{D} \bar{\psi}_u \mathcal{D}\psi_d \mathcal{D} \bar{\psi}_d e^{ - \bar{\psi}_u D \psi_u - \bar{\psi}_d D \psi_d } = \pi^{-V} \int \mathcal{D}\phi \mathcal{D} \phi^{\star} e^{ - \phi^{\star} (D^{\dagger}D)^{-1} \phi }.
+\end{align*}
+
+In this expression $\psi_u, \bar{\psi}_u, \psi_d, \bar{\psi}_d$ are complex Grassmann-valued fields and $\phi, \phi^{\star}$ are regular complex-valued fields, $V = \abs{\Lambda}$ is the number of lattice points. The integral over Grassmann variables has been reduced to an integral over regular numbers. Thus, the Dirac-operator has to be inverted for a given vector $\phi$ to construct the (effective) \df{pseudofermion action} for the probability weight \eqref{eq:sample_mean}
 
 \begin{align}
-  S = S_G[A] + \phi^{\star} D^{-1} \phi. \label{eq:pseudofermion_action}
+  S = S_G[A] + \phi^{\star} (D^{\dagger}D)^{-1} \phi. \label{eq:pseudofermion_action}
 \end{align}
 
-The irrelevant factor $\pi^{-V}$ can be absorbed in a redefinition of the fields $\phi$ and $\phi^{\star}$. An advantage of this description over equation \eqref{eq:eucl_action} is that the determinant is a highly non-local term in the sense that is depends on the state of the entire system. By introducing pseudofermions, the non-locality of equation \eqref{eq:eucl_action} can be reduced \cite{fucito1981}.
+The irrelevant factor $\pi^{-V}$ can be absorbed in a redefinition of the fields $\phi$ and $\phi^{\star}$. An advantage of this description over equation \eqref{eq:eucl_action} is that the determinant is a highly non-local term in the sense that is depends on the state of the entire system. By introducing pseudofermions, the non-locality of equation \eqref{eq:eucl_action} can be reduced \cite{fucito1981}, if one has an even number of mass-degenerate fundamental fermion flavors.
 
 \subsection{Hybrid Monte Carlo}
 
@@ -1639,8 +1646,6 @@ The iteration step equation of the \df{method of steepest descent} in defined as
 where the $\alpha_i \in \mathbb{C}$ are the amounts to go in direction of the current residual $\vec{r}_i$. The $\alpha_i$ are determined by minimising the parabola with respect to $\alpha_i$, $\frac{d}{d \alpha_i} f(\vec{x}_{i+1}) \stackrel{!}{=} 0$.
 
 \end{definition}
-
-%TODO: figure of steepest descent zigzag.
 
 \begin{remark}[Convergence]
 The method of steepest descent converges very slowly to the actual solution, when starting at an unfavourable starting point $\vec{x}_0$ (see figure \ref{fig:qform}). The speed of convergence heavily depends on the condition number of the matrix $A$. The process happens to go in the same direction multiple times. If we only go one step in each direction $i$ by the perfect amount $\alpha_i$, we would be done after at most $n$ steps.
@@ -2848,7 +2853,7 @@ A reference implementation was written directly in openQ*D and can be found in t
 
 Small quark masses corresponding to real physics are believed to be the cause for the spontaneous breaking of chiral symmetry in lattice QCD \cite{banks1980}. Numerical lattice QCD has the problem that with large lattice volumes and small quark masses simulation techniques become inefficient in the \df{chiral regime} (where chiral symmetry is spontaneously broken), because the Dirac-operators gets increasingly ill-conditioned. Thus, the presence of low eigenvalues is a source of difficulty \cite{giusti2003}. According to the Bank-Casher relation, see \cite{banks1980}, this is because the number of eigenvalues of $D$ below a fixed value grows with $O(V)$, where $V$ is the total 4D lattice volume. On the other hand, the computational effort scales even worse with $O(V^2)$, \cite{luscher2007}. This behaviour goes under the name of \df{$V^2$-problem}.
 
-A solving algorithm that has a flat scaling with respect to the quark masses can therefore lead to large speedups specially in that regime. By deflating the Dirac-operator, it is possible to separate eigenmodes with small eigenvalues from the others. Thus, the space needs to be split in low and high modes without actually calculating the modes, else the problem would be solved already.
+A solving algorithm that has a flat scaling with respect to the quark masses can therefore lead to large speedups specially in the chiral regime. The topic of this section is the deflated SAP+GCR algorithm, \acrshort{dflsapgcr}\footnote{Deflation -- as described in the following section -- can be applied to any linear solving algorithm.}. By deflating the Dirac-operator, it is possible to separate eigenmodes with small eigenvalues from the bulk. Thus, the space needs to be split in low and high modes without actually calculating the modes, else the problem would be solved already.
 
 \subsection{Deflation}
 
@@ -2910,13 +2915,13 @@ If we find clever subspaces in which the projectors $P_L$ and $P_R$ project with
 \end{remark}
 
 \begin{remark}
-Notice that $P_L A$ as well as $(1-P_L)A$ are not invertible. There are infinitely many solutions $\vec{x}^{\star}_1$ and $\vec{x}^{\star}_2$\footnotemark. Nonetheless the solution vector $\vec{x}^{\star}$ is still unique after the projection in equation \eqref{eq:def_projection}, because $P_R$ removes all ambiguity from the vector.
+Notice that $P_L A$ as well as $(1-P_L)A$ are not invertible. There are infinitely many solutions $\vec{x}^{\star}_1$ and $\vec{x}^{\star}_2$\footnotemark. Nonetheless the solution vector $\vec{x}^{\star}$ is still unique after the projection in equation \eqref{eq:def_projection}, because $P_R$ removes all ambiguity from $\vec{x}^{\star}_1$ and $\vec{x}^{\star}_2$.
 \end{remark}
 
 \footnotetext{Let $P$ be a linear projector (not the identity-operator) and $A$ an invertible linear operator. The system of interest is $PA\vec{x} = P\vec{b}$. There exists at least one solution to this, namely the unique solution to $A\vec{x} = \vec{b}$. Since $PA$ is not invertible, the only two possibilities are either zero or infinite solutions to $PA\vec{x} = P\vec{b}$, but it can't be zero solutions.}
 
 \begin{remark}
-Comparing deflation to left preconditioning, the difference is that in deflation $P_L$ is a projector and $P_L A$ has condition number infinite while in case of preconditioning $P_L $ is invertible (a good approximation of $A^{-1}$) and the condition number of $P_L A$ is expected to be smaller than the one of $A$.
+Comparing deflation to left preconditioning, the difference is that in deflation $P_L$ is a projector and $P_L A$ has condition number infinite (but finite effective condition number) while in case of preconditioning $P_L $ is invertible (a good approximation of $A^{-1}$) and the condition number of $P_L A$ is expected to be smaller than the one of $A$. 
 \end{remark}
 
 \begin{remark}
@@ -2925,19 +2930,22 @@ If $A$ is positive definite, $P_L A$ is positive semi-definite and has condition
 
 Therefore, it makes sense to define the relevant quantity.
 
-\begin{definition}[Effective condition number]
+\begin{definition}[Condition number]
 
-The \df{effective condition number} of a matrix $A$ is the ratio between the largest and smallest eigenvalue with positive magnitude
+The \df{condition number} $\kappa$ and the \df{effective condition number} $\kappa_{eff}$ of a matrix $A$ are the ratios between the largest and the smallest eigenvalues
 
 \begin{align*}
-  \kappa_{eff}(A) &\coloneqq \frac{\abs{\lambda_{max}}}{\abs{\lambda_{pmin}}}, \\
+    \kappa(A) &\coloneqq \frac{\abs{\lambda_{max}(A)}}{\abs{\lambda_{min}(A)}},
+    & &\text{and} &
+    \kappa_{eff}(A) &\coloneqq \frac{\abs{\lambda_{max}(A)}}{\abs{\lambda_{pmin}(A)}},
 \end{align*}
 
 where
 
 \begin{align*}
-  \abs{\lambda_{max}} &= \max \abs{\sigma(A)}, \\
-  \abs{\lambda_{pmin}} &= \min \{ \abs{\lambda} \, \bigm\lvert \, \lambda \in \sigma(A), \abs{\lambda} > 0 \}.
+  \abs{\lambda_{max}(A)} &\coloneqq \max \abs{\sigma(A)}, \\
+  \abs{\lambda_{min}(A)} &\coloneqq \min \abs{\sigma(A)}, \\
+  \abs{\lambda_{pmin}(A)} &\coloneqq \min \{ \abs{\lambda} \, \bigm\lvert \, \lambda \in \sigma(A), \abs{\lambda} > 0 \}.
 \end{align*}
 
 \end{definition}
@@ -3061,7 +3069,7 @@ The subscripts stand for "low" and "high", corresponding to the low and high mod
 \begin{lemma}
 \label{lem:condition_number}
 
-Let $A$, $\{\vec{\omega}_i\}_{i=1}^N \in \Omega$, $P_L$, $P_R$ be as in corollary \ref{cor:deflation} and assume that the spectrum of $A$ is separable \eqref{eq:separable}. Define the deflation subspace to be the subspace corresponding to the low eigenmodes, $\Omega \coloneqq \Omega_l$. Then $\kappa_{eff}(\hat{A}) \ll \kappa(A)$ and $\kappa(\tilde{A}) \ll \kappa(A)$.
+Let $A$, $\{\vec{\omega}_i\}_{i=1}^N \in \Omega$, $P_L$, $P_R$ be as in corollary \ref{cor:deflation} and assume that the spectrum of $A$ is separable, equation \eqref{eq:separable}. Define the deflation subspace to be the subspace corresponding to the low eigenmodes, $\Omega \coloneqq \Omega_l$. Then $\kappa_{eff}(\hat{A}) \ll \kappa(A)$ and $\kappa(\tilde{A}) \ll \kappa(A)$.
 \end{lemma}
 
 \begin{proof}
@@ -3084,15 +3092,17 @@ The deflated operator $\hat{A} \coloneqq P_L A$ acts on the orthogonal complemen
     &= \hat{A} \vec{x}.
 \end{align*}
 
-This now means, that the low eigenmodes are projected to zero, and do not participate to the effective condition number anymore. Futher, define the \df{minimal and maximal eigenvalue} of an operator $A$,
+\begin{comment}
+Futher, define the \df{minimal and maximal eigenvalue} of an operator $A$,
 
 \begin{align*}
     \lambda_{max}(A) &\coloneqq \max\limits_{\lambda \in \sigma(A)} \abs{\lambda}, \\
     \lambda_{min}(A) &\coloneqq \min\limits_{\lambda \in \sigma(A)} \abs{\lambda}, \\
     \lambda_{pmin}(A) &\coloneqq \min\limits_{\lambda \in \sigma(A), \abs{\lambda} > 0} \abs{\lambda}.
 \end{align*}
+\end{comment}
 
-The condition number of $\hat{A}$ can now be upper bounded,
+This now means, that the low eigenmodes are projected to zero, and do not participate to the effective condition number of $\hat{A}$, which can now be upper bounded,
 
 \begin{align*}
     \kappa_{eff}({\hat{A}}) = \frac{\abs{\lambda_{max}(\hat{A})}}{\abs{\lambda_{pmin}(\hat{A})}} = \frac{\abs{\lambda_{max}(A)}}{\abs{\lambda_{pmin}(\hat{A})}} \ll \frac{\abs{\lambda_{max}(A)}}{\abs{\lambda_{min}(A)}} = \kappa({A}),
@@ -3103,7 +3113,7 @@ where property \eqref{eq:separable} was used in the second inequality. Similarly
 \end{proof}
 
 \begin{remark}
-Lemma \ref{lem:condition_number} tells us that the deflated and the little system are significantly better conditioned than the full system and both are therefore solved in fewer iterations\footnote{Additionally the little system is much smaller in size than the full system, but the sparsity will not stay -- it might even become dense. The precision up to which this system has to be solved in an application of the projector is usually a fraction of the desired precision of the full solution.}. This holds only if we can find the subspace corresponding to the low eigenmodes $\Omega_l$ and if the low eigenvalues of the matrix are somewhat isolated from the bulk of the eigenvalues. Equation \eqref{eq:separable} gives us a condition on $A$ for an efficient deflation.
+Lemma \ref{lem:condition_number} tells us that the deflated and the little system are significantly better conditioned than the full system and both are therefore solved in fewer iterations\footnote{Additionally, the little system is much smaller in size than the full system, but the sparsity will not stay -- it might even become dense. The precision up to which this system has to be solved in an application of the projector is usually a fraction of the desired precision of the full solution.}. This holds only if we can find the subspace corresponding to the low eigenmodes $\Omega_l$ and if the low eigenvalues of the matrix are somewhat isolated from the bulk of the eigenvalues. Equation \eqref{eq:separable} gives us a condition on $A$ for an efficient deflation.
 \end{remark}
 
 %TODO: evtl. weg damit lemma 9.4
@@ -3182,12 +3192,12 @@ Definition \ref{def:local_coherence} can also (very informally) be restated as $
 \end{remark}
 
 \begin{remark}
-It turns out that the low eigenmodes with subspace $\Omega_{exact} = \Omega_l$ of the Dirac-operator are locally coherent\footnote{This is not proven, but numerical experiments show a strong sign of local coherence, \cite{luscher2007}.}.
+It turns out that the low eigenmodes with subspace $\Omega_{exact} = \Omega_l$ of the Dirac-operator are locally coherent\footnote{This is not proven, but numerical experiments show a strong indication of local coherence, \cite{luscher2007}.}.
 \end{remark}
 
-It remains to describe how to obtain the $M$ bootstrap fields $\vec{\beta_j}$. Ideally, they should be low eigenmodes of the Dirac-operator or linear combinations thereof. Usually, one starts with randomly generated vectors and repeatedly apply the inverse power method (theorem \ref{thm:inverse_power_method} in appendix \ref{sec:proofs}) to them. The resulting vectors may not be exact eigenvectors, but the components associated to the complement of the low modes quickly decrease after some inverse iteration steps (see corollary \ref{cor:inverse_power_method} in appendix \ref{sec:proofs}). These vectors are then, up to some $\varepsilon > 0$, linear combinations of low eigenmodes and can thus be used as bootstrap fields to generate a subspace that approximates the low eigenmode subspace well. At this point the property of local coherence can be exploited and efficient deflation subspaces can be generated from these fields by projecting them onto some block decomposition.
+It remains to describe how to obtain the $M$ bootstrap fields $\vec{\beta_j}$. Ideally, they should be low eigenmodes of the Dirac-operator or linear combinations thereof. Usually, one starts with randomly generated vectors and repeatedly applies the inverse power method (see theorem \ref{thm:inverse_power_method} in appendix \ref{sec:inverse_power_method}). The resulting vectors may not be exact eigenvectors, but the components associated to the complement of the low modes quickly decrease after some inverse iteration steps (see corollary \ref{cor:inverse_power_method} in appendix \ref{sec:inverse_power_method}). These vectors are then, up to some $\varepsilon > 0$, linear combinations of low eigenmodes and can thus be used as bootstrap fields to generate a subspace that approximates the low eigenmode subspace well. At this point the property of local coherence can be exploited and efficient deflation subspaces can be generated from these fields by projecting them onto some block decomposition.
 
-To summarize the results, if the Dirac-operator has a spectrum that is separable in the sense of equation \eqref{eq:separable} and the low eigenmodes are locally coherent for a small $\varepsilon$, then inexact deflation can be applied to solve the ill-conditioned Dirac equation and the procedure is more efficient than without deflation, because the deflated system is better conditioned (lemma \ref{lem:condition_number}). Also, generating the inexact deflation subspaces can be done using only a few low eigenmodes.
+To summarize the results, if the Dirac-operator has a spectrum that is separable in the sense of equation \eqref{eq:separable} and the low eigenmodes are locally coherent for a small $\varepsilon$, then inexact deflation can be applied to solve the ill-conditioned Dirac equation and the procedure is more efficient than without deflation, because the deflated system is better conditioned (lemma \ref{lem:condition_number}). Moreover, generating the inexact deflation subspaces can be done efficiently using only a few low eigenmodes.
 
 \begin{comment}
 The larger the condition number the worse the problem to solve with iterative methods. But now we have 2 systems with condition numbers of infinity! Why is this better than one system with condition number < infinity? the smaller systems restricted to the projections space have condition numbers lower than the full system, IF the deflation space was chosen "wisely".
@@ -3254,7 +3264,7 @@ little dirac operator can also be preconditioned using eo-preconditioning if the
 
 \subsubsection{Setup}
 
-The \acrshort{dflsapgcr}-kernel was implemented in Python by extending the already existing \acrshort{sapgcr} code. Only the preconditioning phase has changed. The deflated variant of the algorithm takes the same arguments as the regular one, see table \ref{tab:sap_gcr_settings}. In addition to these settings, the deflated algorithm requires configuration options for the deflation subspace and the settings concerning the solver for the little equation, see table \ref{tab:dfl_sap_gcr_settings}.
+The \acrshort{dflsapgcr}-kernel was implemented in Python by extending the already existing implementation of \acrshort{sapgcr}. Only the preconditioning phase has changed. The deflated variant of the algorithm takes the same arguments as the regular one, see table \ref{tab:sap_gcr_settings}. In addition to these settings, the deflated algorithm requires configuration options for the deflation subspace and the settings concerning the solver for the little equation, see table \ref{tab:dfl_sap_gcr_settings}.
 
 \begin{table}[H]
 \centering
@@ -3266,16 +3276,16 @@ The \acrshort{dflsapgcr}-kernel was implemented in Python by extending the alrea
         \hline
         \code{bs}  & size of the deflation blocks & not to be confused with the block size for SAP \\
         \hline
-        \code{res}  & desired relative residual & for the little equation \\
+        \code{res}  & desired relative residual & for solving the little equation \\
         \hline
-        \code{nmx}  & maximal number of GCR steps & for the little equation \\
+        \code{nmx}  & maximal number of GCR steps & for solving the little equation \\
         \hline
     \end{tabular}
-    \caption{Settings for \code{DFL\_SAP\_GCR} and their meanings.}
+    \caption{Additional settings for \code{DFL\_SAP\_GCR} and their meanings. The first two options concern the generation of the deflation subspace, while the last two options deal with the little equation.}
     \label{tab:dfl_sap_gcr_settings}
 \end{table}
 
-The following plot series shows the interplay between deflation and Schwarz-preconditioning in terms of run-time. Figures \ref{fig:dfl_sap_gcr_start} - \ref{fig:dfl_sap_gcr_end} contain the measurements. The relative residual for the full system was chosen to the $10^{-9}$, the block size for the Schwarz-preconditioning is $4^4$ and the number of Krylov vectors until a restart was chosen to be $n_{kv} = 7$. The entire algorithm was executed on the CPU. Hybrid or pure-GPU runs are expected to look very similar in shape, the number of GCR-steps will be equal to the pure-CPU case. The plots show the dimension of the deflation subspace in $x$-direction and the amount of Schwarz-preconditioning in terms of $(n_{cy},n_{mr})$ in $y$-direction. The colors denote the run-time and the numbers within the blocks show the absolute run-time in seconds needed to solve the system and the number of outer GCR-steps needed until convergence (the value of the \code{status} variable). The time needed for the generation of the deflation subspaces is not included in the time measurements. For each time measurement, the average of \num{10} runs was taken. As in section \ref{sec:sap_gcr_results}, the configuration $(n_{cy},n_{mr}) = (0,0)$ denotes the absence of any Schwarz-preconditioning. Analogously if the dimension of the deflation subspace $\dim \Omega = N_s n_b = 0$ vanishes, it means no deflation is applied to the problem. All deflation subspaces were generated by starting with $N_s$ random vectors, $n_b$ blocks to project onto and applying the procedure described in section \ref{sec:dfl_subspace}. The number of inverse iteration steps was chosen to be $n_{inv} = 5$, where for each inversion one step of a \acrshort*{sapgcr}-solver was used with $n_{cy} = 5$, $n_{mr} = 4$.
+The following plot series shows the interplay between deflation and Schwarz-preconditioning in terms of run-time. Figures \ref{fig:dfl_sap_gcr_start} - \ref{fig:dfl_sap_gcr_end} contain the measurements. The relative residual for the full system was chosen to the $10^{-9}$, the block size for the Schwarz-preconditioning is $4^4$ and the number of Krylov vectors until a restart was chosen to be $n_{kv} = 7$. The entire algorithm was executed on the CPU. Hybrid or pure-GPU runs are expected to look very similar in shape, but shifted in run-time. The number of required GCR-steps will be equal to the pure-CPU case. The plots show the dimension of the deflation subspace in $x$-direction and the amount of Schwarz-preconditioning in terms of $(n_{cy},n_{mr})$ in $y$-direction. The colors denote the run-time and the numbers within the blocks show the absolute run-time in seconds needed to solve the system and the number of outer GCR-steps needed until convergence (the value of the \code{status} variable). The time needed for the generation of the deflation subspaces is not included in the measurements. For each time measurement, the average of \num{10} runs was taken. A vanishing dimension of the deflation subspace, $\dim \Omega = N_s n_b = 0$, indicates that no deflation is applied to the problem. All deflation subspaces were generated by starting with $N_s$ random vectors and $n_b$ blocks to project onto, followed by applying the procedure described in section \ref{sec:dfl_subspace}. The number of inverse iteration steps was chosen to be $n_{inv} = 5$, where for each inversion one step of a \acrshort*{sapgcr}-solver was applied with $(n_{cy}, n_{mr}) = (5,4)$.
 
 \begin{figure}[h]
     \centering
@@ -3297,19 +3307,19 @@ The following plot series shows the interplay between deflation and Schwarz-prec
 
 \subsubsection{Discussion of figures \ref{fig:dfl_sap_gcr_start} - \ref{fig:dfl_sap_gcr_end}}
 
-The analysis was done on two Dirac-operators differing in their condition number. The operator in figure \ref{fig:dfl_sap_gcr_conf6_0-8x8-30_8x8x8x8_k_0.15649} is bad-conditioned, while in figure \ref{fig:dfl_sap_gcr_conf6_0-8x8-30_8x8x8x8_k_0.05} the operator is close to the identity. It is expected that both plots show some similarity. Namely the number of GCR-steps needed should decrease when going from the lower left point upwards or to the right. There will be more preconditioning and deflation in the mentioned directions, leading to fewer needed GCR-steps. The configuration at the top right should thus have the least GCR-steps out of all configurations. However, this does not imply that it is the fastest, because each GCR-step involves heavy amounts of Schwarz-preconditioning, and the deflation subspace is the largest. Thus, the top right configuration is the one most intense in computational effort per GCR-step.
+The analysis was done on two Dirac-operators differing substancially in their condition number. The operator in figure \ref{fig:dfl_sap_gcr_conf6_0-8x8-30_8x8x8x8_k_0.15649} is bad-conditioned, while in figure \ref{fig:dfl_sap_gcr_conf6_0-8x8-30_8x8x8x8_k_0.05} the operator is close to the identity. It is expected that both plots show some similarity. Namely the number of GCR-steps needed should decrease when going from the lower left point upwards or to the right. There will be more preconditioning and deflation in the mentioned directions, leading to fewer needed GCR-steps. The configuration at the top right should thus have the least GCR-steps out of all configurations. However, this does not imply that it is the fastest, because each GCR-step involves heavy amounts of Schwarz-preconditioning, and the deflation subspace is the largest. Thus, the top right configuration is the one most intense in computational effort per GCR-step.
 
-\textbf{Figure \ref{fig:dfl_sap_gcr_conf6_0-8x8-30_8x8x8x8_k_0.15649}}: Figure \ref{fig:dfl_sap_gcr_conf6_0-8x8-30_8x8x8x8_k_0.15649} is of special interest because the operator is in bad condition. The pattern we observe has a bowl-shape, where the minimum is placed at some certain configuration. Configurations in the neighbourhood of the minimum perform similar. Starting from the minimum, the run-time increases in every direction. The \num{100} configurations considered seem to sample the configuration space quite well. The plot shows that there is a non-trivial interplay between preconditioning and deflation. Clearly, solving the little equation reduces the components of the full residue associated to the low eigenmodes. On the other hand, preconditioning consolidates the spectrum around the value \num{1}. This compactification affects the high modes more than the low modes, leading to a reduction of the high-mode components of the full residue.
+\textbf{Figure \ref{fig:dfl_sap_gcr_conf6_0-8x8-30_8x8x8x8_k_0.15649}}: Figure \ref{fig:dfl_sap_gcr_conf6_0-8x8-30_8x8x8x8_k_0.15649} is of special interest because the operator is in bad condition, thus well suited for delfation as well as Schwatrz-preconditioning. The pattern we observe has a bowl-shape, where the minimum is placed at some certain configuration. Configurations in the neighbourhood of the minimum perform similar. Starting from the minimum, the run-time increases in every direction. The \num{100} configurations considered seem to sample the configuration space quite well. The plot shows that there is a non-trivial interplay between preconditioning and deflation. Clearly, solving the little equation reduces the components of the full residue associated to the low eigenmodes. On the other hand, preconditioning consolidates the spectrum around the value \num{1}. This compactification affects the high modes more than the low modes, leading to a reduction of the high-mode components of the full residue. Therefore, the algorithm alternatives between treating the high and low mode components in the current solution vector.
 
-\textbf{Figure \ref{fig:dfl_sap_gcr_conf6_0-8x8-30_8x8x8x8_k_0.05}}: In contrast to the previous operator, the matrix in figure \ref{fig:dfl_sap_gcr_conf6_0-8x8-30_8x8x8x8_k_0.05} is well-conditioned. The plot tells us that in this case low-mode deflation is a waste of resources. Theoretically, it can also be seen, because a well-conditioned operator has no separable spectrum in the sense of equation \eqref{eq:separable}. Thus, the proofs in section \ref{sec:deflation} give us a reasoning why deflation is not efficient in this case. Applying the results from section \ref{sec:sap_gcr_results}, Schwarz-preconditioning should be kept within a tight limit for good conditioned systems. As stated previously, we expect the number of GCR-steps to decrease, when using larger deflation subspaces. On the contrary, when looking at the configuration $(n_{cy},n{mr}) = (1,1)$, we observe an \textit{increase} to the right instead. This suggests that too large deflation subspaces cause the solver to perform even worse, not only in run-time as it is with Schwarz-preconditioning, but also in the number of GCR-steps, finally leading to a regression. This specific operator has a clustering of all its eigenvalues around $1$. The exact low-mode eigenspace is still of the same size as for the operator in figure \ref{fig:dfl_sap_gcr_conf6_0-8x8-30_8x8x8x8_k_0.15649}, but the low-eigenvalues are not clearly separated anymore from the bulk of eigenvalues\footnote{The operator does not satisfy equation \eqref{eq:separable} anymore.}. A separation is thus harder to achieve, making the deflation subspace arbitrary and the deflation of the full system unprogressive and expensive. For deflation to be effective in such a case, one needs to determine the $N_s$ bootstrap vectors more precisely by using more inverse iteration steps, making the generation of deflation subspace computationally more expensive. Obviously, the better alternative would be to drop deflation entirely and minimize Schwarz-preconditioning for such a system.
+\textbf{Figure \ref{fig:dfl_sap_gcr_conf6_0-8x8-30_8x8x8x8_k_0.05}}: In contrast to the previous operator, the matrix in figure \ref{fig:dfl_sap_gcr_conf6_0-8x8-30_8x8x8x8_k_0.05} is well-conditioned. The plot tells us that in this case low-mode deflation is a waste of resources. Theoretically, this can be understood, because a well-conditioned operator has no separable spectrum in the sense of equation \eqref{eq:separable}. Thus, the proofs in section \ref{sec:deflation} give us a reasoning why deflation is not efficient in this case. Applying the results from section \ref{sec:sap_gcr_results}, Schwarz-preconditioning should be kept within a tight limit for good conditioned systems. As stated previously, we expect the number of GCR-steps to decrease, when using larger deflation subspaces. On the contrary, when looking at the configuration $(n_{cy},n{mr}) = (1,1)$, we observe an \textit{increase} to the right instead. This suggests that too large deflation subspaces cause the solver to perform even worse, not only in run-time as it is with Schwarz-preconditioning, but also in the number of GCR-steps, finally leading to a regression. This specific operator has a clustering of all its eigenvalues around $1$. The exact low-mode eigenspace is still of the same size as for the operator in figure \ref{fig:dfl_sap_gcr_conf6_0-8x8-30_8x8x8x8_k_0.15649}, but the low-eigenvalues are not clearly separated anymore from the bulk of eigenvalues. A separation is thus harder to achieve, making the deflation subspace arbitrary and the deflation of the full system unprogressive and expensive. For deflation to be effective in such a case, one needs to determine the $N_s$ bootstrap vectors more precisely by using more inverse iteration steps, making the generation of deflation subspace computationally more expensive. Obviously, the better alternative would be to drop deflation entirely and minimize Schwarz-preconditioning for such a system.
 
 \subsubsection{Conclusion}
 
-The run-time seems to be convex in the dimension of the deflation subspace. This suggests that the true subspace of low eigenmodes lies approximately at the minimum of that convex curve. As a justification imagine that the subspace of low eigenmodes has dimension $d$, but the algorithm produced a subspace of dimension $d_1 \gg d$. This implies that the generated deflation subspace must contain high eigenmodes as well, making the little system increasingly ill-conditioned. This results in longer run-times, because the little equation has to be solved in every (outer) GCR-step. On the other hand, let's assume the algorithm generates a deflation subspace of dimension $d_2 \ll d$. Since only a few low eigenmodes can be split off, the deflated equation is still in bad condition. Although the little equation seems to be in good condition and small in its dimension, thus solved fast, it hardly contributes to the full solution. Again, this results in a longer run-time. Certainly, the perfect size for the deflation subspace is the size of the subspace of the (exact) low eigenmodes or a bit larger. Of importance is that the bulk of the low eigenmodes is contained in it.
+The run-time seems to be convex in the dimension of the deflation subspace. This suggests that the true subspace of low eigenmodes lies approximately at the minimum of that convex curve. As a justification imagine that the subspace of low eigenmodes has dimension $d$, but the algorithm produced a subspace of dimension $d_1 \gg d$. This implies that the generated deflation subspace must contain high eigenmodes as well, making the little system increasingly ill-conditioned. This results in longer run-times, because the little equation has to be solved in every (outer) GCR-step. On the other hand, let's assume the algorithm generates a deflation subspace of dimension $d_2 \ll d$. Since only a few low eigenmodes can be split off, the deflated equation is still in bad condition (lemma \ref{lem:condition_number} does not apply). Although the little equation seems to be in good condition and small in its dimension, thus solved fast, it hardly contributes to the full solution. Again, resulting in longer run-times. Certainly, the perfect size for the deflation subspace is approximately the size of the subspace of the (exact) low eigenmodes. Of importance is that the bulk of the low eigenmodes is contained in it, such that the theorems of the previous section apply.
 
-As mentioned before, the plots exhibit a bowl-shape, where the minimum gives the perfect balance between Schwarz-preconditioning and inexact low-mode deflation. The position of this minimum is certainly a property of the operator in consideration and depends on its condition number. If the number of low modes can be upper bounded as tight as possible with little computational effort, then together with the adaptive variant of the \acrshort*{sapgcr} algorithm one obtains a powerful and versatile solver.
+As mentioned before, the plots exhibit a bowl-shape, where the minimum gives the perfect balance between Schwarz-preconditioning and inexact low-mode deflation. The position of this minimum is certainly a property of the operator in consideration and depends on its condition number. If the number of low modes estimated with little computational effort, then together with the adaptive variant of the \acrshort*{sapgcr} algorithm one obtains a powerful and versatile solver.
 
-TODO
+Thinking about utilizing the GPU for the deflated solver, we see that the little equation should not be transferred to and solved on the GPU. Its dimensionality is a fraction of the full problem size, even for large lattices this is still small. Results in section \ref{sec:sap_gcr_results} show the GPU being efficient only on large sub-problems, while on small blocks it is clearly outperformed by the CPU. On the contrary, if the deflation is combined with Schwarz-preconditioning, the blocked problems can still be solved on the GPU efficiently and the conclusions of section \ref{sec:sap_gcr_results} apply.
 
 \begin{comment}
 \section{Multi-shift Conjugate Gradient}
@@ -3339,9 +3349,9 @@ The gauge fields are SU(3) matrices. Inspecting their representations, they can 
 
 \end{comment}
 
-The lattice Dirac-operator \eqref{eq:dwop} in openQ*D is implemented in terms of the various gauge-fields $U_{\mu}(n)$, only these are stored in memory\footnote{To be precise openQ*D also implements the Sheikholeslami-Wohlert-term \cite{sheikholeslami1985} which needs to store a set of fields as well and the boundary $O(a)$-improvement term that only depends on two constants $c_F, c^{\prime}_F$, depending on the chosen boundary conditions.}. In every HMC-trajectory the fields are updated, and the operator changes. In every Monte Carlo step the Dirac-operator has to be inverted for a given source vector to create the pseudofermion action, see equation \eqref{eq:pseudofermion_action}. To construct correlation functions requires the inverse of the operator from a given source point to any other point on the lattice. This requires \num{12} rows or columns of $D^{-1}$, thus \num{12} inversions. Or simply calculating the quark-propagator from one lattice point to another requires an inversion as well. In summary, inverting the Dirac-operator takes about \num{90}\% of computation time of a lattice simulation. It is thus a fundamental kernel in every numerical lattice QFT calculation.
+The lattice Dirac-operator \eqref{eq:dwop} in openQ*D is implemented in terms of the various gauge-fields $U_{\mu}(n)$, only these are stored in memory\footnote{To be precise openQ*D also implements the Sheikholeslami-Wohlert-term \cite{sheikholeslami1985} which needs to store a set of fields as well and the boundary $O(a)$-improvement term that depends on two constants $c_F, c^{\prime}_F$, whose values depend on the chosen boundary conditions.}. In every HMC-trajectory the fields are updated, and the operator changes. In every Monte Carlo step the Dirac-operator has to be inverted for a given source vector to create the pseudofermion action, see equation \eqref{eq:pseudofermion_action}. The construction of correlation functions requires the inverse of the operator from a given source point to any other point on the lattice. This requires \num{12} rows or columns of $D^{-1}$, thus \num{12} inversions. Or simply calculating the fermion-propagator from one lattice point to another requires an inversion as well (see equation \eqref{eq:fermion_observables}). In summary, inverting the Dirac-operator takes about \num{90}\% of computation time in a lattice simulation. It is thus a fundamental kernel in every numerical lattice QFT calculation. Optimizing it increases the performance of \textit{any} solver.
 
-\subsection{Threaded Dirac-operator}
+\subsection{Dirac-operator with threads}
 
 \label{sec:threads}
 
@@ -3357,24 +3367,24 @@ It makes sense to agree on terminology before analysing and discussing the resul
     \item \df{CPU, Processor, Physical core}: Hardware unit capable of independently performing basic arithmetic, logic, controlling, and (I/O) operations. A single physical core may correspond to one or more logical cores. Multiple physical cores may share L2 and L3 caches. Physical cores are associated to NUMA-nodes.
     \item \df{Logical core}: Logical cores are the abilities of a single physical core to execute two or more threads or processes concurrently. Logical cores associated to the same physical core share their caches.
     \item \df{Process, Rank}: As opposed to threads, processes or ranks do not share resources such as memory. Different instances of processes need to setup a communication channel to be able to communicate (using communication libraries such as MPI). 
-    \item \df{Thread}: Sequence of programmed instructions. Multiple threads can execute concurrently and share resources such as memory. A process has always at least one thread (the master thread). A thread is spawned by another thread. Communication among threads on the same node happens via shared memory.
+    \item \df{Thread}: Sequence of programmed instructions. Multiple threads can execute concurrently and share resources such as memory. A process has always at least one thread (the master thread). A thread is spawned and joined by another thread. Communication among threads on the same node happens via shared memory.
     \item \df{NUMA-architecture}: A collection of NUMA-nodes linked by a point-to-point network. All cores, memory and devices are divided in NUMA-domains.
     \item \df{NUMA-node, NUMA-domain, NUMA-region}: A group of cores and/or memory and/or devices with \acrfull{uma}. Local memory is accessible to the other NUMA-nodes, but latency is generally higher than to their own local memory. Memory-bandwidth on the other hand can even be higher to other NUMA-nodes than to the one associated to. Not to be confused with the physical node.
 \end{itemize}
 
 \subsubsection{Setup}
 
-The Dirac-operator in single-precision was implemented as a variant using threads according to the OpenMP standard in openQCD version 1.6 \cite{openqcd}. The performance of the operator was compared to the native implementation without threads. The runs were conducted on two different nodes having two vastly different processors, see tables \ref{tab:dop_omp_amd} and \ref{tab:dop_omp_intel}. On each node, \num{3} different lattice sizes were considered; $64^4$, $32^4$ and $16^4$. For each lattice size many configurations $(n_r,n_{th})$ were analysed, $n_r$ being the number of ranks and $n_{th}$ the number of threads. The configurations were chosen such that the machine was utilized half, fully or over-subscripted. Every configuration was executed \num{10} times, its average is quoted in the table. Used OpenMP environment variables were:
+The Dirac-operator in single-precision was implemented as a variant using threads according to the OpenMP standard in openQCD version 1.6 \cite{openqcd}. The performance of the operator was compared to the native implementation without threads. The runs were conducted on two different nodes having two vastly different processors, see tables \ref{tab:dop_omp_amd} and \ref{tab:dop_omp_intel}. On each node, \num{3} different lattice sizes were considered; $64^4$, $32^4$ and $16^4$. For each lattice size many configurations $(n_r,n_{th})$ were analysed, $n_r$ being the number of ranks and $n_{th}$ the number of threads. The configurations were chosen such that the machine was utilized half, fully or over-subscripted. Every configuration was executed \num{10} times, the average is quoted in the table. The exported OpenMP environment was:
 
 \begin{lstlisting}[
     language=sh,
     numbers=none,
     label=lst:omp_env,
-    caption={Environment variables for openMP.}
+    caption={Environment variables for OpenMP.}
 ]
 # each place corresponds to a core, threads are bound to cores
 OMP_PLACES=cores
-# block cyclic scheduling, where each thread gets floor(iteration/threads)
+# block cyclic scheduling, where each thread gets floor(#iteration/#threads)
 # contiguous iterations. In multiple parallel for-loops, all with the same
 # scheduling policy and the same limits, the same threads get the same loop-slices
 OMP_SCHEDULE=static
@@ -3437,13 +3447,13 @@ The runs were disposed using the mentioned environment variables and Slurms CPU-
         omp & 1 & 512 & $2.35 \pm 0.01$ & $171 \pm 3$ & $53.4 \pm 5.3$ \\
         \hline
     \end{tabular}
-    \caption{\num{10} consecutive invocations of the single precision Dirac-operator \code{Dw()} on random fields in openQCD version 1.6. The table shows runs with different rank/thread configurations $(n_r, n_{th})$ on different lattice sizes. The lattice size refers to the total lattice size on the node. The node consisted of \num{2} NUMA-nodes, \num{2} sockets each with an AMD EPYC 7742 processor @ 2.25GHz with \num{64} physical cores per socket and \num{2} threads per core; in total \num{256} logical cores, with 512GB of memory. The cache sizes of one processor are L1 data: 2MB, L1 instruction: 2MB, L2: 32MB, L3: 256MB. L1 data: 2MB ($64 \times 32$KB), L1 instruction: 2MB ($64 \times 32$KB), L2: 32MB ($64 \times 512$KB), L3: 256MB ($16 \times 16$MB).}
+    \caption{\num{10} consecutive invocations of the single precision Dirac-operator \code{Dw()} on random fields in openQCD version 1.6. The table shows runs with different rank/thread configurations $(n_r, n_{th})$ on different lattice sizes. The lattice size refers to the total lattice size on the node. The node consisted of \num{2} NUMA-nodes, \num{2} sockets each with an AMD EPYC 7742 processor @ 2.25GHz with \num{64} physical cores per socket and \num{2} threads per core; in total \num{256} logical cores, with 512GB of memory. The cache sizes of one processor are L1 data: 2MB ($64 \times 32$KB), L1 instruction: 2MB ($64 \times 32$KB), L2: 32MB ($64 \times 512$KB), L3: 256MB ($16 \times 16$MB).}
     \label{tab:dop_omp_amd}
 \end{table}
 
-\textbf{Table \ref{tab:dop_omp_amd}}: In table \ref{tab:dop_omp_amd} the number of physical and logical cores was a power of \num{2}, therefore in both cases -- native and with threads -- all logical cores on the node could be utilized. In general, the best run-times were achieved with the native operator. The only exception for the $16^4$ lattice was the run with \num{64} ranks and \num{2} threads per rank. With that lattice size the entire gauge-field configuration fits into L2 cache of one processor (see table \ref{tab:lattice_sizes}), making consecutive runs very fast. Especially for the threaded variant, with twice as many threads the problem is not solved in half the time. This suggests that the overhead for dealing with threads is not negligible, and the threaded variant certainly needs improvement. It should be seen as a first working step towards hyper-threading. On the other hand, the native implementation lacks an ideal strong scaling, which can be seen by looking at the first two rows. Generally, the runs with only \num{128} ranks are faster than the runs using every of the \num{256} logical cores. This holds for all considered lattice sizes. Let's concentrate on the most interesting lattice size $64^4$. The threaded variant brings no benefit compared to the native one, but there are configurations that are comparable in run-time, namely the ones with $(n_r, n_{th})=(64,4)$ as well as $(32,8)$. Both make use of all logical cores on the node. Improving the threaded implementation can therefore lead to a speedup increase (see conclusion). Generally, the less ranks, the worse the performance becomes. This can be explained by false sharing among the threads and ignorance concerning NUMA-effects when implementing the threaded operator.
+\textbf{Table \ref{tab:dop_omp_amd}}: In table \ref{tab:dop_omp_amd} the number of physical and logical cores was a power of \num{2}, therefore in both cases -- native and with threads -- all logical cores on the node could be utilized. In general, the best run-times were achieved with the native operator. The only exception for the $16^4$ lattice was the run with \num{64} ranks and \num{2} threads per rank. With that lattice size the entire gauge-field configuration fits into L2 cache of one processor (see table \ref{tab:lattice_sizes}), making consecutive runs very fast. Especially for the variant with threads, with twice as many threads the problem is not solved in half the time. This suggests that the overhead for dealing with threads is not negligible, and certainly needs improvement. It should be seen as a first working step towards hyper-threading. On the other hand, the native implementation lacks an ideal strong scaling, which can be seen by looking at the first two rows. Generally, the runs with only \num{128} ranks are faster than the runs using every of the \num{256} logical cores. This holds for all considered lattice sizes. Let's concentrate on the most interesting lattice size $64^4$. The variant with threads brings no benefit compared to the native one, but there are configurations that are comparable in run-time, namely the ones with $(n_r, n_{th})=(64,4)$ as well as $(32,8)$. Both make use of all logical cores on the node. Improving the thread implementation can therefore lead to a speedup increase (see conclusion). Generally, the less ranks, the worse the performance becomes. This can be explained by false sharing among the threads and ignorance concerning NUMA-effects when implementing the operator with threads.
 
-\textbf{Table \ref{tab:dop_omp_intel}}: Table \ref{tab:dop_omp_intel} shows a different picture: most notable for the analysis is the fact that the total number of physical and logical cores was \textit{not} a power of \num{2} on this node. This makes it difficult to utilize all resources using the native implementation. This fact is reflected by the results. The threaded variant has substantial performance increase compared to the best native pure-MPI implementation using \num{64} ranks. Especially the configurations with ranks and threads $(n_r, n_{th})=(16,7)$, $(8,14)$ and $(4,14)$ perform best. The reason for this lies in the complicated association of cores to NUMA-domains. The node has \num{4} NUMA-domains, where the logical cores are associated to NUMA-domains in a non-trival manner (see listing \ref{lst:lscpu}). \num{14} logical cores share an L3 cache. This explains why the mentioned configurations with \num{14} threads perform well. The jobs were disposed in a way that the \num{14} threads are bound to physical cores with the same L3 cache, thus cores in the same NUMA-domain. The job $(16,7)$ that performed best was disposed such that each of the \num{4} NUMA-domains contained a group of \num{4} consecutive ranks with \num{7} threads each. All \num{112} logical cores were utilized.
+\textbf{Table \ref{tab:dop_omp_intel}}: Table \ref{tab:dop_omp_intel} shows a vastly different picture: most notable for the analysis is the fact that the total number of physical and logical cores was \textit{not} a power of \num{2} on this node. This makes it difficult to utilize all resources using the native implementation. This fact is reflected by the results. The variant using threads has substantial performance increase compared to the best native pure-MPI implementation using \num{64} ranks. Especially the configurations with ranks and threads $(n_r, n_{th})=(16,7)$, $(8,14)$ and $(4,14)$ perform best. The reason for this lies in the non-trivial association of cores to NUMA-domains. The node has \num{4} NUMA-domains, where the logical cores are associated to NUMA-domains in a non-trival manner (see listing \ref{lst:lscpu}). \num{14} logical cores share an L3 cache. This explains why the mentioned configurations with \num{14} threads perform well. The jobs were disposed in a way that the \num{14} threads are bound to physical cores with the same L3 cache, thus cores in the same NUMA-domain. The job $(16,7)$ that performed best was disposed such that each of the \num{4} NUMA-domains contained a group of \num{4} consecutive ranks with \num{7} threads each. All \num{112} logical cores were utilized.
 
 \begin{figure}
 \begin{lstlisting}[
@@ -3563,21 +3573,21 @@ CPU NODE SOCKET CORE L1d:L1i:L2:L3 ONLINE
 
 \subsubsection{Conclusion}
 
-The threaded variant is useful on machines where the number of logical or physical cores is not a power of \num{2}, or can somehow not be fully utilized by the pure-MPI implementation. Since in openQCD (and openQ*D) the number of ranks in one direction can only be $2,4,6,\dots$ and the lattice size in one direction can only be $4,6,8,\dots$, these numbers are limited for a given lattice size and a processor where the number of CPUs is not a power of \num{2}. Utilizing the entire node is not always possible\footnote{For example the node in table \ref{tab:dop_omp_intel}, where only a maximum of \num{64} from a total of \num{112} logical cores could be utilized.}. On the other hand, the threaded operator can utilize the entire node, because the number of threads per rank is arbitrary.
+The variant using threads is useful on machines where the number of logical or physical cores is not a power of \num{2}, or can somehow not be fully utilized by the pure-MPI implementation. Since in openQCD (and openQ*D) the number of ranks in one direction can only be $2,4,6,\dots$ and the lattice size in one direction can only be $4,6,8,\dots$, these numbers are limited for a given lattice size and a processor where the number of CPUs is not a power of \num{2}. Utilizing the entire node is not always possible\footnote{For example the node in table \ref{tab:dop_omp_intel}, where only a maximum of \num{64} from a total of \num{112} logical cores could be utilized.}. On the other hand, the operator with threads can utilize the entire node, because the number of threads per rank is arbitrary.
 
 When implementing threads, it is important to write NUMA-aware code. In the above implementation there are certainly performance degradations due to NUMA-effects and false sharing. It was tried to obey the first-touch policy as often as possible, by initializing the involved arrays with a parallel for-loop, just as they are accessed later in the main for-loop\footnote{See line 1295ff in \code{modules/dirac/Dw.c} in \cite{openqcd_threads}} within the Dirac-operator. However, a certain amount of false sharing was not preventable without significantly changing the original code.
 
-Another peculiarity of the above implementation was that in \code{deo()} the \num{8} directions of the gauge-fields had to be separately locked in every lattice point, because in these code segments the output vector was written leading to race conditions without locking. The initialization and de-initialization of the \code{VOLUME/2} locks involve a non-negligible overhead in every call of the Dirac-operator. The overhead can be estimated by comparing the results of $(128, N/A)$ and $(128, 1)$ in table \ref{tab:dop_omp_amd} or $(64, N/A)$ and $(64, 1)$ in table \ref{tab:dop_omp_intel}.
+Another peculiarity of the above implementation was that in \code{deo()} the \num{8} directions of the gauge-fields had to be separately locked in every lattice point, because in these code segments the output vector was written leading to race conditions among threads without locking. The initialization and de-initialization of the \code{VOLUME/2} locks involve a non-negligible overhead in every call of the Dirac-operator. The overhead can be estimated by comparing the results of $(128, N/A)$ and $(128, 1)$ in table \ref{tab:dop_omp_amd} or $(64, N/A)$ and $(64, 1)$ in table \ref{tab:dop_omp_intel}.
 
 \begin{proposal}{The Dirac-operator with threads}{dop_threads}
 
 The analysis in section \ref{sec:threads} shows that a version of the Dirac-operator employing threads can improve performance as well.
 
-For future refinements of the threaded implementation one can concentrate on false sharing of the current implementation. For example, in the main loop, instead of consecutively looping over the elements that are being read, loop over the elements that are written (the output spinor) in such a way that only a (consecutive) slice of the output spinor is written in each iteration. Each thread then has its own constant equally sized slice to write to, without having race conditions with other threads. This method avoids expensive locking. It implies to use \code{schedule(static)} and the same boundaries in all parallel for-loops, such that a thread always gets the same loop slice within different for-loops. The current test-implementation obeys that. A certain amount of false sharing is not preventable without changing the loop as described above. In the parts of the code where the output spinor \code{r} is written consecutively (\code{r+i} or \code{r+VOLUME/2+i}) only true sharing appears, because \code{r} was initialized in the same way (first touch policy). But within \code{deo()}, \code{r} is written on arbitrary offsets, leading to false sharing.
+For future refinements of the thread implementation one can concentrate on false sharing of the current implementation. For example, in the main loop, instead of consecutively looping over the elements that are being read, loop over the elements that are written (the output spinor) in such a way that only a (consecutive) slice of the output spinor is written in each iteration. Each thread then has its own constant equally sized slice to write to, without having race conditions with other threads. This method avoids expensive locking. It implies to use \code{schedule(static)} and the same boundaries in all parallel for-loops, such that a thread always gets the same loop slice within different for-loops. The current test-implementation obeys that. A certain amount of false sharing is not preventable without changing the loop as described above. In the parts of the code where the output spinor \code{r} is written consecutively (\code{r+i} or \code{r+VOLUME/2+i}) only true sharing appears, because \code{r} was initialized in the same way (first touch policy). But within \code{deo()}, \code{r} is written on arbitrary offsets, leading to false sharing.
 
 In the main parallel for-loop not all threads have the same amount of workload as implemented currently. This is due to the if-statement inside the loop. Using \code{schedule(dynamic)} here instead is not recommended, because we want the same threads to get the same data-slices as in previous parallel for-loops to reduce data movement due to cache coherency.
 
-A reference implementation was written directly in openQCD and can be found in the GitHub repository ref. \cite{openqcd_threads}.
+The thread implementation, with which the above results are obtained, was written directly in openQCD and can be found in the GitHub repository ref. \cite{openqcd_threads}.
 
 \end{proposal}
 
@@ -3598,18 +3608,18 @@ future:
 
 \subsection{Dirac-operator representations}
 
-It makes sense to look at different representations of the gauge-fields $U_{\mu}(n)$, since on GPUs sparse linear algebra is even more memory-bound than on CPUs. While collecting the data on GPUs in sections \ref{sec:sap_gcr_results} and \ref{sec:dfl_sap_gcr_results} the GPU load was never higher than \num{20}-\num{30}\%. If we achieve higher arithmetic intensities in the calculations and less memory traffic in application kernels such as the Dirac-operator, we can achieve a \num{2}-\num{4} times faster GPU-implementation than the reference implementation in Python that was used in the analysis. This gives motivation to the following proposal and definition.
+It makes sense to look at different representations of the gauge-fields $U_{\mu}(n)$, since on GPUs sparse linear algebra is even more memory-bound than on CPUs. While collecting the data on GPUs in section \ref{sec:sap_gcr_results}, the GPU load was never higher than \num{20}-\num{30}\%. If we achieve higher arithmetic intensities in the calculations and less memory traffic in application kernels such as the Dirac-operator, we can achieve a \num{2}-\num{4} times faster GPU-implementation than the reference implementation in Python that was used in the analysis. This gives motivation to the following proposal and definition.
 
 \begin{definition}[Arithmetic Intensity]
-  The \df{arithmetic intensity} $I$ is the ratio of the \df{work} $W$ and the \df{memory traffic} $Q$ appearing in a considered piece of code,
+  The \df{arithmetic intensity} $I$ is the ratio of the \df{work} $W$ and the \df{memory traffic} $T$ appearing in a considered piece of code,
   \begin{align*}
-    I = \frac{W}{Q}.
+    I = \frac{W}{T}.
   \end{align*}
-  The work $W$ needs to be given as number of floating-point operations and the memory traffic $Q$ in terms of stored and loaded bytes. The unit of arithmetic intensity $I$ is then floating-point operations per byte and depends on the data type of the involved quantities.
+  The work $W$ needs to be given as number of floating-point operations and the memory traffic $T$ in terms of stored and loaded bytes. The unit of arithmetic intensity $I$ is then floating-point operations per byte and depends on the data type of the involved quantities.
 \end{definition}
 
 \begin{proposal}{Representation of the Dirac-operator}{dop_reps}
-For the implementation of the Dirac-operator on the GPU, the software library QUDA \cite{clark2010} is a good sample. To improve the performance of their Dirac-operator, the authors of QUDA used a representation of the $SU(3)$-fields with \num{8} real numbers, a gauge transformation to make almost all of the gauge fields in temporal direction to the identity-matrix and a change of basis in the $\gamma$-matrices, such that one of the four matrices has a quite simple form. The most interesting one is the $SU(3)$-representation with only \num{8} real numbers. In openQ*D \footnote{See line 43 in \code{include/su3.h} in \cite{openqxd}.} the struct \code{su3\_dble} representing a $SU(3)$-gauge-field consists of \num{18} double precision numbers. The C macro for a matrix-matrix multiplication of 2 such \code{su3\_dble} \footnote{See line 490ff in \code{include/su3.h} in \cite{openqxd}.} consists of $18 \cdot 12$ floating-point operations, $2 \cdot 18$ loads and $18$ stores. Using \gls{binary64}, the arithmetic intensity is $I = 0.5$ floating-point operations per byte, making the problem memory-bound.
+For the implementation of the Dirac-operator on the GPU, the software library QUDA \cite{clark2010} is a good sample. To improve the performance of their Dirac-operator, the authors of QUDA used a representation of the $SU(3)$-fields with \num{8} real numbers, a gauge transformation to make almost all of the gauge fields in temporal direction to the identity-matrix and a change of basis in the $\gamma$-matrices, such that one of the four matrices has a quite simple form. The most interesting one is the $SU(3)$-representation with only \num{8} real numbers. In openQ*D the struct \code{su3\_dble}\footnote{See line 43 in \code{include/su3.h} in \cite{openqxd}.} representing an $SU(3)$-gauge-field consists of \num{18} double precision numbers. The C-macro for a matrix-matrix multiplication of 2 such structs, \code{\_su3\_times\_su3()}\footnote{See line 490ff in \code{include/su3.h} in \cite{openqxd}.}, consists of $18 \cdot 12$ floating-point operations, $2 \cdot 18$ loads and $18$ stores. Using \gls{binary64}, the arithmetic intensity is $I = 0.5$ floating-point operations per byte, making the problem memory-bound.
 
 Since the rows and columns of $SU(3)$-matrices form an orthonormal basis of $\mathbb{C}^3$, one representation of such matrices consists of only the first two rows/columns and the third row/column is calculated as the vector product of the former two \cite{deforcrand1985}. This is a representation with \num{12} real numbers. A matrix-matrix multiplication of two such matrices ends up in $270$ floating-point operations, $2 \cdot 12$ loads and $12$ stores. This results in an arithmetic intensity of $I = 0.9375$ floating-point operations per byte using \gls{binary64} -- still memory-bound.
 
@@ -3647,7 +3657,7 @@ where $N \coloneqq \left(1 - \abs{a_{11}}^2 \right)^{-\frac{1}{2}}$. Notice that
   \abs{a_{11}}^2 + \abs{a_{12}}^2 + \abs{a_{13}}^2 = \abs{a_{11}}^2 + \abs{a_{21}}^2 + \abs{a_{31}}^2 = 1, \label{eq:su3_orth_constr}
 \end{align}
 
-leading to the observation that all \num{12} real numbers are in the interval $[-1, 1].$
+leading to the observation that all \num{10} real numbers are in the interval $[-1, 1].$
 
 Finally, a minimal representation of $8$ real numbers \cite{bunk1986} can be obtained using the constraint above \eqref{eq:su3_orth_constr}. If we write $a_{ij} = x_{ij} + i y_{ij}$ with $x_{ij}, y_{ij} \in \mathbb{R}$ we can eliminate \num{2} further numbers. One (of many) choices could be
 
@@ -3672,7 +3682,7 @@ Using this, only $a_{11}, a_{12}, a_{21}$ and the real parts of $a_{13}$ and $a_
         8   & 1.9115 & 3.8229  & 7.6458 \\
         \hline
     \end{tabular}
-    \caption{Arithmetic intensities of $SU(3)$ representations with different requirement for real numbers for a matrix-matrix multiplication. In the calculation of the intensities a FLOP-count of \num{6} was used for the square root of a floating-point number and previous results were reused instead of recalculated.}
+    \caption{Arithmetic intensities of $SU(3)$ representations with different requirement for real numbers for a matrix-matrix multiplication, \code{\_su3\_times\_su3()}. In the calculation of the intensities a FLOP-count of \num{6} was used for the square root of a floating-point number and previous results were reused instead of recalculated.}
     \label{tab:ai_su3}
 \end{table}
     
@@ -3698,7 +3708,7 @@ In table \ref{tab:dw_dble} one invocation of \code{Dw\_dble()} was called and th
         12288 & \code{\_vector\_i\_sub\_assign()} & 0.0416 & 0.0416 & 0.0416 & 0.0416 \\
         \hline
     \end{tabular}
-    \caption{Number of C macro calls for one call of \code{Dw\_dble()} on a $8^4$ local lattice with $4$ ranks.}
+    \caption{C-macro calls for one call of \code{Dw\_dble()} on a $8^4$ local lattice with $4$ ranks. Notice that the relevant macros for improvement are \code{\_su3\_multiply()} and \code{\_su3\_inverse\_multiply()}. All other macros are variants of axpy and cannot be improved unless the representation of spinor-fields would be changed as well.}
     \label{tab:dw_dble}
 \end{table}
 
@@ -3713,7 +3723,7 @@ A necessary condition for GPU acceleration to be advantageous is that the benefi
 
 \section{GPU Implementation}
 
-There are multiple possibilities how to implement GPU-utilisation into the current state of the code. The resources of the GPU could be used to increase the number of ranks and thus increase the total lattice volume (see proposal \ref{pp:gpu_implementation1}), motivated by the results a pre-GPU implementation of the solvers can be considered (see proposal \ref{pp:gpu_implementation2}), implement the hybrid variant similar to the one in the results (see proposal \ref{pp:gpu_implementation3}) or a completely different approach utilizing both compute devices at the same time (see proposal \ref{pp:gpu_implementation4}).
+There are multiple possibilities how to implement GPU-utilisation into the current state of the code. The resources of the GPU could be used to increase the number of ranks and thus increase the total lattice volume (see proposal \ref{pp:gpu_implementation1}). Motivated by the results in section \ref{sec:sap_gcr_results}, a pure-GPU implementation of all solvers (see proposal \ref{pp:gpu_implementation2}) or a hybrid variant similar to the one in the results could be considered (see proposal \ref{pp:gpu_implementation3}). Finally, a completely different approach harnessing both compute devices at the same time is presented in proposal \ref{pp:gpu_implementation4}.
 
 \begin{proposal}{GPU Implementation Variant 1 - GPU ranks}{gpu_implementation1} % ref with pp:gpu_implementation1
 
@@ -3735,7 +3745,7 @@ Since the GPUs are fast on the solver algorithms, a pure-GPU implementation of a
     \item Advantage: Only a small subset of solver algorithm code has to be changed.
     \item Advantage: Significant speedups with little effort.
     \item Disadvantage: The Dirac-operator has to be held in the main memory as well as in the GPU memory. Both need to be in sync. This will lead to a lot of traffic from main memory to the GPU, which is usually slower than GPU-internal traffic. The Dirac-operator is stored in terms of its gauge-fields. They will be redundant and thus the full amount of GPU and CPU memory us not optimally utilised.
-    \item Disadvantage: Since the solvers run on the GPUs, the CPUs will be stale during that time (although the waiting time will be smaller than the time, they would need to run the solvers themselves). In the HMC-part that is still performed on the CPUs, the GPUs will be stale. Again, the full potential of performance is not utilised.
+    \item Disadvantage: Since the solvers run on the GPUs, the CPUs will be stale during that time (although the waiting time will be smaller than the time, they would need to run the solvers themselves). Since the HMC-part is still performed on the CPUs, the GPUs will be stale meanwhile. Again, the full potential of performance is not utilised.
 \end{itemize}
 
 \end{proposal}
@@ -3751,7 +3761,7 @@ If the problem is split among CPU ranks and GPU ranks, one will always have the 
 
 \end{proposal}
 
-All mentioned variants so far include the waiting problem; either the CPU or the GPU is not utilized completely. To achieve workload balancing the system needs to avoid idle time on the CPU and GPU devices, the average load thus remains low. Utilizing more than one kind of processing unit \textit{at the same time} goes by the name \df{heterogeneous computing} \cite{shan2006}. With proposal \ref{pp:gpu_implementation4}, which is probably the most versatile one, a worker queue is included. There are several approaches to implement a workload dividing system based on contention \cite{gregg2010}, problem size \cite{ding2009}, location of data \cite{becchi2010,augonnet2011}, performance of past iterations \cite{li2011,choi2013,bernabe2013,belviranli2013}, machine learning \cite{grewe2011}, on-demand allocation of load balancing \cite{agulleiro2012,teodoro2012}, processing power \cite{lu2012,hawick2013}, priority scheduling \cite{topcuoglu2002} or a performance/execution model \cite{augonnet2011,ogata2008}. Since the involved kernels are mostly memory-bound it makes sense to consider workload division as a function of the data location. It makes sense that idle devices steal chunks of work from others, even when this involves data transfer. This motivates the last proposal.
+All mentioned variants so far include the waiting problem; either the CPU or the GPU is not utilized completely. To achieve workload balancing the system needs to avoid idle time on the CPU and GPU devices, the average load thus remains low. Utilizing more than one kind of processing unit \textit{at the same time} goes by the name of \df{heterogeneous computing} \cite{shan2006}. With proposal \ref{pp:gpu_implementation4}, which is probably the most versatile one, a worker queue is included. There are several approaches to implement a workload dividing system based on contention \cite{gregg2010}, problem size \cite{ding2009}, location of data \cite{becchi2010,augonnet2011}, performance of past iterations \cite{li2011,choi2013,bernabe2013,belviranli2013}, machine learning \cite{grewe2011}, on-demand allocation of load balancing \cite{agulleiro2012,teodoro2012}, processing power \cite{lu2012,hawick2013}, priority scheduling \cite{topcuoglu2002} or a performance/execution model \cite{augonnet2011,ogata2008}. Since the involved kernels are mostly memory-bound it makes sense to consider workload division as a function of the data location. It makes sense that idle devices steal chunks of work from others, even when this involves data transfer. This motivates the last proposal.
 
 \begin{proposal}{GPU Implementation Variant 4 - Heterogeneous Computing}{gpu_implementation4} % ref with pp:gpu_implementation4
 
@@ -3763,6 +3773,7 @@ It makes sense to partition the workload into chunks. The size of a chunk should
     \item Advantage: This system works on clusters having nodes with and without GPU accelerators -- both can contribute to the solution.
     \item Disadvantage: More communication overhead due to the work-stealing nature.
     \item Disadvantage: Enormous imlementation effort.
+    \item Disadvantage: This variant needs a lot of testing and researching for an optimal workload division.
 \end{itemize}
 
 
@@ -3798,15 +3809,15 @@ During a simulation, a lot of linear systems of equation of the type $A \vec{x} 
 
 \label{sec:summary}
 
-This thesis has two major purposes: (1) to investigate solver algorithms and other important application kernels appearing in the lattice QFT application openQ*D and (2) to suggest and demonstrate implementations utilizing the GPU of modern supercomputing facilities. The main motive was an increase of performance in terms of run-time. The main body of this thesis comprises \num{4} chapters, each of them dealing with a different application kernel in openQ*D.
+This thesis has two major purposes: 1) to investigate solver algorithms and other important application kernels appearing in the lattice QFT application openQ*D and 2) to suggest and demonstrate implementations utilizing the GPU on modern supercomputing facilities. The main motive was an increase of performance in terms of run-time. The essential part of this thesis comprises \num{4} chapters, each of them dealing with a different application kernel in openQ*D.
 
-The convergence analysis of the \acrshort{cg} algorithm in section \ref{sec:cg} suggested that common \num{16}-bit data types such as \gls{binary16} or \gls{bfloat16} appearing on modern GPUs are suitable for an implementation of a mixed precision solver, where most of the iterative process is calculated in reduced precision. We found that the Dirac-operator can be formulated using such reduced data types.
+The convergence analysis of the \acrshort{cg} algorithm in section \ref{sec:cg} suggested that common \num{16}-bit data types such as \gls{binary16} or \gls{bfloat16} appearing on modern GPUs are suitable for an implementation of mixed precision solvers, where most of the iterative process is calculated in reduced precision. We found that the Dirac-operator can be formulated using such reduced data types.
 
-The run-time analysis done for the \acrshort{sapgcr} algorithm in section \ref{sec:sap_gcr} showed that large parts or even the complete algorithm can be performed on the GPU and significant performance improvements can be expected therewith. From the collected data, an adaptive variant of the algorithm (independent the CPU or GPU) can be derived with promising run-times.
+The run-time analysis done for the \acrshort{sapgcr} algorithm in section \ref{sec:sap_gcr} showed that large parts or even the complete algorithm can be performed on the GPU and significant performance improvements can be expected therewith. From the collected data, an adaptive variant of the algorithm (independently of the CPU or GPU) can be derived with promising run-times.
 
-A similar run-time analysis was performed for the \acrshort{dflsapgcr} algorithm in section \ref{sec:dfl_sap_gcr}. The only new insight compared to the previous numerical results was that the size of the deflation subspace should approximately match the size of the low eigenmode subspace. The theoretical part of the section contains a formal proof that deflation is efficient if the operator in consideration has locally coherent low eigenmodes and its spectrum is separable.
+A similar run-time analysis was performed for the \acrshort{dflsapgcr} algorithm in section \ref{sec:dfl_sap_gcr}. The only new insight compared to the previous numerical results was that the size of the deflation subspace should approximately match the size of the low eigenmode subspace. The theoretical part of the section explains this result and contains a formal proof that deflation is efficient if the operator in consideration has locally coherent low eigenmodes and its spectrum is separable.
 
-In a last analysis addressing the lattice Dirac-operator, section \ref{sec:dop}, a reference implementation using threads within openQCD was implemented and investigated. On certain NUMA-systems the threaded variant outperformed the native one, if the number of threads and ranks was chosen to fit the NUMA-architecture of the node. Finally, different representations for the gauge fields were proposed in order to increase the arithmetic intensity and decrease the memory traffic of the Dirac-kernel.
+In a last analysis addressing the lattice Dirac-operator, section \ref{sec:dop}, a reference implementation using threads within openQCD was implemented and investigated. On certain NUMA-systems the thread variant outperformed the native one, if the number of threads and ranks was chosen to fit the NUMA-architecture of the node. Finally, different representations for the gauge fields were proposed in order to increase the arithmetic intensity and decrease the memory traffic in the Dirac-kernel, especially suitable for the GPU.
 
 All proposals can easily be accessed by the list of proposals in the appendix \ref{sec:proposals}.
 
@@ -3826,13 +3837,13 @@ Third paragraph: Give a concluding statement, including a short summary of the r
 
 \label{sec:outlook}
 
-Future research from here on can go in many different directions. Immediate next steps would be to explore the Dirac-operator further. The Python-implementation could be extended to represent the operator not in terms of a \acrshort{csr}-matrix, but instead in terms of different representations for $SU(3)$-matrices (see proposal \ref{pp:dop_reps}). To implement such a representation in openQ*D directly is straight-forward. Run-time measurements such as the ones in section \ref{sec:sap_gcr_results} can then be repeated and studied. Such an implementation is expected to speed up the results on the GPU, because the kernels involve less memory traffic and are arithmetically more intense. Investigating how these representations perform on the CPU might be of interest as well.
+Future research from here on can go in many different directions. Immediate next steps would be to explore the Dirac-operator further. The Python-implementation could be extended to represent the operator not in terms of a \acrshort{csr}-matrix, but instead in terms of different representations for $SU(3)$-matrices (see proposal \ref{pp:dop_reps}). To implement such a representation in openQ*D directly is straight-forward and manageable in effort. Run-time measurements such as the ones in section \ref{sec:sap_gcr_results} can then be repeated and studied. Such an implementation is expected to speed up the results on the GPU, because the kernels involve less memory traffic and are arithmetically more intense. Investigating how these representations perform on the CPU might be of interest as well.
 
 Pursuing proposal \ref{pp:alpha} further might not be fruitful. It is included in this document only for the sake of completeness.
 
 On the other hand, the OpenMP implementation in section \ref{sec:threads} can act as a starting point to employ threads and as such exploit architectures involing NUMA. Since \code{Dw()} is already implemented with threads, it is straightforward to reimplement \code{Dwee()}, \code{Dwoo()}, \code{Dweo()}, \code{Dwoe()} and \code{Dwhat()} with threads as well since all problems that might arise are already solved in the reference implementation of \code{Dw()}. Only the block variants \code{Dwee\_blk()}, ... must be considered separately, because although they have exactly the same structure in the loops, they have a completely different (and even variable) range. A straight parallelisation with OpenMP might work, but there will be false sharing, because the threads will recieve different loop-slices than in previous loops. One has to think about association of threads to blocks.
 
-It is worth to further investigate the threaded implementation suggested in proposal \ref{pp:dop_threads}, where we want to loop over the output spinor consecutively instead of looping over quantities that are being read to avoid false sharing. Such a technique introduces a complete reimplementation of the Dirac-operator \code{Dw()}.
+It is worth to further investigate the thread implementation suggested in proposal \ref{pp:dop_threads}, where we want to loop over the output spinor consecutively instead of looping over quantities that are being read to avoid false sharing. Such a technique introduces a complete reimplementation of the Dirac-operator \code{Dw()}.
 
 The OpenMP variant can be used to further implement offloading OpenMP directives to the accelerator \cite{omp_offloading}. This would be a straightforward way to implement a GPU-variant of the operator within affordable time and effort, which could act as a baseline for more sophisticated future GPU-realisations. As a certain advantage of this direction, the code will stay backward compatible since the pragmas will be ignored by the compiler when no OpenMP compiler flags are set.
 
@@ -3841,7 +3852,7 @@ The GPU implementation variant in proposal \ref{pp:gpu_implementation4} only scr
 \begin{comment}
 
 ** openMP offloading to the GPU -> easy way to implement Dop on GPU
-** explore threaded variant more
+** explore thread variant more
 * use performance profiler tools and look for false sharing, etc...
 ** tests with different representations of the gauge fields
 * reimplementation of Dop on the GPU
@@ -3857,7 +3868,7 @@ The GPU implementation variant in proposal \ref{pp:gpu_implementation4} only scr
 
 At this point let me thank my supervisor Prof. Thomas Schulthess for giving me the opportunity to deep dive into this fascinating topic and the co-supervisors Prof. Marina Marinković, Dr. Raffaele Solcà and Dr. Anton Kozhevnikov for treating me as a part of their groups and answering my many questions with patience. I have learned a lot from them. They gave me great support and assistance. It was a pleasure to work with them!
 
-One of the greatest challenges of my thesis although was organizing a meeting date suitable for all participants, a task comparable to a complicated numerical problem with many boundary conditions, that ironically and very accurately resembled the challenges in numerical lattice QFT. On the other hand, when finally, a meeting date was fixed, it tended to be as stable as the Bitcoin stock market price.
+One of the greatest challenges of my thesis although was organizing a meeting date suitable for all participants, a task comparable to a complicated numerical problem with many boundary conditions, that ironically and very accurately resembled the challenges in numerical lattice QFT. On the other hand, when finally a meeting date was fixed, it tended to be as stable as the Bitcoin stock market price.
 
 This section would not be complete if I do not thank the coffee and energy drink manufacturing industry. Without them it would certainly not have been possible to write all of this in \num{6} months\footnote{I'll probably owe them my first heart attack as well.}.
 
@@ -3885,27 +3896,9 @@ This section would not be complete if I do not thank the coffee and energy drink
 \renewcommand{\theprop}{\Alph{subsection}.\arabic{prop}}
 \renewcommand{\thelemma}{\Alph{subsection}.\arabic{lemma}}
 
-\subsection{Proofs}
+\subsection{Inverse Power Method}
 
-\label{sec:proofs}
-
-\begin{prop}[Gaussian integral formula]
-
-\label{prop:gauss_integral}
-
-Let $B$ be a Hermitian, invertible $n \times n$-matrix and $z_i \in \mathbb{C}$, for $i = 1, \dots, n$, then
-
-\begin{align*}
-  \prod_{k=1}^n \int d z_k^{\star} d z_k \exp( - \sum_{i,j=0}^n z_i^{*} B_{ij} z_j ) = \pi^n (\det B)^{-1}.
-\end{align*}
-
-\end{prop}
-
-\begin{proof}
-
-TODO
-
-\end{proof}
+\label{sec:inverse_power_method}
 
 \begin{theorem}[Inverse Power Method]
 
@@ -3929,7 +3922,7 @@ is proportional to the eigenvector corresponding to the smallest eigenvalue.
   &= \frac{c_1}{\lambda_1^k} \left( \vec{v}_1 + \sum_{j=2}^n \left(\frac{\lambda_1}{\lambda_j}\right)^k \frac{c_j}{c_1} \vec{v}_j \right).
 \end{align*}
 
-Since $\abs{\lambda_1} < \abs{\lambda_j}$, for $j \ge 1$, $\left(\frac{\lambda_1}{\lambda_j}\right)^k \to 0$ for $k \to \infty$.
+Since $\abs{\lambda_1} < \abs{\lambda_j}$, for $j \ge 2$, $\left(\frac{\lambda_1}{\lambda_j}\right)^k \to 0$ for $k \to \infty$.
 
 \end{proof}
 
@@ -3937,7 +3930,7 @@ Since $\abs{\lambda_1} < \abs{\lambda_j}$, for $j \ge 1$, $\left(\frac{\lambda_1
 
 \label{cor:inverse_power_method}
 
-Let $A$ be as in theorem \ref{thm:inverse_power_method}, but with $n > m$ smallest eigenvalues of approximately the same magnitude $\abs{\lambda_1} \approx \abs{\lambda_2} \approx \dots \approx \abs{\lambda_{m}} \le \abs{\lambda_{m+1}} \leq \dots \leq \abs{\lambda_n}$. Then,
+Let $A$ be as in theorem \ref{thm:inverse_power_method}, but with $m$ smallest eigenvalues of approximately the same magnitude $\abs{\lambda_1} \approx \abs{\lambda_2} \approx \dots \approx \abs{\lambda_{m}} < \abs{\lambda_{m+1}} \leq \dots \leq \abs{\lambda_n}$. Then,
 
 \begin{align*}
   (A^{-1})^k \vec{b}_0 \xrightarrow{k\rightarrow\infty} \sum_{i=1}^m d_i \vec{v}_i
@@ -4014,7 +4007,7 @@ TODO: second derivative.
 
 \label{sec:grassmann}
 
-In order to satisfy the Pauli principle and thus making fermion anti-commutative, we need to introduce a new type of numbers, called Grassmann variables.
+In order to satisfy the Pauli exclusion principle and thus making fermions anti-commute, we need to introduce a new type of numbers, called Grassmann variables.
 
 \begin{definition}[Grassmann variables]
 
@@ -4052,7 +4045,7 @@ Let $a,b \in \mathbb{F}$ and $\theta, \beta \in \mathbb{G}$. The Taylor-expansio
   \right.
 \end{align*}
 
-because terms $O(\theta^2)$ and higher are exactly zero. Thus, it makes sense to define the \df{derivative with respect to a Grassmann variable} as
+because terms $O(\theta^2)$ and higher are zero exactly. Thus, it makes sense to define the \df{derivative with respect to a Grassmann variable} as
 
 \begin{align*}
   \frac{d}{d \theta} f(\theta) = \left\{
@@ -4080,7 +4073,7 @@ Notice that the derivative $\frac{d}{d \theta}$ as well as the integral measure 
 
 \label{prop:grassmann_integral}
 
-Let $B$ be a Hermitian, invertible $n \times n$-matrix and $\theta_i \in \mathbb{G}$, for $i = 1, \dots, n$, then
+Let $B$ be a complex $n \times n$-matrix and $\theta_i \in \mathbb{G}$, for $i = 1, \dots, n$, then
 
 \begin{align*}
   \prod_{k=1}^n \int d \theta_k^{\star} d \theta_k \exp( - \sum_{i,j=0}^n \theta_i^{*} B_{ij} \theta_j ) = \det B.
@@ -4088,11 +4081,29 @@ Let $B$ be a Hermitian, invertible $n \times n$-matrix and $\theta_i \in \mathbb
 
 \end{prop}
 
+\begin{comment}
 \begin{proof}
-
 TODO
-
 \end{proof}
+\end{comment}
+
+\begin{prop}[Gaussian integral formula]
+
+\label{prop:gauss_integral}
+
+Let $B$ be a Hermitian, invertible $n \times n$-matrix and $z_i \in \mathbb{C}$, for $i = 1, \dots, n$, then
+
+\begin{align*}
+  \prod_{k=1}^n \int d z_k^{\star} d z_k \exp( - \sum_{i,j=0}^n z_i^{*} B_{ij} z_j ) = \pi^n (\det B)^{-1}.
+\end{align*}
+
+\end{prop}
+
+\begin{comment}
+\begin{proof}
+TODO
+\end{proof}
+\end{comment}
 
 \begin{remark}
   Notice the strong resemblance between propositions \ref{prop:grassmann_integral} and \ref{prop:gauss_integral}.
